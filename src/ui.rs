@@ -20,6 +20,9 @@ pub enum UiAction {
     DeleteSave,
     SelectSite(String),
     ScoutSelectedSite,
+    FoundCamp,
+    UpgradeSelectedSettlement,
+    SetSettlementFocus(String),
     AdvanceSeason,
     ToggleChronicle,
 }
@@ -69,21 +72,27 @@ fn draw_header(ctx: &UiContext<'_>) {
 
     let clock = &ctx.session.clock;
     draw_badge(
-        Rect::new(rect.right() - 430.0, rect.y + 18.0, 136.0, 28.0),
+        Rect::new(rect.right() - 560.0, rect.y + 18.0, 124.0, 28.0),
+        &format!("{} action", ctx.session.council_actions_remaining),
+        Color::new(0.24, 0.23, 0.16, 1.0),
+        dark::TEXT,
+    );
+    draw_badge(
+        Rect::new(rect.right() - 426.0, rect.y + 18.0, 132.0, 28.0),
+        &format!("{} migrants", ctx.session.migrant_pool),
+        Color::new(0.20, 0.22, 0.24, 1.0),
+        dark::TEXT,
+    );
+    draw_badge(
+        Rect::new(rect.right() - 284.0, rect.y + 18.0, 122.0, 28.0),
         &format!("{} Y{}", clock.season.label(), clock.year),
         Color::new(0.20, 0.24, 0.18, 1.0),
         dark::TEXT,
     );
     draw_badge(
-        Rect::new(rect.right() - 280.0, rect.y + 18.0, 128.0, 28.0),
+        Rect::new(rect.right() - 152.0, rect.y + 18.0, 134.0, 28.0),
         &format!("{} known", ctx.session.known_site_count()),
         Color::new(0.20, 0.28, 0.23, 1.0),
-        dark::TEXT,
-    );
-    draw_badge(
-        Rect::new(rect.right() - 138.0, rect.y + 18.0, 120.0, 28.0),
-        &format!("{} rumors", ctx.session.adjacent_unknown_count(ctx.data)),
-        Color::new(0.26, 0.22, 0.16, 1.0),
         dark::TEXT,
     );
 }
@@ -96,7 +105,7 @@ fn draw_footer() {
             .with_border(1.0, Color::new(0.52, 0.47, 0.32, 0.45)),
     );
     draw_text_block(
-        "Click visible markers to inspect sites. Question markers are adjacent unknown sites; select one and scout it. Space advances the season. C opens the chronicle. Right mouse drag and +/- adjust the map.",
+        "Click visible markers to inspect sites, found camps, set settlement focus, and upgrade when requirements are met. Question markers are adjacent unknown sites; select one and scout it. Space advances the season. C opens the chronicle.",
         rect.x + 18.0,
         rect.y + 14.0,
         rect.w - 36.0,

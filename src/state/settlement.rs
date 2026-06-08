@@ -1,0 +1,774 @@
+//! Settlement runtime state, player actions, and seasonal economy updates.
+
+use super::{GameSession, Season};
+use crate::data::{
+    GameData, ResourceStock, SettlementFocusDef, SettlementStartDef, SettlementTier, SiteCategory,
+};
+use serde::{Deserialize, Serialize};
+use std::collections::{HashSet, VecDeque};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SettlementStatus {
+    Active,
+    Lost,
+}
+
+impl Default for SettlementStatus {
+    fn default() -> Self {
+        Self::Active
+    }
+}
+
+impl SettlementStatus {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Active => "Active",
+            Self::Lost => "Lost",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SettlementRuntimeState {
+    pub id: String,
+    pub name: String,
+    pub location_id: String,
+    pub owner_faction: String,
+    pub tier: SettlementTier,
+    pub population: i32,
+    pub stored: ResourceStock,
+    pub prosperity: i32,
+    pub stability: i32,
+    pub defence: i32,
+    pub loyalty: i32,
+    pub danger: i32,
+    pub focus_id: String,
+    pub traits: Vec<String>,
+    pub memory_tags: Vec<String>,
+    pub active_issue_ids: Vec<String>,
+    pub founded_year: u32,
+    pub founded_season: Season,
+    #[serde(default)]
+    pub status: SettlementStatus,
+    #[serde(default)]
+    pub famine_seasons: i32,
+}
+
+impl SettlementRuntimeState {
+    pub fn from_start(
+        id: String,
+        name: String,
+        location_id: String,
+        owner_faction: String,
+        start: &SettlementStartDef,
+        clock_year: u32,
+        clock_season: Season,
+    ) -> Self {
+        Self {
+            id,
+            name,
+            location_id,
+            owner_faction,
+            tier: start.tier,
+            population: start.population,
+            stored: start.resources,
+            prosperity: clamp_stat(start.prosperity),
+            stability: clamp_stat(start.stability),
+            defence: clamp_stat(start.defence),
+            loyalty: clamp_stat(start.loyalty),
+            danger: clamp_stat(start.danger),
+            focus_id: start.focus_id.clone(),
+            traits: Vec::new(),
+            memory_tags: Vec::new(),
+            active_issue_ids: Vec::new(),
+            founded_year: clock_year,
+            founded_season: clock_season,
+            status: SettlementStatus::Active,
+            famine_seasons: 0,
+        }
+    }
+
+    pub fn focus<'a>(&self, data: &'a GameData) -> Option<&'a SettlementFocusDef> {
+        data.settlement_balance.focus(&self.focus_id)
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.status == SettlementStatus::Active
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct SettlementActionStatus {
+    pub enabled: bool,
+    pub reason: String,
+}
+
+impl SettlementActionStatus {
+    pub fn enabled(reason: impl Into<String>) -> Self {
+        Self {
+            enabled: true,
+            reason: reason.into(),
+        }
+    }
+
+    pub fn disabled(reason: impl Into<String>) -> Self {
+        Self {
+            enabled: false,
+            reason: reason.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct SeasonAdvanceReport {
+    pub food_shortages: usize,
+    pub settlements_lost: usize,
+}
+
+#[derive(Debug, Clone, Default)]
+struct SettlementSeasonOutcome {
+    started_famine: bool,
+    food_shortage: bool,
+    lost: bool,
+}
+
+impl GameSession {
+    pub fn create_starting_settlements(data: &GameData) -> Vec<SettlementRuntimeState> {
+        let Some(capital) = data.site(&data.settlement_balance.founding.source_site_id) else {
+            return Vec::new();
+        };
+
+        let mut settlement = SettlementRuntimeState::from_start(
+            format!("settlement_{}", capital.id),
+            capital.name.clone(),
+            capital.id.clone(),
+            "player".to_owned(),
+            &data.settlement_balance.starting_capital,
+            data.config.starting_year,
+            Season::from_config(&data.config.starting_season),
+        );
+        settlement.traits = capital.traits.clone();
+        settlement.memory_tags.push("charter_seat".to_owned());
+        vec![settlement]
+    }
+
+    pub fn settlement_at_site(&self, site_id: &str) -> Option<&SettlementRuntimeState> {
+        self.settlements
+            .iter()
+            .find(|settlement| settlement.location_id == site_id)
+    }
+
+    pub fn selected_settlement(&self) -> Option<&SettlementRuntimeState> {
+        self.settlement_at_site(&self.selected_site_id)
+    }
+
+    pub fn founding_status(&self, data: &GameData) -> SettlementActionStatus {
+        let Some(site) = self.selected_site(data) else {
+            return SettlementActionStatus::disabled("Select a site before founding.");
+        };
+
+        if !self.is_known(&site.id) {
+            return SettlementActionStatus::disabled("Scout this site before founding.");
+        }
+        if site.category != SiteCategory::Settlement {
+            return SettlementActionStatus::disabled(
+                "Only settlement-capable sites can be founded.",
+            );
+        }
+        if self.settlement_at_site(&site.id).is_some() {
+            return SettlementActionStatus::disabled("This site already has a settlement.");
+        }
+        if site.owner.as_deref().is_some() {
+            return SettlementActionStatus::disabled("This site is already claimed.");
+        }
+
+        let founding = &data.settlement_balance.founding;
+        if self.council_actions_remaining < founding.action_cost {
+            return SettlementActionStatus::disabled(format!(
+                "Needs {} council action.",
+                founding.action_cost
+            ));
+        }
+
+        let Some(source) = self.active_settlement_at_site(&founding.source_site_id) else {
+            return SettlementActionStatus::disabled("The charter capital is unavailable.");
+        };
+        if let Some(reason) = source.stored.deficit_text(founding.cost) {
+            return SettlementActionStatus::disabled(reason);
+        }
+
+        let source_can_send =
+            source.population - founding.population_transfer >= founding.min_source_population;
+        let migrants_can_send = self.migrant_pool >= founding.population_transfer;
+        if !source_can_send && !migrants_can_send {
+            return SettlementActionStatus::disabled(format!(
+                "Needs {} available settlers from the capital or migrant pool.",
+                founding.population_transfer
+            ));
+        }
+
+        SettlementActionStatus::enabled(format!(
+            "Costs {} action, {}, and {} settlers.",
+            founding.action_cost,
+            founding.cost.cost_text(),
+            founding.population_transfer
+        ))
+    }
+
+    pub fn found_selected_camp(&mut self, data: &GameData) -> Result<String, String> {
+        let status = self.founding_status(data);
+        if !status.enabled {
+            return Err(status.reason);
+        }
+
+        let site_id = self.selected_site_id.clone();
+        let site = data
+            .site(&site_id)
+            .ok_or_else(|| "Selected site is missing.".to_owned())?;
+        let founding = &data.settlement_balance.founding;
+        let source_index = self
+            .settlements
+            .iter()
+            .position(|settlement| {
+                settlement.location_id == founding.source_site_id && settlement.is_active()
+            })
+            .ok_or_else(|| "The charter capital is unavailable.".to_owned())?;
+
+        let source_can_send = self.settlements[source_index].population
+            - founding.population_transfer
+            >= founding.min_source_population;
+        {
+            let source = &mut self.settlements[source_index];
+            source.stored.subtract(founding.cost);
+            if source_can_send {
+                source.population -= founding.population_transfer;
+                add_unique_tag(&mut source.memory_tags, "sent_frontier_families");
+            }
+        }
+        if !source_can_send {
+            self.migrant_pool -= founding.population_transfer;
+        }
+        self.council_actions_remaining -= founding.action_cost;
+
+        let mut settlement = SettlementRuntimeState::from_start(
+            format!("settlement_{}", site.id),
+            site.name.clone(),
+            site.id.clone(),
+            "player".to_owned(),
+            &data.settlement_balance.founded_camp,
+            self.clock.year,
+            self.clock.season,
+        );
+        settlement.traits = site.traits.clone();
+        add_unique_tag(&mut settlement.memory_tags, "frontier_founding");
+        self.settlements.push(settlement);
+        self.add_chronicle_entry(data, "settlement_founded", Some(&site_id));
+
+        Ok(format!("Founded camp at {}", site.name))
+    }
+
+    pub fn selected_upgrade_label(&self, data: &GameData) -> String {
+        let Some(settlement) = self.selected_settlement() else {
+            return "Upgrade Settlement".to_owned();
+        };
+        data.settlement_balance
+            .upgrade_from(settlement.tier)
+            .map(|upgrade| format!("Upgrade to {}", upgrade.to.label()))
+            .unwrap_or_else(|| "Upgrade Settlement".to_owned())
+    }
+
+    pub fn upgrade_status(&self, data: &GameData) -> SettlementActionStatus {
+        let Some(settlement) = self.selected_settlement() else {
+            return SettlementActionStatus::disabled("No settlement selected.");
+        };
+        if !settlement.is_active() {
+            return SettlementActionStatus::disabled("Lost settlements cannot be upgraded.");
+        }
+
+        let Some(upgrade) = data.settlement_balance.upgrade_from(settlement.tier) else {
+            return SettlementActionStatus::disabled("City is the current prototype ceiling.");
+        };
+        if self.council_actions_remaining < upgrade.action_cost {
+            return SettlementActionStatus::disabled(format!(
+                "Needs {} council action.",
+                upgrade.action_cost
+            ));
+        }
+        if settlement
+            .active_issue_ids
+            .contains(&data.settlement_balance.famine.issue_id)
+        {
+            return SettlementActionStatus::disabled("Resolve famine before upgrading.");
+        }
+        if settlement.population < upgrade.min_population {
+            return SettlementActionStatus::disabled(format!(
+                "Needs population {}+.",
+                upgrade.min_population
+            ));
+        }
+        if settlement.prosperity < upgrade.min_prosperity {
+            return SettlementActionStatus::disabled(format!(
+                "Needs prosperity {}+.",
+                upgrade.min_prosperity
+            ));
+        }
+        if settlement.stability < upgrade.min_stability {
+            return SettlementActionStatus::disabled(format!(
+                "Needs stability {}+.",
+                upgrade.min_stability
+            ));
+        }
+        if let Some(reason) = settlement.stored.deficit_text(upgrade.cost) {
+            return SettlementActionStatus::disabled(reason);
+        }
+        if upgrade.requires_capital_network
+            && !self.has_capital_network_access(data, &settlement.location_id)
+        {
+            return SettlementActionStatus::disabled(
+                "Needs a road connection to the capital network.",
+            );
+        }
+        if upgrade.requires_stone_road_or_port
+            && !self.has_stone_road_or_port_access(data, &settlement.location_id)
+        {
+            return SettlementActionStatus::disabled(
+                "Needs a stone road or port connection; this gate is stubbed until road upgrades.",
+            );
+        }
+
+        SettlementActionStatus::enabled(format!(
+            "Costs {} action and {}.",
+            upgrade.action_cost,
+            upgrade.cost.cost_text()
+        ))
+    }
+
+    pub fn upgrade_selected_settlement(&mut self, data: &GameData) -> Result<String, String> {
+        let status = self.upgrade_status(data);
+        if !status.enabled {
+            return Err(status.reason);
+        }
+
+        let site_id = self.selected_site_id.clone();
+        let settlement_index = self
+            .settlements
+            .iter()
+            .position(|settlement| settlement.location_id == site_id)
+            .ok_or_else(|| "No settlement selected.".to_owned())?;
+        let upgrade = data
+            .settlement_balance
+            .upgrade_from(self.settlements[settlement_index].tier)
+            .ok_or_else(|| "No upgrade is available.".to_owned())?
+            .clone();
+        let settlement = &mut self.settlements[settlement_index];
+        settlement.stored.subtract(upgrade.cost);
+        settlement.tier = upgrade.to;
+        settlement.prosperity = clamp_stat(settlement.prosperity + 5);
+        settlement.stability = clamp_stat(settlement.stability + 4);
+        settlement.defence = clamp_stat(settlement.defence + 5);
+        add_unique_tag(
+            &mut settlement.memory_tags,
+            &format!("upgraded_to_{}", upgrade.to.label().to_lowercase()),
+        );
+        let settlement_name = settlement.name.clone();
+        self.council_actions_remaining -= upgrade.action_cost;
+        self.add_chronicle_entry(data, "settlement_upgraded", Some(&site_id));
+
+        Ok(format!(
+            "{} became a {}",
+            settlement_name,
+            upgrade.to.label()
+        ))
+    }
+
+    pub fn focus_change_status(&self, data: &GameData, focus_id: &str) -> SettlementActionStatus {
+        let Some(settlement) = self.selected_settlement() else {
+            return SettlementActionStatus::disabled("No settlement selected.");
+        };
+        if !settlement.is_active() {
+            return SettlementActionStatus::disabled("Lost settlements cannot change focus.");
+        }
+        let Some(focus) = data.settlement_balance.focus(focus_id) else {
+            return SettlementActionStatus::disabled("Unknown focus.");
+        };
+        if settlement.focus_id == focus.id {
+            return SettlementActionStatus::disabled("This focus is already active.");
+        }
+        let action_cost = data.settlement_balance.focus_change_action_cost;
+        if self.council_actions_remaining < action_cost {
+            return SettlementActionStatus::disabled(format!(
+                "Needs {} council action.",
+                action_cost
+            ));
+        }
+
+        if action_cost > 0 {
+            SettlementActionStatus::enabled(format!(
+                "Costs {} action. {}",
+                action_cost, focus.notes
+            ))
+        } else {
+            SettlementActionStatus::enabled(focus.notes.clone())
+        }
+    }
+
+    pub fn set_selected_settlement_focus(
+        &mut self,
+        data: &GameData,
+        focus_id: &str,
+    ) -> Result<String, String> {
+        let status = self.focus_change_status(data, focus_id);
+        if !status.enabled {
+            return Err(status.reason);
+        }
+        let focus_name = data
+            .settlement_balance
+            .focus(focus_id)
+            .map(|focus| focus.name.clone())
+            .ok_or_else(|| "Unknown focus.".to_owned())?;
+        let site_id = self.selected_site_id.clone();
+        let action_cost = data.settlement_balance.focus_change_action_cost;
+        let settlement = self
+            .settlements
+            .iter_mut()
+            .find(|settlement| settlement.location_id == site_id)
+            .ok_or_else(|| "No settlement selected.".to_owned())?;
+        settlement.focus_id = focus_id.to_owned();
+        self.council_actions_remaining -= action_cost;
+
+        Ok(format!("{} focus set to {}", settlement.name, focus_name))
+    }
+
+    pub fn advance_settlement_economy(&mut self, data: &GameData) -> SeasonAdvanceReport {
+        let mut report = SeasonAdvanceReport::default();
+        let mut chronicle_events: Vec<(&str, String)> = Vec::new();
+
+        for settlement in &mut self.settlements {
+            let outcome = apply_season_to_settlement(settlement, data);
+            if outcome.food_shortage {
+                report.food_shortages += 1;
+            }
+            if outcome.started_famine {
+                chronicle_events.push(("settlement_starvation", settlement.location_id.clone()));
+            }
+            if outcome.lost {
+                report.settlements_lost += 1;
+                chronicle_events.push(("settlement_lost", settlement.location_id.clone()));
+            }
+        }
+
+        self.council_actions_remaining = data.settlement_balance.council_actions_per_season;
+        for (template_id, site_id) in chronicle_events {
+            self.add_chronicle_entry(data, template_id, Some(&site_id));
+        }
+
+        report
+    }
+
+    fn active_settlement_at_site(&self, site_id: &str) -> Option<&SettlementRuntimeState> {
+        self.settlements
+            .iter()
+            .find(|settlement| settlement.location_id == site_id && settlement.is_active())
+    }
+
+    fn has_capital_network_access(&self, data: &GameData, site_id: &str) -> bool {
+        let capital_site_id = data.settlement_balance.founding.source_site_id.as_str();
+        if site_id == capital_site_id {
+            return true;
+        }
+
+        let mut visited: HashSet<&str> = HashSet::new();
+        let mut frontier = VecDeque::from([site_id]);
+        while let Some(current_site_id) = frontier.pop_front() {
+            if !visited.insert(current_site_id) {
+                continue;
+            }
+            for road in data.roads_for_site(current_site_id) {
+                if road.level == 0 {
+                    continue;
+                }
+                let Some(next_site_id) = road.other_end(current_site_id) else {
+                    continue;
+                };
+                if next_site_id == capital_site_id {
+                    return true;
+                }
+                frontier.push_back(next_site_id);
+            }
+        }
+
+        false
+    }
+
+    fn has_stone_road_or_port_access(&self, data: &GameData, site_id: &str) -> bool {
+        let has_stone_road = data
+            .roads_for_site(site_id)
+            .any(|road| road.level >= 2 || road.route_type.contains("stone"));
+        let has_port_trait = data
+            .site(site_id)
+            .map(|site| {
+                site.traits
+                    .iter()
+                    .any(|site_trait| site_trait.to_lowercase().contains("port"))
+            })
+            .unwrap_or(false);
+
+        has_stone_road || has_port_trait
+    }
+}
+
+fn apply_season_to_settlement(
+    settlement: &mut SettlementRuntimeState,
+    data: &GameData,
+) -> SettlementSeasonOutcome {
+    if !settlement.is_active() {
+        return SettlementSeasonOutcome::default();
+    }
+
+    let mut outcome = SettlementSeasonOutcome::default();
+    let production = production_for(settlement, data);
+    settlement.stored.add(production);
+
+    let consumption = food_consumption_for(settlement, data);
+    settlement.stored.food -= consumption;
+    let had_shortage = settlement.stored.food < 0;
+    if had_shortage {
+        settlement.stored.food = 0;
+        outcome.food_shortage = true;
+        outcome.started_famine = settlement.famine_seasons == 0;
+        settlement.famine_seasons += 1;
+        add_unique_tag(&mut settlement.memory_tags, "hungry");
+        add_unique_issue(
+            &mut settlement.active_issue_ids,
+            &data.settlement_balance.famine.issue_id,
+        );
+        apply_famine(settlement, data);
+    } else {
+        recover_from_food_security(settlement, data);
+    }
+
+    apply_focus_drift(settlement, data);
+    if settlement.famine_seasons == 0 && settlement.stability > 65 {
+        settlement.loyalty = clamp_stat(settlement.loyalty + 2);
+    }
+
+    if should_lose_to_famine(settlement, data) {
+        settlement.status = SettlementStatus::Lost;
+        settlement.population = 0;
+        settlement.stored = ResourceStock::default();
+        settlement.active_issue_ids.clear();
+        add_unique_issue(&mut settlement.active_issue_ids, "abandoned");
+        add_unique_tag(&mut settlement.memory_tags, "lost_to_famine");
+        outcome.lost = true;
+    }
+
+    outcome
+}
+
+fn production_for(settlement: &SettlementRuntimeState, data: &GameData) -> ResourceStock {
+    let Some(focus) = settlement.focus(data) else {
+        return ResourceStock::default();
+    };
+    let tier_modifier = data
+        .settlement_balance
+        .tier(settlement.tier)
+        .map(|tier| tier.production_modifier)
+        .unwrap_or(1.0);
+    let mut output = focus.output.scaled(tier_modifier);
+
+    if let Some(site) = data.site(&settlement.location_id) {
+        if let Some(terrain) = data.terrain_at(site.position.x, site.position.y) {
+            match focus.id.as_str() {
+                "farming" => output.food += ((terrain.fertility - 50) / 5).clamp(-8, 12),
+                "logging" => output.timber += ((terrain.timber - 50) / 5).clamp(-8, 12),
+                "quarrying" => output.stone += ((terrain.stone - 50) / 5).clamp(-8, 12),
+                "trade" => {
+                    if data
+                        .roads_for_site(&settlement.location_id)
+                        .any(|road| road.level > 0)
+                    {
+                        output.wealth += 8;
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    output.food = output.food.max(0);
+    output.timber = output.timber.max(0);
+    output.stone = output.stone.max(0);
+    output.wealth = output.wealth.max(0);
+    output
+}
+
+fn food_consumption_for(settlement: &SettlementRuntimeState, data: &GameData) -> i32 {
+    let consumption_modifier = data
+        .settlement_balance
+        .tier(settlement.tier)
+        .map(|tier| tier.consumption_modifier)
+        .unwrap_or(1.0);
+
+    (settlement.population as f32
+        * data.settlement_balance.food_consumed_per_population
+        * consumption_modifier)
+        .round()
+        .max(1.0) as i32
+}
+
+fn apply_famine(settlement: &mut SettlementRuntimeState, data: &GameData) {
+    let famine = &data.settlement_balance.famine;
+    settlement.stability = clamp_stat(settlement.stability - famine.stability_loss);
+    settlement.loyalty = clamp_stat(settlement.loyalty - famine.loyalty_loss);
+    settlement.prosperity = clamp_stat(settlement.prosperity - famine.prosperity_loss);
+    let population_loss_percent = famine.population_loss_percent + settlement.famine_seasons - 1;
+    let population_loss = ((settlement.population * population_loss_percent) / 100).max(1);
+    settlement.population = (settlement.population - population_loss).max(0);
+}
+
+fn recover_from_food_security(settlement: &mut SettlementRuntimeState, data: &GameData) {
+    if settlement.famine_seasons > 0 {
+        settlement.famine_seasons -= 1;
+        if settlement.famine_seasons == 0 {
+            remove_issue(
+                &mut settlement.active_issue_ids,
+                &data.settlement_balance.famine.issue_id,
+            );
+        }
+    }
+    if settlement.stability > 50 {
+        let natural_growth = ((settlement.population as f32) * 0.005).round() as i32;
+        settlement.population += natural_growth.max(1);
+    }
+    if settlement.prosperity > 65 {
+        settlement.population += ((settlement.prosperity - 65) / 5).clamp(2, 8);
+    }
+    if settlement.stability > 70 && settlement.danger < 35 {
+        settlement.population += ((settlement.stability - 70) / 8).clamp(1, 5);
+    }
+    settlement.stability = clamp_stat(settlement.stability + 1);
+}
+
+fn apply_focus_drift(settlement: &mut SettlementRuntimeState, data: &GameData) {
+    let Some(focus) = settlement.focus(data) else {
+        return;
+    };
+
+    settlement.prosperity = clamp_stat(settlement.prosperity + focus.prosperity_delta);
+    settlement.stability = clamp_stat(settlement.stability + focus.stability_delta);
+    settlement.loyalty = clamp_stat(settlement.loyalty + focus.loyalty_delta);
+    settlement.defence = clamp_stat(settlement.defence + focus.defence_delta);
+    settlement.danger = clamp_stat(settlement.danger + focus.danger_delta);
+}
+
+fn should_lose_to_famine(settlement: &SettlementRuntimeState, data: &GameData) -> bool {
+    let famine = &data.settlement_balance.famine;
+    settlement.population < famine.collapse_population_below
+        || (settlement.famine_seasons >= famine.collapse_after_seasons
+            && (settlement.stability <= 20 || settlement.loyalty <= 15))
+}
+
+fn add_unique_tag(tags: &mut Vec<String>, tag: &str) {
+    if !tags.iter().any(|existing| existing == tag) {
+        tags.push(tag.to_owned());
+    }
+}
+
+fn add_unique_issue(issue_ids: &mut Vec<String>, issue_id: &str) {
+    if !issue_ids.iter().any(|existing| existing == issue_id) {
+        issue_ids.push(issue_id.to_owned());
+    }
+}
+
+fn remove_issue(issue_ids: &mut Vec<String>, issue_id: &str) {
+    issue_ids.retain(|existing| existing != issue_id);
+}
+
+fn clamp_stat(value: i32) -> i32 {
+    value.clamp(0, 100)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::state::GameSession;
+
+    fn test_data() -> GameData {
+        GameData::load().unwrap()
+    }
+
+    #[test]
+    fn new_campaign_has_a_capital_settlement() {
+        let data = test_data();
+        let session = GameSession::new(&data);
+        let capital = session.settlement_at_site("charter_hall").unwrap();
+
+        assert_eq!(capital.tier, SettlementTier::Village);
+        assert_eq!(capital.population, 140);
+        assert_eq!(session.council_actions_remaining, 2);
+    }
+
+    #[test]
+    fn founding_camp_spends_resources_population_and_action() {
+        let data = test_data();
+        let mut session = GameSession::new(&data);
+
+        assert!(session.select_site(&data, "lowmeadow"));
+        assert!(session.founding_status(&data).enabled);
+        session.found_selected_camp(&data).unwrap();
+
+        let capital = session.settlement_at_site("charter_hall").unwrap();
+        let camp = session.settlement_at_site("lowmeadow").unwrap();
+        assert_eq!(capital.population, 80);
+        assert_eq!(capital.stored.timber, 95);
+        assert_eq!(camp.population, 60);
+        assert_eq!(session.council_actions_remaining, 1);
+        assert!(session
+            .chronicle
+            .iter()
+            .any(|entry| entry.site_id.as_deref() == Some("lowmeadow")));
+    }
+
+    #[test]
+    fn invalid_upgrade_explains_missing_requirements() {
+        let data = test_data();
+        let mut session = GameSession::new(&data);
+
+        assert!(session.select_site(&data, "lowmeadow"));
+        session.found_selected_camp(&data).unwrap();
+
+        let status = session.upgrade_status(&data);
+        assert!(!status.enabled);
+        assert!(status.reason.contains("population"));
+    }
+
+    #[test]
+    fn famine_can_collapse_neglected_settlement() {
+        let data = test_data();
+        let mut session = GameSession::new(&data);
+
+        assert!(session.select_site(&data, "lowmeadow"));
+        session.found_selected_camp(&data).unwrap();
+        let camp = session
+            .settlements
+            .iter_mut()
+            .find(|settlement| settlement.location_id == "lowmeadow")
+            .unwrap();
+        camp.focus_id = "quarrying".to_owned();
+        camp.stored.food = 0;
+        camp.stability = 24;
+        camp.loyalty = 22;
+
+        for _ in 0..6 {
+            session.advance_settlement_economy(&data);
+        }
+
+        let camp = session.settlement_at_site("lowmeadow").unwrap();
+        assert_eq!(camp.status, SettlementStatus::Lost);
+        assert!(session
+            .chronicle
+            .iter()
+            .any(|entry| entry.title.contains("Abandoned")));
+    }
+}

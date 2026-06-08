@@ -16,5 +16,29 @@
     "title": "A New Year Opens",
     "body": "Year {year} began with the council still measuring promise against distance.",
     "importance": "minor"
+  },
+  {
+    "id": "settlement_founded",
+    "title": "{site} Is Founded",
+    "body": "In {season} of Year {year}, settlers raised a charter camp at {site}, carrying stores and hard promises into {region}.",
+    "importance": "major"
+  },
+  {
+    "id": "settlement_upgraded",
+    "title": "{site} Grows",
+    "body": "{site} crossed a new threshold in {season} of Year {year}, proving that a frontier holding could become something sturdier.",
+    "importance": "major"
+  },
+  {
+    "id": "settlement_starvation",
+    "title": "Hunger Reaches {site}",
+    "body": "Food stores failed at {site} in {season} of Year {year}. Stability and loyalty began to bend under empty granaries.",
+    "importance": "notable"
+  },
+  {
+    "id": "settlement_lost",
+    "title": "{site} Is Abandoned",
+    "body": "Neglect and hunger broke {site} in {season} of Year {year}. The chronicle marked the place as a warning to the realm.",
+    "importance": "major"
   }
 ]

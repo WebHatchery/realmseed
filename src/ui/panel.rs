@@ -2,6 +2,7 @@
 
 use super::{virtual_button, UiAction, UiContext};
 use crate::state::SiteKnowledge;
+use crate::state::{SettlementRuntimeState, SettlementStatus};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::RectExt;
@@ -27,8 +28,11 @@ pub(super) fn draw_side_panel(
     let content = rect.inset(18.0);
     let mut y = content.y + 38.0;
     y = draw_selected_site(ctx, content, y);
-    y = draw_campaign_actions(ctx, mouse, input_enabled, actions, content, y + 12.0);
-    draw_save_actions(ctx, mouse, input_enabled, actions, content, y + 14.0);
+    y = draw_settlement_section(ctx, mouse, input_enabled, actions, content, y + 8.0);
+    y = draw_campaign_actions(ctx, mouse, input_enabled, actions, content, y + 10.0);
+    if y + 110.0 < content.y + content.h {
+        draw_save_actions(ctx, mouse, input_enabled, actions, content, y + 10.0);
+    }
 }
 
 fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> f32 {
@@ -102,15 +106,246 @@ fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> f32 {
     draw_text_block(
         &known_text,
         content.x,
-        y + 86.0,
+        y + 78.0,
         content.w,
-        138.0,
-        16.0,
-        4.0,
+        50.0,
+        15.0,
+        3.0,
         dark::TEXT_DIM,
     );
 
-    y + 238.0
+    y + 136.0
+}
+
+fn draw_settlement_section(
+    ctx: &UiContext<'_>,
+    mouse: Vec2,
+    input_enabled: bool,
+    actions: &mut Vec<UiAction>,
+    content: Rect,
+    y: f32,
+) -> f32 {
+    let Some(site) = ctx.session.selected_site(ctx.data) else {
+        return y;
+    };
+    if ctx.session.site_knowledge(&site.id) != SiteKnowledge::Known {
+        return y;
+    }
+
+    draw_text_ex(
+        "Settlement",
+        content.x,
+        y,
+        TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
+    );
+
+    if let Some(settlement) = ctx.session.settlement_at_site(&site.id) {
+        draw_existing_settlement(
+            ctx,
+            mouse,
+            input_enabled,
+            actions,
+            content,
+            y + 18.0,
+            settlement,
+        )
+    } else {
+        draw_found_camp_action(ctx, mouse, input_enabled, actions, content, y + 18.0)
+    }
+}
+
+fn draw_existing_settlement(
+    ctx: &UiContext<'_>,
+    mouse: Vec2,
+    input_enabled: bool,
+    actions: &mut Vec<UiAction>,
+    content: Rect,
+    y: f32,
+    settlement: &SettlementRuntimeState,
+) -> f32 {
+    let status_tone = if settlement.status == SettlementStatus::Lost {
+        Color::new(0.34, 0.16, 0.14, 1.0)
+    } else {
+        Color::new(0.18, 0.26, 0.18, 1.0)
+    };
+    draw_badge(
+        Rect::new(content.x, y, 94.0, 24.0),
+        settlement.tier.label(),
+        Color::new(0.20, 0.23, 0.18, 1.0),
+        dark::TEXT,
+    );
+    draw_badge(
+        Rect::new(content.x + 104.0, y, 92.0, 24.0),
+        settlement.status.label(),
+        status_tone,
+        dark::TEXT,
+    );
+    draw_text_ex(
+        &format!(
+            "Pop {}  Founded {} Y{}",
+            settlement.population,
+            settlement.founded_season.label(),
+            settlement.founded_year
+        ),
+        content.x + 206.0,
+        y + 18.0,
+        TextStyle::new(14.0, dark::TEXT_DIM).params(),
+    );
+
+    let resources = format!(
+        "Food {}   Timber {}   Stone {}   Wealth {}",
+        settlement.stored.food,
+        settlement.stored.timber,
+        settlement.stored.stone,
+        settlement.stored.wealth
+    );
+    draw_text_ex(
+        &resources,
+        content.x,
+        y + 36.0,
+        TextStyle::new(15.0, dark::TEXT).params(),
+    );
+
+    draw_metric_row(
+        content.x,
+        y + 52.0,
+        [
+            ("Stab", settlement.stability),
+            ("Loyal", settlement.loyalty),
+            ("Pros", settlement.prosperity),
+            ("Def", settlement.defence),
+            ("Danger", settlement.danger),
+        ],
+    );
+
+    let focus_name = settlement
+        .focus(ctx.data)
+        .map(|focus| focus.name.as_str())
+        .unwrap_or("Unknown");
+    draw_text_ex(
+        &format!("Focus: {}", focus_name),
+        content.x,
+        y + 88.0,
+        TextStyle::new(15.0, dark::TEXT_BRIGHT).params(),
+    );
+    draw_focus_buttons(
+        ctx,
+        mouse,
+        input_enabled,
+        actions,
+        content,
+        y + 100.0,
+        settlement,
+    );
+
+    let upgrade_status = ctx.session.upgrade_status(ctx.data);
+    if virtual_button(
+        Rect::new(content.x, y + 158.0, content.w, 30.0),
+        &ctx.session.selected_upgrade_label(ctx.data),
+        input_enabled && upgrade_status.enabled,
+        ButtonTone::Positive,
+        mouse,
+    ) {
+        actions.push(UiAction::UpgradeSelectedSettlement);
+    }
+    draw_text_block(
+        &upgrade_status.reason,
+        content.x,
+        y + 190.0,
+        content.w,
+        24.0,
+        13.0,
+        2.0,
+        if upgrade_status.enabled {
+            dark::TEXT_DIM
+        } else {
+            dark::WARNING
+        },
+    );
+
+    y + 218.0
+}
+
+fn draw_focus_buttons(
+    ctx: &UiContext<'_>,
+    mouse: Vec2,
+    input_enabled: bool,
+    actions: &mut Vec<UiAction>,
+    content: Rect,
+    y: f32,
+    settlement: &SettlementRuntimeState,
+) {
+    let col_w = (content.w - 12.0) / 3.0;
+    for (index, focus) in ctx.data.settlement_balance.focuses.iter().enumerate() {
+        let col = (index % 3) as f32;
+        let row = (index / 3) as f32;
+        let rect = Rect::new(content.x + col * (col_w + 6.0), y + row * 27.0, col_w, 23.0);
+        let status = ctx.session.focus_change_status(ctx.data, &focus.id);
+        let is_current = settlement.focus_id == focus.id;
+        let tone = if is_current {
+            ButtonTone::Primary
+        } else {
+            ButtonTone::Secondary
+        };
+        if virtual_button(
+            rect,
+            &focus.name,
+            input_enabled && status.enabled,
+            tone,
+            mouse,
+        ) {
+            actions.push(UiAction::SetSettlementFocus(focus.id.clone()));
+        }
+    }
+}
+
+fn draw_found_camp_action(
+    ctx: &UiContext<'_>,
+    mouse: Vec2,
+    input_enabled: bool,
+    actions: &mut Vec<UiAction>,
+    content: Rect,
+    y: f32,
+) -> f32 {
+    let status = ctx.session.founding_status(ctx.data);
+    if virtual_button(
+        Rect::new(content.x, y, content.w, 34.0),
+        "Found Camp",
+        input_enabled && status.enabled,
+        ButtonTone::Positive,
+        mouse,
+    ) {
+        actions.push(UiAction::FoundCamp);
+    }
+    draw_text_block(
+        &status.reason,
+        content.x,
+        y + 40.0,
+        content.w,
+        38.0,
+        14.0,
+        3.0,
+        if status.enabled {
+            dark::TEXT_DIM
+        } else {
+            dark::WARNING
+        },
+    );
+
+    y + 84.0
+}
+
+fn draw_metric_row(x: f32, y: f32, metrics: [(&str, i32); 5]) {
+    let badge_w = 68.0;
+    for (index, (label, value)) in metrics.iter().enumerate() {
+        let rect = Rect::new(x + index as f32 * (badge_w + 5.0), y, badge_w, 25.0);
+        let color = if *label == "Danger" {
+            Color::new(0.28, 0.18, 0.14, 1.0)
+        } else {
+            Color::new(0.18, 0.22, 0.18, 1.0)
+        };
+        draw_badge(rect, &format!("{} {}", label, value), color, dark::TEXT);
+    }
 }
 
 fn draw_campaign_actions(
@@ -127,23 +362,22 @@ fn draw_campaign_actions(
         y,
         TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
     );
-    let mut next_y = y + 16.0;
+    let next_y = y + 16.0;
+    let third = (content.w - 16.0) / 3.0;
     let scout_enabled = input_enabled && ctx.session.can_scout_selected_site(ctx.data);
     if virtual_button(
-        Rect::new(content.x, next_y, content.w, 38.0),
-        "Scout Selected Site",
+        Rect::new(content.x, next_y, third, 34.0),
+        "Scout",
         scout_enabled,
         ButtonTone::Primary,
         mouse,
     ) {
         actions.push(UiAction::ScoutSelectedSite);
     }
-    next_y += 48.0;
 
-    let half = (content.w - 10.0) / 2.0;
     if virtual_button(
-        Rect::new(content.x, next_y, half, 38.0),
-        "Advance Season",
+        Rect::new(content.x + third + 8.0, next_y, third, 34.0),
+        "Advance",
         input_enabled,
         ButtonTone::Positive,
         mouse,
@@ -156,7 +390,7 @@ fn draw_campaign_actions(
         "Chronicle"
     };
     if virtual_button(
-        Rect::new(content.x + half + 10.0, next_y, half, 38.0),
+        Rect::new(content.x + (third + 8.0) * 2.0, next_y, third, 34.0),
         chronicle_label,
         input_enabled,
         ButtonTone::Secondary,
@@ -164,7 +398,7 @@ fn draw_campaign_actions(
     ) {
         actions.push(UiAction::ToggleChronicle);
     }
-    next_y + 48.0
+    next_y + 44.0
 }
 
 fn draw_save_actions(

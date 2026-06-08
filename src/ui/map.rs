@@ -1,7 +1,8 @@
 //! Strategic terrain map rendering and site picking.
 
 use super::{color_from_array, map_panel_rect, UiAction, UiContext};
-use crate::data::{SiteCategory, SiteDef};
+use crate::data::{SettlementTier, SiteCategory, SiteDef};
+use crate::state::{SettlementRuntimeState, SettlementStatus};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::RectExt;
@@ -131,8 +132,9 @@ fn draw_sites(ctx: &UiContext<'_>, view: &MapView) {
 fn draw_known_site(ctx: &UiContext<'_>, view: &MapView, site: &SiteDef) {
     let position = view.site_position(site);
     let selected = ctx.session.selected_site_id == site.id;
-    let radius = marker_radius(site) * ctx.camera_zoom.clamp(0.9, 1.3);
-    let fill = marker_color(site);
+    let settlement = ctx.session.settlement_at_site(&site.id);
+    let radius = marker_radius(site, settlement) * ctx.camera_zoom.clamp(0.9, 1.3);
+    let fill = marker_color(site, settlement);
 
     draw_circle(
         position.x,
@@ -208,12 +210,24 @@ fn picked_site_id(ctx: &UiContext<'_>, view: &MapView, mouse: Vec2) -> Option<St
             return None;
         }
         let position = view.site_position(site);
-        let radius = marker_radius(site).max(8.0) + 7.0;
+        let radius = marker_radius(site, ctx.session.settlement_at_site(&site.id)).max(8.0) + 7.0;
         (position.distance(mouse) <= radius).then(|| site.id.clone())
     })
 }
 
-fn marker_radius(site: &SiteDef) -> f32 {
+fn marker_radius(site: &SiteDef, settlement: Option<&SettlementRuntimeState>) -> f32 {
+    if let Some(settlement) = settlement {
+        return match settlement.status {
+            SettlementStatus::Lost => 6.0,
+            SettlementStatus::Active => match settlement.tier {
+                SettlementTier::Camp => 7.0,
+                SettlementTier::Village => 8.5,
+                SettlementTier::Town => 10.0,
+                SettlementTier::City => 12.0,
+            },
+        };
+    }
+
     match site.site_type.as_str() {
         "capital" => 9.0,
         "independent_settlement" => 7.5,
@@ -225,7 +239,19 @@ fn marker_radius(site: &SiteDef) -> f32 {
     }
 }
 
-fn marker_color(site: &SiteDef) -> Color {
+fn marker_color(site: &SiteDef, settlement: Option<&SettlementRuntimeState>) -> Color {
+    if let Some(settlement) = settlement {
+        return match settlement.status {
+            SettlementStatus::Lost => Color::new(0.22, 0.18, 0.16, 1.0),
+            SettlementStatus::Active => match settlement.tier {
+                SettlementTier::Camp => Color::new(0.66, 0.76, 0.42, 1.0),
+                SettlementTier::Village => Color::new(0.78, 0.70, 0.36, 1.0),
+                SettlementTier::Town => Color::new(0.82, 0.55, 0.30, 1.0),
+                SettlementTier::City => Color::new(0.88, 0.42, 0.28, 1.0),
+            },
+        };
+    }
+
     match site.site_type.as_str() {
         "capital" => Color::new(0.86, 0.67, 0.26, 1.0),
         "independent_settlement" => Color::new(0.36, 0.58, 0.76, 1.0),

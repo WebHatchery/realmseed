@@ -1,5 +1,9 @@
 //! Runtime campaign state, seasonal turns, scouting, and save migration.
 
+pub mod settlement;
+
+pub use settlement::*;
+
 use crate::data::{ChronicleTemplateDef, GameData, SiteDef};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -108,6 +112,12 @@ pub struct SaveData {
     pub clock: CampaignClock,
     pub selected_site_id: String,
     pub site_states: Vec<SiteRuntimeState>,
+    #[serde(default)]
+    pub settlements: Vec<SettlementRuntimeState>,
+    #[serde(default)]
+    pub migrant_pool: i32,
+    #[serde(default)]
+    pub council_actions_remaining: i32,
     pub chronicle: Vec<ChronicleEntry>,
     pub campaign_seed: u64,
 }
@@ -117,6 +127,9 @@ pub struct GameSession {
     pub clock: CampaignClock,
     pub selected_site_id: String,
     pub site_states: Vec<SiteRuntimeState>,
+    pub settlements: Vec<SettlementRuntimeState>,
+    pub migrant_pool: i32,
+    pub council_actions_remaining: i32,
     pub chronicle: Vec<ChronicleEntry>,
     pub campaign_seed: u64,
 }
@@ -150,6 +163,9 @@ impl GameSession {
                     },
                 })
                 .collect(),
+            settlements: Self::create_starting_settlements(data),
+            migrant_pool: data.settlement_balance.starting_migrant_pool,
+            council_actions_remaining: data.settlement_balance.council_actions_per_season,
             chronicle: Vec::new(),
             campaign_seed: data.config.campaign_seed,
         };
@@ -157,14 +173,19 @@ impl GameSession {
         session
     }
 
-    pub fn from_save(save: SaveData) -> Self {
-        Self {
+    pub fn from_save(save: SaveData, data: &GameData) -> Self {
+        let mut session = Self {
             clock: save.clock,
             selected_site_id: save.selected_site_id,
             site_states: save.site_states,
+            settlements: save.settlements,
+            migrant_pool: save.migrant_pool,
+            council_actions_remaining: save.council_actions_remaining,
             chronicle: save.chronicle,
             campaign_seed: save.campaign_seed,
-        }
+        };
+        session.ensure_phase_2_defaults(data);
+        session
     }
 
     pub fn to_save(&self, version: &str) -> SaveData {
@@ -173,6 +194,9 @@ impl GameSession {
             clock: self.clock.clone(),
             selected_site_id: self.selected_site_id.clone(),
             site_states: self.site_states.clone(),
+            settlements: self.settlements.clone(),
+            migrant_pool: self.migrant_pool,
+            council_actions_remaining: self.council_actions_remaining,
             chronicle: self.chronicle.clone(),
             campaign_seed: self.campaign_seed,
         }
@@ -239,23 +263,18 @@ impl GameSession {
         true
     }
 
-    pub fn advance_season(&mut self, data: &GameData) {
+    pub fn advance_season(&mut self, data: &GameData) -> SeasonAdvanceReport {
+        let report = self.advance_settlement_economy(data);
         if self.clock.advance() {
             self.add_chronicle_entry(data, "new_year", None);
         }
+        report
     }
 
     pub fn known_site_count(&self) -> usize {
         self.site_states
             .iter()
             .filter(|state| state.knowledge == SiteKnowledge::Known)
-            .count()
-    }
-
-    pub fn adjacent_unknown_count(&self, data: &GameData) -> usize {
-        data.sites
-            .iter()
-            .filter(|site| self.is_adjacent_unknown(data, &site.id))
             .count()
     }
 
@@ -301,6 +320,14 @@ impl GameSession {
             ),
             site_id: site_id.map(str::to_owned),
             importance: template.importance.clone(),
+        }
+    }
+
+    fn ensure_phase_2_defaults(&mut self, data: &GameData) {
+        if self.settlements.is_empty() {
+            self.settlements = Self::create_starting_settlements(data);
+            self.migrant_pool = data.settlement_balance.starting_migrant_pool;
+            self.council_actions_remaining = data.settlement_balance.council_actions_per_season;
         }
     }
 }

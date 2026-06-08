@@ -165,13 +165,52 @@ impl Game {
                         .warning("Select an adjacent unknown site to scout");
                 }
             }
+            UiAction::FoundCamp => match self.session.found_selected_camp(&self.data) {
+                Ok(message) => {
+                    self.notifications.success(message);
+                    self.show_chronicle = true;
+                }
+                Err(reason) => self.notifications.warning(reason),
+            },
+            UiAction::UpgradeSelectedSettlement => {
+                match self.session.upgrade_selected_settlement(&self.data) {
+                    Ok(message) => {
+                        self.notifications.success(message);
+                        self.show_chronicle = true;
+                    }
+                    Err(reason) => self.notifications.warning(reason),
+                }
+            }
+            UiAction::SetSettlementFocus(focus_id) => {
+                match self
+                    .session
+                    .set_selected_settlement_focus(&self.data, &focus_id)
+                {
+                    Ok(message) => self.notifications.info(message),
+                    Err(reason) => self.notifications.warning(reason),
+                }
+            }
             UiAction::AdvanceSeason => {
-                self.session.advance_season(&self.data);
+                let report = self.session.advance_season(&self.data);
                 self.notifications.info(format!(
                     "{} Year {}",
                     self.session.clock.season.label(),
                     self.session.clock.year
                 ));
+                if report.food_shortages > 0 {
+                    self.notifications.warning(format!(
+                        "{} settlement food shortage reported",
+                        report.food_shortages
+                    ));
+                    self.show_chronicle = true;
+                }
+                if report.settlements_lost > 0 {
+                    self.notifications.danger(format!(
+                        "{} settlement lost to neglect",
+                        report.settlements_lost
+                    ));
+                    self.show_chronicle = true;
+                }
             }
             UiAction::ToggleChronicle => {
                 self.show_chronicle = !self.show_chronicle;
@@ -205,7 +244,7 @@ impl Game {
 
         match loaded {
             Ok(save) => {
-                self.session = GameSession::from_save(save);
+                self.session = GameSession::from_save(save, &self.data);
                 self.notifications.success("Loaded campaign");
                 self.refresh_save_state();
             }

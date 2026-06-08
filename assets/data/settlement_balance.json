@@ -1,0 +1,229 @@
+{
+  "council_actions_per_season": 2,
+  "focus_change_action_cost": 0,
+  "starting_migrant_pool": 90,
+  "food_consumed_per_population": 0.25,
+  "starting_capital": {
+    "tier": "village",
+    "population": 140,
+    "resources": {
+      "food": 180,
+      "timber": 130,
+      "stone": 35,
+      "wealth": 90
+    },
+    "prosperity": 55,
+    "stability": 68,
+    "defence": 24,
+    "loyalty": 76,
+    "danger": 22,
+    "focus_id": "civic"
+  },
+  "founded_camp": {
+    "tier": "camp",
+    "population": 60,
+    "resources": {
+      "food": 85,
+      "timber": 32,
+      "stone": 6,
+      "wealth": 14
+    },
+    "prosperity": 36,
+    "stability": 58,
+    "defence": 14,
+    "loyalty": 64,
+    "danger": 34,
+    "focus_id": "farming"
+  },
+  "founding": {
+    "action_cost": 1,
+    "source_site_id": "charter_hall",
+    "population_transfer": 60,
+    "min_source_population": 70,
+    "cost": {
+      "food": 35,
+      "timber": 35,
+      "stone": 0,
+      "wealth": 15
+    }
+  },
+  "famine": {
+    "issue_id": "famine",
+    "stability_loss": 7,
+    "loyalty_loss": 5,
+    "prosperity_loss": 4,
+    "population_loss_percent": 8,
+    "collapse_after_seasons": 4,
+    "collapse_population_below": 18
+  },
+  "tiers": [
+    {
+      "tier": "camp",
+      "production_modifier": 0.5,
+      "consumption_modifier": 0.8
+    },
+    {
+      "tier": "village",
+      "production_modifier": 1.0,
+      "consumption_modifier": 1.0
+    },
+    {
+      "tier": "town",
+      "production_modifier": 1.8,
+      "consumption_modifier": 1.2
+    },
+    {
+      "tier": "city",
+      "production_modifier": 3.0,
+      "consumption_modifier": 1.5
+    }
+  ],
+  "focuses": [
+    {
+      "id": "farming",
+      "name": "Farming",
+      "output": {
+        "food": 45,
+        "timber": 5,
+        "stone": 0,
+        "wealth": 5
+      },
+      "prosperity_delta": 1,
+      "stability_delta": 0,
+      "loyalty_delta": 0,
+      "defence_delta": 0,
+      "danger_delta": -1,
+      "notes": "Strong food output and slow population support."
+    },
+    {
+      "id": "logging",
+      "name": "Logging",
+      "output": {
+        "food": 15,
+        "timber": 35,
+        "stone": 0,
+        "wealth": 8
+      },
+      "prosperity_delta": 1,
+      "stability_delta": 0,
+      "loyalty_delta": 0,
+      "defence_delta": 0,
+      "danger_delta": 1,
+      "notes": "High timber output, with a little added wilderness pressure."
+    },
+    {
+      "id": "quarrying",
+      "name": "Quarrying",
+      "output": {
+        "food": 10,
+        "timber": 5,
+        "stone": 28,
+        "wealth": 8
+      },
+      "prosperity_delta": 1,
+      "stability_delta": -1,
+      "loyalty_delta": 0,
+      "defence_delta": 0,
+      "danger_delta": 0,
+      "notes": "Stone output for later works, with slower civic growth."
+    },
+    {
+      "id": "trade",
+      "name": "Trade",
+      "output": {
+        "food": 15,
+        "timber": 5,
+        "stone": 0,
+        "wealth": 30
+      },
+      "prosperity_delta": 3,
+      "stability_delta": 0,
+      "loyalty_delta": -1,
+      "defence_delta": 0,
+      "danger_delta": 0,
+      "notes": "Strong wealth and prosperity, but local ambitions rise."
+    },
+    {
+      "id": "fortification",
+      "name": "Fortify",
+      "output": {
+        "food": 10,
+        "timber": 10,
+        "stone": 8,
+        "wealth": 5
+      },
+      "prosperity_delta": -1,
+      "stability_delta": 1,
+      "loyalty_delta": 0,
+      "defence_delta": 3,
+      "danger_delta": -2,
+      "notes": "Improves defence and lowers danger at the cost of growth."
+    },
+    {
+      "id": "civic",
+      "name": "Civic",
+      "output": {
+        "food": 20,
+        "timber": 8,
+        "stone": 3,
+        "wealth": 10
+      },
+      "prosperity_delta": 1,
+      "stability_delta": 2,
+      "loyalty_delta": 2,
+      "defence_delta": 0,
+      "danger_delta": -1,
+      "notes": "Balanced output with stability and loyalty gains."
+    }
+  ],
+  "upgrades": [
+    {
+      "from": "camp",
+      "to": "village",
+      "action_cost": 1,
+      "min_population": 80,
+      "min_prosperity": 0,
+      "min_stability": 45,
+      "cost": {
+        "food": 0,
+        "timber": 80,
+        "stone": 0,
+        "wealth": 30
+      },
+      "requires_capital_network": false,
+      "requires_stone_road_or_port": false
+    },
+    {
+      "from": "village",
+      "to": "town",
+      "action_cost": 1,
+      "min_population": 250,
+      "min_prosperity": 50,
+      "min_stability": 0,
+      "cost": {
+        "food": 0,
+        "timber": 120,
+        "stone": 80,
+        "wealth": 150
+      },
+      "requires_capital_network": true,
+      "requires_stone_road_or_port": false
+    },
+    {
+      "from": "town",
+      "to": "city",
+      "action_cost": 1,
+      "min_population": 800,
+      "min_prosperity": 70,
+      "min_stability": 55,
+      "cost": {
+        "food": 0,
+        "timber": 0,
+        "stone": 300,
+        "wealth": 400
+      },
+      "requires_capital_network": true,
+      "requires_stone_road_or_port": true
+    }
+  ]
+}
