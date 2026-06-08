@@ -2,9 +2,15 @@
 
 pub mod campaign;
 pub mod event;
+pub mod event_candidates;
 pub mod faction;
 pub mod road;
 pub mod settlement;
+
+#[cfg(test)]
+mod campaign_tests;
+#[cfg(test)]
+mod road_tests;
 
 pub use campaign::*;
 pub use event::*;
@@ -112,6 +118,16 @@ pub struct ChronicleEntry {
     pub body: String,
     pub site_id: Option<String>,
     pub importance: String,
+    #[serde(default = "default_chronicle_tag")]
+    pub tag: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SeasonSummaryRow {
+    pub label: String,
+    pub detail: String,
+    pub site_id: Option<String>,
+    pub tag: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -140,12 +156,16 @@ pub struct SaveData {
     pub wilderness_pressure: Vec<WildernessPressureState>,
     #[serde(default)]
     pub selected_ambition_id: Option<String>,
+    #[serde(default = "default_difficulty_id")]
+    pub selected_difficulty_id: String,
     #[serde(default)]
     pub completed_projects: Vec<CompletedProjectState>,
     #[serde(default)]
     pub active_institutions: Vec<ActiveInstitutionState>,
     #[serde(default)]
     pub last_season_summary: String,
+    #[serde(default)]
+    pub last_season_rows: Vec<SeasonSummaryRow>,
     #[serde(default)]
     pub endgame_summary: Option<EndgameSummary>,
     #[serde(default)]
@@ -175,9 +195,11 @@ pub struct GameSession {
     pub independent_settlements: Vec<IndependentSettlementRuntimeState>,
     pub wilderness_pressure: Vec<WildernessPressureState>,
     pub selected_ambition_id: Option<String>,
+    pub selected_difficulty_id: String,
     pub completed_projects: Vec<CompletedProjectState>,
     pub active_institutions: Vec<ActiveInstitutionState>,
     pub last_season_summary: String,
+    pub last_season_rows: Vec<SeasonSummaryRow>,
     pub endgame_summary: Option<EndgameSummary>,
     pub unmanaged_strain: i32,
     pub unmanaged_strain_seasons: i32,
@@ -226,9 +248,11 @@ impl GameSession {
             independent_settlements: Self::create_independent_states(data),
             wilderness_pressure: Self::create_wilderness_pressure(data),
             selected_ambition_id: None,
+            selected_difficulty_id: default_difficulty_id(),
             completed_projects: Vec::new(),
             active_institutions: Vec::new(),
             last_season_summary: "No season summary yet.".to_owned(),
+            last_season_rows: Vec::new(),
             endgame_summary: None,
             unmanaged_strain: 0,
             unmanaged_strain_seasons: 0,
@@ -256,9 +280,11 @@ impl GameSession {
             independent_settlements: save.independent_settlements,
             wilderness_pressure: save.wilderness_pressure,
             selected_ambition_id: save.selected_ambition_id,
+            selected_difficulty_id: save.selected_difficulty_id,
             completed_projects: save.completed_projects,
             active_institutions: save.active_institutions,
             last_season_summary: save.last_season_summary,
+            last_season_rows: save.last_season_rows,
             endgame_summary: save.endgame_summary,
             unmanaged_strain: save.unmanaged_strain,
             unmanaged_strain_seasons: save.unmanaged_strain_seasons,
@@ -287,9 +313,11 @@ impl GameSession {
             independent_settlements: self.independent_settlements.clone(),
             wilderness_pressure: self.wilderness_pressure.clone(),
             selected_ambition_id: self.selected_ambition_id.clone(),
+            selected_difficulty_id: self.selected_difficulty_id.clone(),
             completed_projects: self.completed_projects.clone(),
             active_institutions: self.active_institutions.clone(),
             last_season_summary: self.last_season_summary.clone(),
+            last_season_rows: self.last_season_rows.clone(),
             endgame_summary: self.endgame_summary.clone(),
             unmanaged_strain: self.unmanaged_strain,
             unmanaged_strain_seasons: self.unmanaged_strain_seasons,
@@ -432,6 +460,7 @@ impl GameSession {
             ),
             site_id: site_id.map(str::to_owned),
             importance: template.importance.clone(),
+            tag: template.tag.clone(),
         }
     }
 
@@ -457,7 +486,18 @@ impl GameSession {
         if self.last_season_summary.is_empty() {
             self.last_season_summary = "No season summary yet.".to_owned();
         }
+        if self.selected_difficulty_id.is_empty() {
+            self.selected_difficulty_id = default_difficulty_id();
+        }
     }
+}
+
+fn default_chronicle_tag() -> String {
+    "memory".to_owned()
+}
+
+fn default_difficulty_id() -> String {
+    "frontier".to_owned()
 }
 
 fn default_rival_faction() -> FactionRuntimeState {

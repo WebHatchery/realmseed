@@ -90,9 +90,6 @@ impl Game {
         if is_key_pressed(KeyCode::C) {
             self.events.push(UiAction::ToggleChronicle);
         }
-        if is_key_pressed(KeyCode::E) {
-            self.events.push(UiAction::ForceEvent);
-        }
         if is_key_pressed(KeyCode::F) {
             self.events.push(UiAction::ToggleFactionPanel);
         }
@@ -235,10 +232,6 @@ impl Game {
             }
             UiAction::DeferEvent => match self.session.defer_pending_event() {
                 Ok(message) => self.notifications.warning(message),
-                Err(reason) => self.notifications.warning(reason),
-            },
-            UiAction::ForceEvent => match self.session.force_next_event(&self.data) {
-                Ok(message) => self.notifications.info(message),
                 Err(reason) => self.notifications.warning(reason),
             },
             UiAction::OpenIndependentTrade => {

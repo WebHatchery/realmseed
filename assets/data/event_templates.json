@@ -1,77 +1,268 @@
 [
   {
-    "id": "food_crisis_opening",
+    "id": "food_crisis_opening_a",
     "family_id": "food_crisis",
     "stage": "opening",
-    "title": "Thin Granaries",
-    "narrative": "{site} reports that stored food will not last through another hard season.",
-    "cause": "Food stores are low compared with local population.",
-    "visible_consequences": "Ignoring this warning can create famine pressure and loyalty loss.",
-    "hidden_consequences": "Repeated hunger increases future civic unrest weight.",
+    "title": "Food Shortage Warning",
+    "narrative": "{site} becomes the focus of food shortage as the frontier story turns again.",
+    "cause": "Food Shortage pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
     "allow_defer": true,
     "choices": [
       {
-        "id": "send_food",
-        "label": "Send Relief",
-        "visible_consequence": "+45 food, +8 loyalty, issue can resolve next season.",
+        "id": "answer_food_crisis",
+        "label": "Commit Council Aid",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
         "effects": {
-          "resource_delta": { "food": 45, "timber": 0, "stone": 0, "wealth": 0 },
-          "stability_delta": 2,
-          "loyalty_delta": 8,
-          "prosperity_delta": 0,
-          "danger_delta": 0,
-          "memory_tags": ["relief_sent"],
+          "resource_delta": {
+            "food": 55,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "remembers_hunger",
+            "food_crisis_answered"
+          ],
           "issue_state": "active",
           "severity_delta": -1,
-          "response_score": 18,
+          "response_score": 22,
+          "close_issue": false,
           "chronicle_template_id": "event_food_crisis_opened"
         }
       },
       {
-        "id": "ration",
-        "label": "Order Rationing",
-        "visible_consequence": "+20 food, -3 loyalty, issue remains active.",
+        "id": "contain_food_crisis",
+        "label": "Local Compromise",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
         "effects": {
-          "resource_delta": { "food": 20, "timber": 0, "stone": 0, "wealth": 0 },
-          "stability_delta": 3,
-          "loyalty_delta": -3,
+          "resource_delta": {
+            "food": 25,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
           "prosperity_delta": 0,
-          "danger_delta": 0,
-          "memory_tags": ["rationed"],
+          "danger_delta": 1,
+          "memory_tags": [
+            "remembers_hunger",
+            "food_crisis_compromise"
+          ],
           "issue_state": "active",
           "severity_delta": 0,
-          "response_score": 10,
+          "response_score": 12,
+          "close_issue": false,
           "chronicle_template_id": "event_food_crisis_opened"
         }
       }
     ]
   },
   {
-    "id": "food_crisis_followup",
+    "id": "food_crisis_opening_b",
     "family_id": "food_crisis",
-    "stage": "follow_up",
-    "title": "Hunger Turns Bitter",
-    "narrative": "The warning at {site} has become an argument over who the charter protects.",
-    "cause": "The food issue aged without enough relief.",
-    "visible_consequences": "A weak response can push the issue toward collapse.",
-    "hidden_consequences": "The settlement may remember neglect even after recovery.",
+    "stage": "opening",
+    "title": "Food Shortage Rumors",
+    "narrative": "{site} becomes the focus of food shortage as the frontier story turns again.",
+    "cause": "Food Shortage pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
     "allow_defer": true,
     "choices": [
       {
-        "id": "open_stores",
-        "label": "Open Stores",
-        "visible_consequence": "+60 food, +6 stability, prepares resolution.",
+        "id": "answer_food_crisis",
+        "label": "Send Envoys",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
         "effects": {
-          "resource_delta": { "food": 60, "timber": 0, "stone": 0, "wealth": -10 },
-          "stability_delta": 6,
+          "resource_delta": {
+            "food": 55,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
           "loyalty_delta": 4,
-          "prosperity_delta": 0,
-          "danger_delta": 0,
-          "memory_tags": ["stores_opened"],
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "remembers_hunger",
+            "food_crisis_answered"
+          ],
           "issue_state": "active",
           "severity_delta": -1,
           "response_score": 22,
-          "chronicle_template_id": "event_food_crisis_resolved"
+          "close_issue": false,
+          "chronicle_template_id": "event_food_crisis_opened"
+        }
+      },
+      {
+        "id": "contain_food_crisis",
+        "label": "Let Locals Lead",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 25,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "remembers_hunger",
+            "food_crisis_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_food_crisis_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "food_crisis_followup_a",
+    "family_id": "food_crisis",
+    "stage": "follow_up",
+    "title": "Food Shortage Deepens",
+    "narrative": "{site} becomes the focus of food shortage as the frontier story turns again.",
+    "cause": "Food Shortage pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_food_crisis",
+        "label": "Escalate Support",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 55,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "remembers_hunger",
+            "food_crisis_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_food_crisis_opened"
+        }
+      },
+      {
+        "id": "contain_food_crisis",
+        "label": "Hold the Line",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 25,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "remembers_hunger",
+            "food_crisis_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_food_crisis_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "food_crisis_followup_b",
+    "family_id": "food_crisis",
+    "stage": "follow_up",
+    "title": "Food Shortage Spreads",
+    "narrative": "{site} becomes the focus of food shortage as the frontier story turns again.",
+    "cause": "Food Shortage pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_food_crisis",
+        "label": "Make a Public Answer",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 55,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "remembers_hunger",
+            "food_crisis_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_food_crisis_opened"
+        }
+      },
+      {
+        "id": "contain_food_crisis",
+        "label": "Delay Wider Action",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 25,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "remembers_hunger",
+            "food_crisis_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_food_crisis_opened"
         }
       }
     ]
@@ -80,24 +271,33 @@
     "id": "food_crisis_resolution",
     "family_id": "food_crisis",
     "stage": "resolution",
-    "title": "Granaries Recovered",
-    "narrative": "{site} has enough food to leave the crisis ledger.",
-    "cause": "Relief and food security overtook the hunger issue.",
-    "visible_consequences": "The issue becomes dormant and leaves a memory tag.",
-    "hidden_consequences": "Future food warnings will use this memory.",
+    "title": "Food Shortage Settled",
+    "narrative": "{site} becomes the focus of food shortage as the frontier story turns again.",
+    "cause": "Food Shortage pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
     "allow_defer": false,
     "choices": [
       {
-        "id": "mark_recovery",
-        "label": "Record Recovery",
-        "visible_consequence": "+4 loyalty, issue resolved.",
+        "id": "record_food_crisis",
+        "label": "Record Settlement",
+        "visible_consequence": "Close the issue and record the outcome.",
         "effects": {
-          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 0 },
-          "stability_delta": 2,
+          "resource_delta": {
+            "food": 55,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
           "loyalty_delta": 4,
-          "prosperity_delta": 1,
-          "danger_delta": 0,
-          "memory_tags": ["famine_recovered"],
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "remembers_hunger",
+            "food_crisis_answered"
+          ],
           "issue_state": "dormant",
           "severity_delta": -3,
           "response_score": 0,
@@ -108,61 +308,577 @@
     ]
   },
   {
-    "id": "road_trouble_opening",
-    "family_id": "road_trouble",
+    "id": "settlement_unrest_opening_a",
+    "family_id": "settlement_unrest",
     "stage": "opening",
-    "title": "Road Crews Ask for Protection",
-    "narrative": "A troubled route near {site} is slowing traders and supply carts.",
-    "cause": "A route is damaged or blocked.",
-    "visible_consequences": "Repairing routes reduces follow-up pressure.",
-    "hidden_consequences": "Road trouble increases unmanaged strain.",
+    "title": "Settlement Unrest Warning",
+    "narrative": "{site} becomes the focus of settlement unrest as the frontier story turns again.",
+    "cause": "Settlement Unrest pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
     "allow_defer": true,
     "choices": [
       {
-        "id": "fund_crews",
-        "label": "Fund Crews",
-        "visible_consequence": "+5 stability, issue can resolve.",
+        "id": "answer_settlement_unrest",
+        "label": "Commit Council Aid",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
         "effects": {
-          "resource_delta": { "food": 0, "timber": -10, "stone": 0, "wealth": -10 },
-          "stability_delta": 5,
-          "loyalty_delta": 2,
-          "prosperity_delta": 1,
-          "danger_delta": -1,
-          "memory_tags": ["road_crews_funded"],
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "civic_grievance",
+            "settlement_unrest_answered"
+          ],
           "issue_state": "active",
           "severity_delta": -1,
-          "response_score": 18,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_settlement_unrest_opened"
+        }
+      },
+      {
+        "id": "contain_settlement_unrest",
+        "label": "Local Compromise",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "civic_grievance",
+            "settlement_unrest_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_settlement_unrest_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "settlement_unrest_opening_b",
+    "family_id": "settlement_unrest",
+    "stage": "opening",
+    "title": "Settlement Unrest Rumors",
+    "narrative": "{site} becomes the focus of settlement unrest as the frontier story turns again.",
+    "cause": "Settlement Unrest pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_settlement_unrest",
+        "label": "Send Envoys",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "civic_grievance",
+            "settlement_unrest_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_settlement_unrest_opened"
+        }
+      },
+      {
+        "id": "contain_settlement_unrest",
+        "label": "Let Locals Lead",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "civic_grievance",
+            "settlement_unrest_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_settlement_unrest_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "settlement_unrest_followup_a",
+    "family_id": "settlement_unrest",
+    "stage": "follow_up",
+    "title": "Settlement Unrest Deepens",
+    "narrative": "{site} becomes the focus of settlement unrest as the frontier story turns again.",
+    "cause": "Settlement Unrest pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_settlement_unrest",
+        "label": "Escalate Support",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "civic_grievance",
+            "settlement_unrest_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_settlement_unrest_opened"
+        }
+      },
+      {
+        "id": "contain_settlement_unrest",
+        "label": "Hold the Line",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "civic_grievance",
+            "settlement_unrest_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_settlement_unrest_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "settlement_unrest_followup_b",
+    "family_id": "settlement_unrest",
+    "stage": "follow_up",
+    "title": "Settlement Unrest Spreads",
+    "narrative": "{site} becomes the focus of settlement unrest as the frontier story turns again.",
+    "cause": "Settlement Unrest pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_settlement_unrest",
+        "label": "Make a Public Answer",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "civic_grievance",
+            "settlement_unrest_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_settlement_unrest_opened"
+        }
+      },
+      {
+        "id": "contain_settlement_unrest",
+        "label": "Delay Wider Action",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "civic_grievance",
+            "settlement_unrest_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_settlement_unrest_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "settlement_unrest_resolution",
+    "family_id": "settlement_unrest",
+    "stage": "resolution",
+    "title": "Settlement Unrest Settled",
+    "narrative": "{site} becomes the focus of settlement unrest as the frontier story turns again.",
+    "cause": "Settlement Unrest pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": false,
+    "choices": [
+      {
+        "id": "record_settlement_unrest",
+        "label": "Record Settlement",
+        "visible_consequence": "Close the issue and record the outcome.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "civic_grievance",
+            "settlement_unrest_answered"
+          ],
+          "issue_state": "dormant",
+          "severity_delta": -3,
+          "response_score": 0,
+          "close_issue": true,
+          "chronicle_template_id": "event_settlement_unrest_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "road_trouble_opening_a",
+    "family_id": "road_trouble",
+    "stage": "opening",
+    "title": "Road Trouble Warning",
+    "narrative": "{site} becomes the focus of road trouble as the frontier story turns again.",
+    "cause": "Road Trouble pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_road_trouble",
+        "label": "Commit Council Aid",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": -20,
+            "stone": 0,
+            "wealth": -12
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "road_trouble",
+            "road_trouble_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_road_trouble_opened"
+        }
+      },
+      {
+        "id": "contain_road_trouble",
+        "label": "Local Compromise",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": -8,
+            "stone": 0,
+            "wealth": -4
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "road_trouble",
+            "road_trouble_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
           "chronicle_template_id": "event_road_trouble_opened"
         }
       }
     ]
   },
   {
-    "id": "road_trouble_followup",
+    "id": "road_trouble_opening_b",
     "family_id": "road_trouble",
-    "stage": "follow_up",
-    "title": "Merchants Threaten to Turn Back",
-    "narrative": "The road problem near {site} has become a trade dispute.",
-    "cause": "A route warning remained active.",
-    "visible_consequences": "Delay can lower prosperity and loyalty.",
-    "hidden_consequences": "Trade-focused settlements remember this sharply.",
+    "stage": "opening",
+    "title": "Road Trouble Rumors",
+    "narrative": "{site} becomes the focus of road trouble as the frontier story turns again.",
+    "cause": "Road Trouble pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
     "allow_defer": true,
     "choices": [
       {
-        "id": "escort_caravans",
-        "label": "Escort Caravans",
-        "visible_consequence": "+4 loyalty, -3 danger, prepares resolution.",
+        "id": "answer_road_trouble",
+        "label": "Send Envoys",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
         "effects": {
-          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": -15 },
-          "stability_delta": 2,
+          "resource_delta": {
+            "food": 0,
+            "timber": -20,
+            "stone": 0,
+            "wealth": -12
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
           "loyalty_delta": 4,
           "prosperity_delta": 2,
           "danger_delta": -3,
-          "memory_tags": ["caravans_escorted"],
+          "memory_tags": [
+            "road_trouble",
+            "road_trouble_answered"
+          ],
           "issue_state": "active",
           "severity_delta": -1,
-          "response_score": 20,
-          "chronicle_template_id": "event_road_trouble_resolved"
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_road_trouble_opened"
+        }
+      },
+      {
+        "id": "contain_road_trouble",
+        "label": "Let Locals Lead",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": -8,
+            "stone": 0,
+            "wealth": -4
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "road_trouble",
+            "road_trouble_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_road_trouble_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "road_trouble_followup_a",
+    "family_id": "road_trouble",
+    "stage": "follow_up",
+    "title": "Road Trouble Deepens",
+    "narrative": "{site} becomes the focus of road trouble as the frontier story turns again.",
+    "cause": "Road Trouble pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_road_trouble",
+        "label": "Escalate Support",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": -20,
+            "stone": 0,
+            "wealth": -12
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "road_trouble",
+            "road_trouble_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_road_trouble_opened"
+        }
+      },
+      {
+        "id": "contain_road_trouble",
+        "label": "Hold the Line",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": -8,
+            "stone": 0,
+            "wealth": -4
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "road_trouble",
+            "road_trouble_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_road_trouble_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "road_trouble_followup_b",
+    "family_id": "road_trouble",
+    "stage": "follow_up",
+    "title": "Road Trouble Spreads",
+    "narrative": "{site} becomes the focus of road trouble as the frontier story turns again.",
+    "cause": "Road Trouble pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_road_trouble",
+        "label": "Make a Public Answer",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": -20,
+            "stone": 0,
+            "wealth": -12
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "road_trouble",
+            "road_trouble_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_road_trouble_opened"
+        }
+      },
+      {
+        "id": "contain_road_trouble",
+        "label": "Delay Wider Action",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": -8,
+            "stone": 0,
+            "wealth": -4
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "road_trouble",
+            "road_trouble_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_road_trouble_opened"
         }
       }
     ]
@@ -171,24 +887,33 @@
     "id": "road_trouble_resolution",
     "family_id": "road_trouble",
     "stage": "resolution",
-    "title": "The Route Holds",
-    "narrative": "Traffic near {site} is moving again.",
-    "cause": "The route response reduced pressure.",
-    "visible_consequences": "The road issue is resolved.",
-    "hidden_consequences": "Roadbound identity scoring improves later.",
+    "title": "Road Trouble Settled",
+    "narrative": "{site} becomes the focus of road trouble as the frontier story turns again.",
+    "cause": "Road Trouble pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
     "allow_defer": false,
     "choices": [
       {
-        "id": "record_safe_route",
-        "label": "Record Safe Route",
-        "visible_consequence": "+2 prosperity, issue resolved.",
+        "id": "record_road_trouble",
+        "label": "Record Settlement",
+        "visible_consequence": "Close the issue and record the outcome.",
         "effects": {
-          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 0 },
-          "stability_delta": 0,
-          "loyalty_delta": 2,
+          "resource_delta": {
+            "food": 0,
+            "timber": -20,
+            "stone": 0,
+            "wealth": -12
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
           "prosperity_delta": 2,
-          "danger_delta": -1,
-          "memory_tags": ["route_restored"],
+          "danger_delta": -3,
+          "memory_tags": [
+            "road_trouble",
+            "road_trouble_answered"
+          ],
           "issue_state": "dormant",
           "severity_delta": -3,
           "response_score": 0,
@@ -199,244 +924,1193 @@
     ]
   },
   {
-    "id": "isolation_opening",
-    "family_id": "isolation",
+    "id": "bandit_pressure_opening_a",
+    "family_id": "bandit_pressure",
     "stage": "opening",
-    "title": "A Distant Settlement Complains",
-    "narrative": "{site} says the capital only remembers it when levies are due.",
-    "cause": "The settlement is isolated from the capital road network.",
-    "visible_consequences": "Isolation lowers loyalty and raises autonomy pressure.",
-    "hidden_consequences": "Rivals may later exploit this grievance.",
+    "title": "Bandit Pressure Warning",
+    "narrative": "{site} becomes the focus of bandit pressure as the frontier story turns again.",
+    "cause": "Bandit Pressure pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
     "allow_defer": true,
     "choices": [
       {
-        "id": "promise_road",
-        "label": "Promise a Road",
-        "visible_consequence": "+5 loyalty now, but the issue remains active.",
+        "id": "answer_bandit_pressure",
+        "label": "Commit Council Aid",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
         "effects": {
-          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 0 },
-          "stability_delta": 1,
-          "loyalty_delta": 5,
-          "prosperity_delta": 0,
-          "danger_delta": 0,
-          "memory_tags": ["road_promised"],
-          "issue_state": "active",
-          "severity_delta": 0,
-          "response_score": 8,
-          "chronicle_template_id": "event_isolation_opened"
-        }
-      }
-    ]
-  },
-  {
-    "id": "isolation_followup",
-    "family_id": "isolation",
-    "stage": "follow_up",
-    "title": "Local Patience Thins",
-    "narrative": "The people of {site} are counting seasons since the council promised better roads.",
-    "cause": "Isolation remained unresolved.",
-    "visible_consequences": "A firm response can keep the settlement in the realm.",
-    "hidden_consequences": "Autonomy pressure grows if ignored.",
-    "allow_defer": true,
-    "choices": [
-      {
-        "id": "send_reeve",
-        "label": "Send a Reeve",
-        "visible_consequence": "+6 stability, +12 response score.",
-        "effects": {
-          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": -20 },
-          "stability_delta": 6,
-          "loyalty_delta": 2,
-          "prosperity_delta": 0,
-          "danger_delta": 0,
-          "memory_tags": ["reeve_sent"],
-          "issue_state": "active",
-          "severity_delta": -1,
-          "response_score": 18,
-          "chronicle_template_id": "event_isolation_resolved"
-        }
-      }
-    ]
-  },
-  {
-    "id": "isolation_resolution",
-    "family_id": "isolation",
-    "stage": "resolution",
-    "title": "The Charter Is Heard Again",
-    "narrative": "{site} accepts that the council has not forgotten it.",
-    "cause": "A response reduced isolation pressure.",
-    "visible_consequences": "The issue resolves, though road access still matters.",
-    "hidden_consequences": "Future rival pressure is reduced for this settlement.",
-    "allow_defer": false,
-    "choices": [
-      {
-        "id": "confirm_oath",
-        "label": "Confirm the Oath",
-        "visible_consequence": "+5 loyalty, issue resolved.",
-        "effects": {
-          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 0 },
-          "stability_delta": 2,
-          "loyalty_delta": 5,
-          "prosperity_delta": 0,
-          "danger_delta": 0,
-          "memory_tags": ["charter_heard"],
-          "issue_state": "dormant",
-          "severity_delta": -3,
-          "response_score": 0,
-          "close_issue": true,
-          "chronicle_template_id": "event_isolation_resolved"
-        }
-      }
-    ]
-  },
-  {
-    "id": "market_dispute_opening",
-    "family_id": "market_dispute",
-    "stage": "opening",
-    "title": "Market Rights Disputed",
-    "narrative": "{site} is growing richer, and local traders want a clearer charter.",
-    "cause": "Trade focus or prosperity created local ambition.",
-    "visible_consequences": "Ignoring this can cost loyalty but may preserve wealth.",
-    "hidden_consequences": "Granting rights can create a proud market memory.",
-    "allow_defer": true,
-    "choices": [
-      {
-        "id": "grant_stalls",
-        "label": "Grant Stalls",
-        "visible_consequence": "+4 prosperity, +3 loyalty.",
-        "effects": {
-          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 10 },
-          "stability_delta": 0,
-          "loyalty_delta": 3,
-          "prosperity_delta": 4,
-          "danger_delta": 0,
-          "memory_tags": ["market_rights"],
-          "issue_state": "active",
-          "severity_delta": -1,
-          "response_score": 18,
-          "chronicle_template_id": "event_market_dispute_opened"
-        }
-      }
-    ]
-  },
-  {
-    "id": "market_dispute_followup",
-    "family_id": "market_dispute",
-    "stage": "follow_up",
-    "title": "Toll Arguments Spread",
-    "narrative": "The market dispute at {site} has become a fight over tolls and exemptions.",
-    "cause": "The market issue remained unsettled.",
-    "visible_consequences": "A compromise can resolve it with a proud memory.",
-    "hidden_consequences": "Harsh refusal may support unrest later.",
-    "allow_defer": true,
-    "choices": [
-      {
-        "id": "broker_compromise",
-        "label": "Broker Compromise",
-        "visible_consequence": "+5 stability, +2 prosperity.",
-        "effects": {
-          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": -10 },
-          "stability_delta": 5,
-          "loyalty_delta": 2,
-          "prosperity_delta": 2,
-          "danger_delta": 0,
-          "memory_tags": ["market_compromise"],
-          "issue_state": "active",
-          "severity_delta": -1,
-          "response_score": 18,
-          "chronicle_template_id": "event_market_dispute_resolved"
-        }
-      }
-    ]
-  },
-  {
-    "id": "market_dispute_resolution",
-    "family_id": "market_dispute",
-    "stage": "resolution",
-    "title": "Market Charter Signed",
-    "narrative": "{site} accepts a new market charter.",
-    "cause": "The dispute was answered before it became unrest.",
-    "visible_consequences": "+3 prosperity, issue resolved.",
-    "hidden_consequences": "Market identity grows.",
-    "allow_defer": false,
-    "choices": [
-      {
-        "id": "seal_charter",
-        "label": "Seal Charter",
-        "visible_consequence": "+3 prosperity, issue resolved.",
-        "effects": {
-          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 0 },
-          "stability_delta": 1,
-          "loyalty_delta": 2,
-          "prosperity_delta": 3,
-          "danger_delta": 0,
-          "memory_tags": ["market_charter"],
-          "issue_state": "dormant",
-          "severity_delta": -3,
-          "response_score": 0,
-          "close_issue": true,
-          "chronicle_template_id": "event_market_dispute_resolved"
-        }
-      }
-    ]
-  },
-  {
-    "id": "migration_wave_opening",
-    "family_id": "migration_wave",
-    "stage": "opening",
-    "title": "Families Ask for Land",
-    "narrative": "Migrant families arrive near {site}, hoping the charter still has room.",
-    "cause": "Food security and stability made the realm attractive.",
-    "visible_consequences": "Accepting them raises population but strains food.",
-    "hidden_consequences": "Migrant memory can alter future events.",
-    "allow_defer": true,
-    "choices": [
-      {
-        "id": "welcome_families",
-        "label": "Welcome Families",
-        "visible_consequence": "+24 population, -25 food.",
-        "effects": {
-          "resource_delta": { "food": -25, "timber": 0, "stone": 0, "wealth": 0 },
-          "population_delta": 24,
-          "stability_delta": -1,
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 3,
           "loyalty_delta": 4,
           "prosperity_delta": 2,
-          "danger_delta": 0,
-          "memory_tags": ["migrants_welcomed"],
+          "danger_delta": -8,
+          "memory_tags": [
+            "bandit_memory",
+            "bandit_pressure_answered"
+          ],
           "issue_state": "active",
           "severity_delta": -1,
-          "response_score": 18,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_bandit_pressure_opened"
+        }
+      },
+      {
+        "id": "contain_bandit_pressure",
+        "label": "Local Compromise",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 0,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": -2,
+          "memory_tags": [
+            "bandit_memory",
+            "bandit_pressure_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_bandit_pressure_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "bandit_pressure_opening_b",
+    "family_id": "bandit_pressure",
+    "stage": "opening",
+    "title": "Bandit Pressure Rumors",
+    "narrative": "{site} becomes the focus of bandit pressure as the frontier story turns again.",
+    "cause": "Bandit Pressure pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_bandit_pressure",
+        "label": "Send Envoys",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 3,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -8,
+          "memory_tags": [
+            "bandit_memory",
+            "bandit_pressure_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_bandit_pressure_opened"
+        }
+      },
+      {
+        "id": "contain_bandit_pressure",
+        "label": "Let Locals Lead",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 0,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": -2,
+          "memory_tags": [
+            "bandit_memory",
+            "bandit_pressure_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_bandit_pressure_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "bandit_pressure_followup_a",
+    "family_id": "bandit_pressure",
+    "stage": "follow_up",
+    "title": "Bandit Pressure Deepens",
+    "narrative": "{site} becomes the focus of bandit pressure as the frontier story turns again.",
+    "cause": "Bandit Pressure pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_bandit_pressure",
+        "label": "Escalate Support",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 3,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -8,
+          "memory_tags": [
+            "bandit_memory",
+            "bandit_pressure_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_bandit_pressure_opened"
+        }
+      },
+      {
+        "id": "contain_bandit_pressure",
+        "label": "Hold the Line",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 0,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": -2,
+          "memory_tags": [
+            "bandit_memory",
+            "bandit_pressure_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_bandit_pressure_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "bandit_pressure_followup_b",
+    "family_id": "bandit_pressure",
+    "stage": "follow_up",
+    "title": "Bandit Pressure Spreads",
+    "narrative": "{site} becomes the focus of bandit pressure as the frontier story turns again.",
+    "cause": "Bandit Pressure pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_bandit_pressure",
+        "label": "Make a Public Answer",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 3,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -8,
+          "memory_tags": [
+            "bandit_memory",
+            "bandit_pressure_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_bandit_pressure_opened"
+        }
+      },
+      {
+        "id": "contain_bandit_pressure",
+        "label": "Delay Wider Action",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 0,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": -2,
+          "memory_tags": [
+            "bandit_memory",
+            "bandit_pressure_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_bandit_pressure_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "bandit_pressure_resolution",
+    "family_id": "bandit_pressure",
+    "stage": "resolution",
+    "title": "Bandit Pressure Settled",
+    "narrative": "{site} becomes the focus of bandit pressure as the frontier story turns again.",
+    "cause": "Bandit Pressure pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": false,
+    "choices": [
+      {
+        "id": "record_bandit_pressure",
+        "label": "Record Settlement",
+        "visible_consequence": "Close the issue and record the outcome.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 3,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -8,
+          "memory_tags": [
+            "bandit_memory",
+            "bandit_pressure_answered"
+          ],
+          "issue_state": "dormant",
+          "severity_delta": -3,
+          "response_score": 0,
+          "close_issue": true,
+          "chronicle_template_id": "event_bandit_pressure_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "border_tension_opening_a",
+    "family_id": "border_tension",
+    "stage": "opening",
+    "title": "Border Tension Warning",
+    "narrative": "{site} becomes the focus of border tension as the frontier story turns again.",
+    "cause": "Border Tension pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_border_tension",
+        "label": "Commit Council Aid",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 3,
+          "prosperity_delta": 2,
+          "danger_delta": -4,
+          "memory_tags": [
+            "border_tension",
+            "border_tension_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_border_tension_opened"
+        }
+      },
+      {
+        "id": "contain_border_tension",
+        "label": "Local Compromise",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -2,
+          "prosperity_delta": 0,
+          "danger_delta": 2,
+          "memory_tags": [
+            "border_tension",
+            "border_tension_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_border_tension_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "border_tension_opening_b",
+    "family_id": "border_tension",
+    "stage": "opening",
+    "title": "Border Tension Rumors",
+    "narrative": "{site} becomes the focus of border tension as the frontier story turns again.",
+    "cause": "Border Tension pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_border_tension",
+        "label": "Send Envoys",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 3,
+          "prosperity_delta": 2,
+          "danger_delta": -4,
+          "memory_tags": [
+            "border_tension",
+            "border_tension_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_border_tension_opened"
+        }
+      },
+      {
+        "id": "contain_border_tension",
+        "label": "Let Locals Lead",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -2,
+          "prosperity_delta": 0,
+          "danger_delta": 2,
+          "memory_tags": [
+            "border_tension",
+            "border_tension_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_border_tension_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "border_tension_followup_a",
+    "family_id": "border_tension",
+    "stage": "follow_up",
+    "title": "Border Tension Deepens",
+    "narrative": "{site} becomes the focus of border tension as the frontier story turns again.",
+    "cause": "Border Tension pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_border_tension",
+        "label": "Escalate Support",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 3,
+          "prosperity_delta": 2,
+          "danger_delta": -4,
+          "memory_tags": [
+            "border_tension",
+            "border_tension_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_border_tension_opened"
+        }
+      },
+      {
+        "id": "contain_border_tension",
+        "label": "Hold the Line",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -2,
+          "prosperity_delta": 0,
+          "danger_delta": 2,
+          "memory_tags": [
+            "border_tension",
+            "border_tension_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_border_tension_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "border_tension_followup_b",
+    "family_id": "border_tension",
+    "stage": "follow_up",
+    "title": "Border Tension Spreads",
+    "narrative": "{site} becomes the focus of border tension as the frontier story turns again.",
+    "cause": "Border Tension pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_border_tension",
+        "label": "Make a Public Answer",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 3,
+          "prosperity_delta": 2,
+          "danger_delta": -4,
+          "memory_tags": [
+            "border_tension",
+            "border_tension_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_border_tension_opened"
+        }
+      },
+      {
+        "id": "contain_border_tension",
+        "label": "Delay Wider Action",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -2,
+          "prosperity_delta": 0,
+          "danger_delta": 2,
+          "memory_tags": [
+            "border_tension",
+            "border_tension_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_border_tension_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "border_tension_resolution",
+    "family_id": "border_tension",
+    "stage": "resolution",
+    "title": "Border Tension Settled",
+    "narrative": "{site} becomes the focus of border tension as the frontier story turns again.",
+    "cause": "Border Tension pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": false,
+    "choices": [
+      {
+        "id": "record_border_tension",
+        "label": "Record Settlement",
+        "visible_consequence": "Close the issue and record the outcome.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 3,
+          "prosperity_delta": 2,
+          "danger_delta": -4,
+          "memory_tags": [
+            "border_tension",
+            "border_tension_answered"
+          ],
+          "issue_state": "dormant",
+          "severity_delta": -3,
+          "response_score": 0,
+          "close_issue": true,
+          "chronicle_template_id": "event_border_tension_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "tax_dispute_opening_a",
+    "family_id": "tax_dispute",
+    "stage": "opening",
+    "title": "Tax Dispute Warning",
+    "narrative": "{site} becomes the focus of tax dispute as the frontier story turns again.",
+    "cause": "Tax Dispute pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_tax_dispute",
+        "label": "Commit Council Aid",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 20
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 3,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "tax_grievance",
+            "tax_dispute_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_tax_dispute_opened"
+        }
+      },
+      {
+        "id": "contain_tax_dispute",
+        "label": "Local Compromise",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 35
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -5,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "tax_grievance",
+            "tax_dispute_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_tax_dispute_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "tax_dispute_opening_b",
+    "family_id": "tax_dispute",
+    "stage": "opening",
+    "title": "Tax Dispute Rumors",
+    "narrative": "{site} becomes the focus of tax dispute as the frontier story turns again.",
+    "cause": "Tax Dispute pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_tax_dispute",
+        "label": "Send Envoys",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 20
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 3,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "tax_grievance",
+            "tax_dispute_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_tax_dispute_opened"
+        }
+      },
+      {
+        "id": "contain_tax_dispute",
+        "label": "Let Locals Lead",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 35
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -5,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "tax_grievance",
+            "tax_dispute_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_tax_dispute_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "tax_dispute_followup_a",
+    "family_id": "tax_dispute",
+    "stage": "follow_up",
+    "title": "Tax Dispute Deepens",
+    "narrative": "{site} becomes the focus of tax dispute as the frontier story turns again.",
+    "cause": "Tax Dispute pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_tax_dispute",
+        "label": "Escalate Support",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 20
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 3,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "tax_grievance",
+            "tax_dispute_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_tax_dispute_opened"
+        }
+      },
+      {
+        "id": "contain_tax_dispute",
+        "label": "Hold the Line",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 35
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -5,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "tax_grievance",
+            "tax_dispute_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_tax_dispute_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "tax_dispute_followup_b",
+    "family_id": "tax_dispute",
+    "stage": "follow_up",
+    "title": "Tax Dispute Spreads",
+    "narrative": "{site} becomes the focus of tax dispute as the frontier story turns again.",
+    "cause": "Tax Dispute pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_tax_dispute",
+        "label": "Make a Public Answer",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 20
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 3,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "tax_grievance",
+            "tax_dispute_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_tax_dispute_opened"
+        }
+      },
+      {
+        "id": "contain_tax_dispute",
+        "label": "Delay Wider Action",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 35
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -5,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "tax_grievance",
+            "tax_dispute_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_tax_dispute_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "tax_dispute_resolution",
+    "family_id": "tax_dispute",
+    "stage": "resolution",
+    "title": "Tax Dispute Settled",
+    "narrative": "{site} becomes the focus of tax dispute as the frontier story turns again.",
+    "cause": "Tax Dispute pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": false,
+    "choices": [
+      {
+        "id": "record_tax_dispute",
+        "label": "Record Settlement",
+        "visible_consequence": "Close the issue and record the outcome.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 20
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 3,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "tax_grievance",
+            "tax_dispute_answered"
+          ],
+          "issue_state": "dormant",
+          "severity_delta": -3,
+          "response_score": 0,
+          "close_issue": true,
+          "chronicle_template_id": "event_tax_dispute_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "migration_wave_opening_a",
+    "family_id": "migration_wave",
+    "stage": "opening",
+    "title": "Migration Warning",
+    "narrative": "{site} becomes the focus of migration as the frontier story turns again.",
+    "cause": "Migration pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_migration_wave",
+        "label": "Commit Council Aid",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": -15,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 12,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "migrant_memory",
+            "migration_wave_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_migration_wave_opened"
+        }
+      },
+      {
+        "id": "contain_migration_wave",
+        "label": "Local Compromise",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": -8,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 6,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "migrant_memory",
+            "migration_wave_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
           "chronicle_template_id": "event_migration_wave_opened"
         }
       }
     ]
   },
   {
-    "id": "migration_wave_followup",
+    "id": "migration_wave_opening_b",
     "family_id": "migration_wave",
-    "stage": "follow_up",
-    "title": "Newcomers Need Holdings",
-    "narrative": "The families near {site} need fields, tools, and recognition.",
-    "cause": "The migration wave remained unresolved.",
-    "visible_consequences": "A settlement grant resolves pressure.",
-    "hidden_consequences": "Failure can produce restless newcomers.",
+    "stage": "opening",
+    "title": "Migration Rumors",
+    "narrative": "{site} becomes the focus of migration as the frontier story turns again.",
+    "cause": "Migration pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
     "allow_defer": true,
     "choices": [
       {
-        "id": "grant_holdings",
-        "label": "Grant Holdings",
-        "visible_consequence": "+8 stability, +6 loyalty.",
+        "id": "answer_migration_wave",
+        "label": "Send Envoys",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
         "effects": {
-          "resource_delta": { "food": 0, "timber": -15, "stone": 0, "wealth": -15 },
-          "stability_delta": 8,
-          "loyalty_delta": 6,
-          "prosperity_delta": 1,
-          "danger_delta": 0,
-          "memory_tags": ["holdings_granted"],
+          "resource_delta": {
+            "food": -15,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 12,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "migrant_memory",
+            "migration_wave_answered"
+          ],
           "issue_state": "active",
           "severity_delta": -1,
-          "response_score": 20,
-          "chronicle_template_id": "event_migration_wave_resolved"
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_migration_wave_opened"
+        }
+      },
+      {
+        "id": "contain_migration_wave",
+        "label": "Let Locals Lead",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": -8,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 6,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "migrant_memory",
+            "migration_wave_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_migration_wave_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "migration_wave_followup_a",
+    "family_id": "migration_wave",
+    "stage": "follow_up",
+    "title": "Migration Deepens",
+    "narrative": "{site} becomes the focus of migration as the frontier story turns again.",
+    "cause": "Migration pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_migration_wave",
+        "label": "Escalate Support",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": -15,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 12,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "migrant_memory",
+            "migration_wave_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_migration_wave_opened"
+        }
+      },
+      {
+        "id": "contain_migration_wave",
+        "label": "Hold the Line",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": -8,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 6,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "migrant_memory",
+            "migration_wave_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_migration_wave_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "migration_wave_followup_b",
+    "family_id": "migration_wave",
+    "stage": "follow_up",
+    "title": "Migration Spreads",
+    "narrative": "{site} becomes the focus of migration as the frontier story turns again.",
+    "cause": "Migration pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_migration_wave",
+        "label": "Make a Public Answer",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": -15,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 12,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "migrant_memory",
+            "migration_wave_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_migration_wave_opened"
+        }
+      },
+      {
+        "id": "contain_migration_wave",
+        "label": "Delay Wider Action",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": -8,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 6,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "migrant_memory",
+            "migration_wave_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_migration_wave_opened"
         }
       }
     ]
@@ -445,24 +2119,33 @@
     "id": "migration_wave_resolution",
     "family_id": "migration_wave",
     "stage": "resolution",
-    "title": "New Names Join the Rolls",
-    "narrative": "{site} records the migrant families as charter people.",
-    "cause": "The council absorbed the migration wave.",
-    "visible_consequences": "+2 loyalty, issue resolved.",
-    "hidden_consequences": "Population identity changes future stories.",
+    "title": "Migration Settled",
+    "narrative": "{site} becomes the focus of migration as the frontier story turns again.",
+    "cause": "Migration pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
     "allow_defer": false,
     "choices": [
       {
-        "id": "record_rolls",
-        "label": "Record Rolls",
-        "visible_consequence": "+2 loyalty, issue resolved.",
+        "id": "record_migration_wave",
+        "label": "Record Settlement",
+        "visible_consequence": "Close the issue and record the outcome.",
         "effects": {
-          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 0 },
-          "stability_delta": 1,
-          "loyalty_delta": 2,
-          "prosperity_delta": 1,
-          "danger_delta": 0,
-          "memory_tags": ["new_rolls"],
+          "resource_delta": {
+            "food": -15,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 12,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "migrant_memory",
+            "migration_wave_answered"
+          ],
           "issue_state": "dormant",
           "severity_delta": -3,
           "response_score": 0,
@@ -473,92 +2156,1541 @@
     ]
   },
   {
-    "id": "civic_unrest_opening",
-    "family_id": "civic_unrest",
+    "id": "local_leadership_opening_a",
+    "family_id": "local_leadership",
     "stage": "opening",
-    "title": "Council Orders Questioned",
-    "narrative": "{site} obeys, but not quietly.",
-    "cause": "Low loyalty, autonomy pressure, or unresolved grievances raised unrest.",
-    "visible_consequences": "Unrest can escalate into harsher stability loss.",
-    "hidden_consequences": "Concessions leave memories.",
+    "title": "Local Leadership Warning",
+    "narrative": "{site} becomes the focus of local leadership as the frontier story turns again.",
+    "cause": "Local Leadership pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
     "allow_defer": true,
     "choices": [
       {
-        "id": "hear_petition",
-        "label": "Hear Petition",
-        "visible_consequence": "+5 loyalty, +3 stability.",
+        "id": "answer_local_leadership",
+        "label": "Commit Council Aid",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
         "effects": {
-          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": -10 },
-          "stability_delta": 3,
-          "loyalty_delta": 5,
-          "prosperity_delta": 0,
-          "danger_delta": 0,
-          "memory_tags": ["petition_heard"],
-          "issue_state": "active",
-          "severity_delta": -1,
-          "response_score": 18,
-          "chronicle_template_id": "event_civic_unrest_opened"
-        }
-      }
-    ]
-  },
-  {
-    "id": "civic_unrest_followup",
-    "family_id": "civic_unrest",
-    "stage": "follow_up",
-    "title": "Petitions Become Demands",
-    "narrative": "Grievances at {site} are now organized enough to worry the council.",
-    "cause": "The unrest issue escalated.",
-    "visible_consequences": "A civic concession can resolve it.",
-    "hidden_consequences": "Ignoring it increases autonomy pressure.",
-    "allow_defer": true,
-    "choices": [
-      {
-        "id": "grant_concession",
-        "label": "Grant Concession",
-        "visible_consequence": "+8 loyalty, -1 prosperity.",
-        "effects": {
-          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": -20 },
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
           "stability_delta": 4,
-          "loyalty_delta": 8,
-          "prosperity_delta": -1,
-          "danger_delta": 0,
-          "memory_tags": ["rights_granted"],
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "local_leader_memory",
+            "local_leadership_answered"
+          ],
           "issue_state": "active",
           "severity_delta": -1,
-          "response_score": 20,
-          "chronicle_template_id": "event_civic_unrest_resolved"
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_local_leadership_opened"
+        }
+      },
+      {
+        "id": "contain_local_leadership",
+        "label": "Local Compromise",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "local_leader_memory",
+            "local_leadership_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_local_leadership_opened"
         }
       }
     ]
   },
   {
-    "id": "civic_unrest_resolution",
-    "family_id": "civic_unrest",
+    "id": "local_leadership_opening_b",
+    "family_id": "local_leadership",
+    "stage": "opening",
+    "title": "Local Leadership Rumors",
+    "narrative": "{site} becomes the focus of local leadership as the frontier story turns again.",
+    "cause": "Local Leadership pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_local_leadership",
+        "label": "Send Envoys",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "local_leader_memory",
+            "local_leadership_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_local_leadership_opened"
+        }
+      },
+      {
+        "id": "contain_local_leadership",
+        "label": "Let Locals Lead",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "local_leader_memory",
+            "local_leadership_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_local_leadership_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "local_leadership_followup_a",
+    "family_id": "local_leadership",
+    "stage": "follow_up",
+    "title": "Local Leadership Deepens",
+    "narrative": "{site} becomes the focus of local leadership as the frontier story turns again.",
+    "cause": "Local Leadership pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_local_leadership",
+        "label": "Escalate Support",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "local_leader_memory",
+            "local_leadership_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_local_leadership_opened"
+        }
+      },
+      {
+        "id": "contain_local_leadership",
+        "label": "Hold the Line",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "local_leader_memory",
+            "local_leadership_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_local_leadership_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "local_leadership_followup_b",
+    "family_id": "local_leadership",
+    "stage": "follow_up",
+    "title": "Local Leadership Spreads",
+    "narrative": "{site} becomes the focus of local leadership as the frontier story turns again.",
+    "cause": "Local Leadership pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_local_leadership",
+        "label": "Make a Public Answer",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "local_leader_memory",
+            "local_leadership_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_local_leadership_opened"
+        }
+      },
+      {
+        "id": "contain_local_leadership",
+        "label": "Delay Wider Action",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "local_leader_memory",
+            "local_leadership_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_local_leadership_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "local_leadership_resolution",
+    "family_id": "local_leadership",
     "stage": "resolution",
-    "title": "The Commons Settle",
-    "narrative": "{site} returns to ordinary charter business.",
-    "cause": "A civic response reduced unrest pressure.",
-    "visible_consequences": "The issue resolves and leaves a civic memory.",
-    "hidden_consequences": "Future loyalty drift can use this memory.",
+    "title": "Local Leadership Settled",
+    "narrative": "{site} becomes the focus of local leadership as the frontier story turns again.",
+    "cause": "Local Leadership pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
     "allow_defer": false,
     "choices": [
       {
-        "id": "record_compact",
-        "label": "Record Compact",
-        "visible_consequence": "+3 loyalty, issue resolved.",
+        "id": "record_local_leadership",
+        "label": "Record Settlement",
+        "visible_consequence": "Close the issue and record the outcome.",
         "effects": {
-          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 0 },
-          "stability_delta": 2,
-          "loyalty_delta": 3,
-          "prosperity_delta": 0,
-          "danger_delta": 0,
-          "memory_tags": ["civic_compact"],
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "local_leader_memory",
+            "local_leadership_answered"
+          ],
           "issue_state": "dormant",
           "severity_delta": -3,
           "response_score": 0,
           "close_issue": true,
-          "chronicle_template_id": "event_civic_unrest_resolved"
+          "chronicle_template_id": "event_local_leadership_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "resource_boom_opening_a",
+    "family_id": "resource_boom",
+    "stage": "opening",
+    "title": "Resource Boom Warning",
+    "narrative": "{site} becomes the focus of resource boom as the frontier story turns again.",
+    "cause": "Resource Boom pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_resource_boom",
+        "label": "Commit Council Aid",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 20,
+            "stone": 12,
+            "wealth": 35
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 6,
+          "danger_delta": -3,
+          "memory_tags": [
+            "boom_memory",
+            "resource_boom_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_resource_boom_opened"
+        }
+      },
+      {
+        "id": "contain_resource_boom",
+        "label": "Local Compromise",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 8,
+            "stone": 4,
+            "wealth": 18
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 3,
+          "danger_delta": 1,
+          "memory_tags": [
+            "boom_memory",
+            "resource_boom_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_resource_boom_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "resource_boom_opening_b",
+    "family_id": "resource_boom",
+    "stage": "opening",
+    "title": "Resource Boom Rumors",
+    "narrative": "{site} becomes the focus of resource boom as the frontier story turns again.",
+    "cause": "Resource Boom pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_resource_boom",
+        "label": "Send Envoys",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 20,
+            "stone": 12,
+            "wealth": 35
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 6,
+          "danger_delta": -3,
+          "memory_tags": [
+            "boom_memory",
+            "resource_boom_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_resource_boom_opened"
+        }
+      },
+      {
+        "id": "contain_resource_boom",
+        "label": "Let Locals Lead",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 8,
+            "stone": 4,
+            "wealth": 18
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 3,
+          "danger_delta": 1,
+          "memory_tags": [
+            "boom_memory",
+            "resource_boom_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_resource_boom_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "resource_boom_followup_a",
+    "family_id": "resource_boom",
+    "stage": "follow_up",
+    "title": "Resource Boom Deepens",
+    "narrative": "{site} becomes the focus of resource boom as the frontier story turns again.",
+    "cause": "Resource Boom pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_resource_boom",
+        "label": "Escalate Support",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 20,
+            "stone": 12,
+            "wealth": 35
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 6,
+          "danger_delta": -3,
+          "memory_tags": [
+            "boom_memory",
+            "resource_boom_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_resource_boom_opened"
+        }
+      },
+      {
+        "id": "contain_resource_boom",
+        "label": "Hold the Line",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 8,
+            "stone": 4,
+            "wealth": 18
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 3,
+          "danger_delta": 1,
+          "memory_tags": [
+            "boom_memory",
+            "resource_boom_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_resource_boom_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "resource_boom_followup_b",
+    "family_id": "resource_boom",
+    "stage": "follow_up",
+    "title": "Resource Boom Spreads",
+    "narrative": "{site} becomes the focus of resource boom as the frontier story turns again.",
+    "cause": "Resource Boom pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_resource_boom",
+        "label": "Make a Public Answer",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 20,
+            "stone": 12,
+            "wealth": 35
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 6,
+          "danger_delta": -3,
+          "memory_tags": [
+            "boom_memory",
+            "resource_boom_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_resource_boom_opened"
+        }
+      },
+      {
+        "id": "contain_resource_boom",
+        "label": "Delay Wider Action",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 8,
+            "stone": 4,
+            "wealth": 18
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 3,
+          "danger_delta": 1,
+          "memory_tags": [
+            "boom_memory",
+            "resource_boom_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_resource_boom_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "resource_boom_resolution",
+    "family_id": "resource_boom",
+    "stage": "resolution",
+    "title": "Resource Boom Settled",
+    "narrative": "{site} becomes the focus of resource boom as the frontier story turns again.",
+    "cause": "Resource Boom pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": false,
+    "choices": [
+      {
+        "id": "record_resource_boom",
+        "label": "Record Settlement",
+        "visible_consequence": "Close the issue and record the outcome.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 20,
+            "stone": 12,
+            "wealth": 35
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 6,
+          "danger_delta": -3,
+          "memory_tags": [
+            "boom_memory",
+            "resource_boom_answered"
+          ],
+          "issue_state": "dormant",
+          "severity_delta": -3,
+          "response_score": 0,
+          "close_issue": true,
+          "chronicle_template_id": "event_resource_boom_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "disaster_opening_a",
+    "family_id": "disaster",
+    "stage": "opening",
+    "title": "Disaster Warning",
+    "narrative": "{site} becomes the focus of disaster as the frontier story turns again.",
+    "cause": "Disaster pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_disaster",
+        "label": "Commit Council Aid",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": -15,
+            "stone": 0,
+            "wealth": -10
+          },
+          "population_delta": 0,
+          "stability_delta": 2,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "disaster_memory",
+            "disaster_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_disaster_opened"
+        }
+      },
+      {
+        "id": "contain_disaster",
+        "label": "Local Compromise",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": -5,
+            "stone": 0,
+            "wealth": -4
+          },
+          "population_delta": 0,
+          "stability_delta": -3,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "disaster_memory",
+            "disaster_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_disaster_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "disaster_opening_b",
+    "family_id": "disaster",
+    "stage": "opening",
+    "title": "Disaster Rumors",
+    "narrative": "{site} becomes the focus of disaster as the frontier story turns again.",
+    "cause": "Disaster pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_disaster",
+        "label": "Send Envoys",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": -15,
+            "stone": 0,
+            "wealth": -10
+          },
+          "population_delta": 0,
+          "stability_delta": 2,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "disaster_memory",
+            "disaster_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_disaster_opened"
+        }
+      },
+      {
+        "id": "contain_disaster",
+        "label": "Let Locals Lead",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": -5,
+            "stone": 0,
+            "wealth": -4
+          },
+          "population_delta": 0,
+          "stability_delta": -3,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "disaster_memory",
+            "disaster_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_disaster_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "disaster_followup_a",
+    "family_id": "disaster",
+    "stage": "follow_up",
+    "title": "Disaster Deepens",
+    "narrative": "{site} becomes the focus of disaster as the frontier story turns again.",
+    "cause": "Disaster pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_disaster",
+        "label": "Escalate Support",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": -15,
+            "stone": 0,
+            "wealth": -10
+          },
+          "population_delta": 0,
+          "stability_delta": 2,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "disaster_memory",
+            "disaster_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_disaster_opened"
+        }
+      },
+      {
+        "id": "contain_disaster",
+        "label": "Hold the Line",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": -5,
+            "stone": 0,
+            "wealth": -4
+          },
+          "population_delta": 0,
+          "stability_delta": -3,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "disaster_memory",
+            "disaster_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_disaster_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "disaster_followup_b",
+    "family_id": "disaster",
+    "stage": "follow_up",
+    "title": "Disaster Spreads",
+    "narrative": "{site} becomes the focus of disaster as the frontier story turns again.",
+    "cause": "Disaster pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_disaster",
+        "label": "Make a Public Answer",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": -15,
+            "stone": 0,
+            "wealth": -10
+          },
+          "population_delta": 0,
+          "stability_delta": 2,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "disaster_memory",
+            "disaster_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_disaster_opened"
+        }
+      },
+      {
+        "id": "contain_disaster",
+        "label": "Delay Wider Action",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": -5,
+            "stone": 0,
+            "wealth": -4
+          },
+          "population_delta": 0,
+          "stability_delta": -3,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "disaster_memory",
+            "disaster_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_disaster_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "disaster_resolution",
+    "family_id": "disaster",
+    "stage": "resolution",
+    "title": "Disaster Settled",
+    "narrative": "{site} becomes the focus of disaster as the frontier story turns again.",
+    "cause": "Disaster pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": false,
+    "choices": [
+      {
+        "id": "record_disaster",
+        "label": "Record Settlement",
+        "visible_consequence": "Close the issue and record the outcome.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": -15,
+            "stone": 0,
+            "wealth": -10
+          },
+          "population_delta": 0,
+          "stability_delta": 2,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "disaster_memory",
+            "disaster_answered"
+          ],
+          "issue_state": "dormant",
+          "severity_delta": -3,
+          "response_score": 0,
+          "close_issue": true,
+          "chronicle_template_id": "event_disaster_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "independent_request_opening_a",
+    "family_id": "independent_request",
+    "stage": "opening",
+    "title": "Independent Settlement Request Warning",
+    "narrative": "{site} becomes the focus of independent settlement request as the frontier story turns again.",
+    "cause": "Independent Settlement Request pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_independent_request",
+        "label": "Commit Council Aid",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": -15
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 3,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "independent_memory",
+            "independent_request_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_independent_request_opened"
+        }
+      },
+      {
+        "id": "contain_independent_request",
+        "label": "Local Compromise",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": -5
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": 0,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "independent_memory",
+            "independent_request_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_independent_request_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "independent_request_opening_b",
+    "family_id": "independent_request",
+    "stage": "opening",
+    "title": "Independent Settlement Request Rumors",
+    "narrative": "{site} becomes the focus of independent settlement request as the frontier story turns again.",
+    "cause": "Independent Settlement Request pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_independent_request",
+        "label": "Send Envoys",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": -15
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 3,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "independent_memory",
+            "independent_request_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_independent_request_opened"
+        }
+      },
+      {
+        "id": "contain_independent_request",
+        "label": "Let Locals Lead",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": -5
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": 0,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "independent_memory",
+            "independent_request_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_independent_request_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "independent_request_followup_a",
+    "family_id": "independent_request",
+    "stage": "follow_up",
+    "title": "Independent Settlement Request Deepens",
+    "narrative": "{site} becomes the focus of independent settlement request as the frontier story turns again.",
+    "cause": "Independent Settlement Request pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_independent_request",
+        "label": "Escalate Support",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": -15
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 3,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "independent_memory",
+            "independent_request_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_independent_request_opened"
+        }
+      },
+      {
+        "id": "contain_independent_request",
+        "label": "Hold the Line",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": -5
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": 0,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "independent_memory",
+            "independent_request_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_independent_request_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "independent_request_followup_b",
+    "family_id": "independent_request",
+    "stage": "follow_up",
+    "title": "Independent Settlement Request Spreads",
+    "narrative": "{site} becomes the focus of independent settlement request as the frontier story turns again.",
+    "cause": "Independent Settlement Request pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_independent_request",
+        "label": "Make a Public Answer",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": -15
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 3,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "independent_memory",
+            "independent_request_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_independent_request_opened"
+        }
+      },
+      {
+        "id": "contain_independent_request",
+        "label": "Delay Wider Action",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": -5
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": 0,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "independent_memory",
+            "independent_request_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_independent_request_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "independent_request_resolution",
+    "family_id": "independent_request",
+    "stage": "resolution",
+    "title": "Independent Settlement Request Settled",
+    "narrative": "{site} becomes the focus of independent settlement request as the frontier story turns again.",
+    "cause": "Independent Settlement Request pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": false,
+    "choices": [
+      {
+        "id": "record_independent_request",
+        "label": "Record Settlement",
+        "visible_consequence": "Close the issue and record the outcome.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": -15
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 3,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": [
+            "independent_memory",
+            "independent_request_answered"
+          ],
+          "issue_state": "dormant",
+          "severity_delta": -3,
+          "response_score": 0,
+          "close_issue": true,
+          "chronicle_template_id": "event_independent_request_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "rival_faction_move_opening_a",
+    "family_id": "rival_faction_move",
+    "stage": "opening",
+    "title": "Rival Faction Move Warning",
+    "narrative": "{site} becomes the focus of rival faction move as the frontier story turns again.",
+    "cause": "Rival Faction Move pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_rival_faction_move",
+        "label": "Commit Council Aid",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -5,
+          "memory_tags": [
+            "rival_move_memory",
+            "rival_faction_move_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_rival_faction_move_opened"
+        }
+      },
+      {
+        "id": "contain_rival_faction_move",
+        "label": "Local Compromise",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "rival_move_memory",
+            "rival_faction_move_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_rival_faction_move_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "rival_faction_move_opening_b",
+    "family_id": "rival_faction_move",
+    "stage": "opening",
+    "title": "Rival Faction Move Rumors",
+    "narrative": "{site} becomes the focus of rival faction move as the frontier story turns again.",
+    "cause": "Rival Faction Move pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_rival_faction_move",
+        "label": "Send Envoys",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -5,
+          "memory_tags": [
+            "rival_move_memory",
+            "rival_faction_move_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_rival_faction_move_opened"
+        }
+      },
+      {
+        "id": "contain_rival_faction_move",
+        "label": "Let Locals Lead",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "rival_move_memory",
+            "rival_faction_move_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_rival_faction_move_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "rival_faction_move_followup_a",
+    "family_id": "rival_faction_move",
+    "stage": "follow_up",
+    "title": "Rival Faction Move Deepens",
+    "narrative": "{site} becomes the focus of rival faction move as the frontier story turns again.",
+    "cause": "Rival Faction Move pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_rival_faction_move",
+        "label": "Escalate Support",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -5,
+          "memory_tags": [
+            "rival_move_memory",
+            "rival_faction_move_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_rival_faction_move_opened"
+        }
+      },
+      {
+        "id": "contain_rival_faction_move",
+        "label": "Hold the Line",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "rival_move_memory",
+            "rival_faction_move_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_rival_faction_move_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "rival_faction_move_followup_b",
+    "family_id": "rival_faction_move",
+    "stage": "follow_up",
+    "title": "Rival Faction Move Spreads",
+    "narrative": "{site} becomes the focus of rival faction move as the frontier story turns again.",
+    "cause": "Rival Faction Move pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "answer_rival_faction_move",
+        "label": "Make a Public Answer",
+        "visible_consequence": "Strong response improves the issue and can lead to resolution.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -5,
+          "memory_tags": [
+            "rival_move_memory",
+            "rival_faction_move_answered"
+          ],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "close_issue": false,
+          "chronicle_template_id": "event_rival_faction_move_opened"
+        }
+      },
+      {
+        "id": "contain_rival_faction_move",
+        "label": "Delay Wider Action",
+        "visible_consequence": "Partial response buys time but may leave pressure behind.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 1,
+          "loyalty_delta": -1,
+          "prosperity_delta": 0,
+          "danger_delta": 1,
+          "memory_tags": [
+            "rival_move_memory",
+            "rival_faction_move_compromise"
+          ],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 12,
+          "close_issue": false,
+          "chronicle_template_id": "event_rival_faction_move_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "rival_faction_move_resolution",
+    "family_id": "rival_faction_move",
+    "stage": "resolution",
+    "title": "Rival Faction Move Settled",
+    "narrative": "{site} becomes the focus of rival faction move as the frontier story turns again.",
+    "cause": "Rival Faction Move pressure is now high enough to demand council attention.",
+    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
+    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "allow_defer": false,
+    "choices": [
+      {
+        "id": "record_rival_faction_move",
+        "label": "Record Settlement",
+        "visible_consequence": "Close the issue and record the outcome.",
+        "effects": {
+          "resource_delta": {
+            "food": 0,
+            "timber": 0,
+            "stone": 0,
+            "wealth": 0
+          },
+          "population_delta": 0,
+          "stability_delta": 4,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -5,
+          "memory_tags": [
+            "rival_move_memory",
+            "rival_faction_move_answered"
+          ],
+          "issue_state": "dormant",
+          "severity_delta": -3,
+          "response_score": 0,
+          "close_issue": true,
+          "chronicle_template_id": "event_rival_faction_move_resolved"
         }
       }
     ]

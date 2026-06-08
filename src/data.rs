@@ -149,6 +149,8 @@ pub struct ChronicleTemplateDef {
     pub title: String,
     pub body: String,
     pub importance: String,
+    #[serde(default = "default_chronicle_tag")]
+    pub tag: String,
 }
 
 #[derive(Debug, Clone)]
@@ -320,15 +322,32 @@ impl GameData {
     }
 
     fn validate_events(&self) -> Result<(), String> {
-        if self.event_families.len() < 6 {
-            return Err("expected at least 6 event families".to_owned());
+        if self.event_families.len() < 12 {
+            return Err("expected at least 12 event families".to_owned());
+        }
+        if self.event_templates.len() < 60 {
+            return Err("expected at least 60 event templates".to_owned());
+        }
+        if self.chronicle_templates.len() < 60 {
+            return Err("expected at least 60 chronicle templates".to_owned());
         }
         for family in &self.event_families {
-            for template_id in [
-                &family.opening_template_id,
-                &family.followup_template_id,
-                &family.resolution_template_id,
-            ] {
+            let mut template_ids = Vec::new();
+            template_ids.extend(family.template_ids_for_stage(EventStage::Opening));
+            template_ids.extend(family.template_ids_for_stage(EventStage::FollowUp));
+            template_ids.extend(family.template_ids_for_stage(EventStage::Resolution));
+            if family.template_ids_for_stage(EventStage::Opening).len() < 2
+                || family.template_ids_for_stage(EventStage::FollowUp).len() < 2
+                || family
+                    .template_ids_for_stage(EventStage::Resolution)
+                    .is_empty()
+            {
+                return Err(format!(
+                    "event family {} needs prototype-ready template depth",
+                    family.id
+                ));
+            }
+            for template_id in template_ids {
                 if self.event_template(template_id).is_none() {
                     return Err(format!(
                         "event family {} references missing template {}",
@@ -355,6 +374,10 @@ impl GameData {
     }
 }
 
+fn default_chronicle_tag() -> String {
+    "memory".to_owned()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -370,7 +393,9 @@ mod tests {
         assert_eq!(data.roads.len(), 50);
         assert_eq!(data.settlement_balance.focuses.len(), 6);
         assert_eq!(data.road_balance.road_event_issue_ids.len(), 3);
-        assert_eq!(data.event_families.len(), 6);
+        assert!(data.event_families.len() >= 12);
+        assert!(data.event_templates.len() >= 60);
+        assert!(data.chronicle_templates.len() >= 60);
         assert_eq!(data.faction_balance.rival.id, "ashthorn_clan");
         assert_eq!(data.campaign_balance.campaign_turns, 80);
         assert_eq!(

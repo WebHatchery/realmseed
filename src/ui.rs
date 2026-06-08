@@ -31,7 +31,6 @@ pub enum UiAction {
     CompleteRegionalProject(String),
     ResolveEventChoice(String),
     DeferEvent,
-    ForceEvent,
     OpenIndependentTrade,
     BeginIndependentIntegration,
     ToggleFactionPanel,
@@ -132,7 +131,7 @@ fn draw_footer(ctx: &UiContext<'_>) {
     );
     draw_text_block(
         &format!(
-            "{}\nSpace advances the season. C opens the chronicle. F opens faction pressure. E forces the next eligible event for validation.",
+            "{}\nSpace advances the season. C opens the chronicle. F opens faction pressure.",
             ctx.session.guidance_text()
         ),
         rect.x + 18.0,

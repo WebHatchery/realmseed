@@ -1,6 +1,6 @@
 //! Rival faction, independent settlement, and wilderness pressure simulation.
 
-use super::{GameSession, SettlementActionStatus, SettlementStatus};
+use super::{GameSession, RouteCondition, SettlementActionStatus, SettlementStatus};
 use crate::data::{FactionGoal, GameData, SiteCategory};
 use serde::{Deserialize, Serialize};
 
@@ -185,8 +185,18 @@ impl GameSession {
         if independent.integration_state == IntegrationState::Integrated {
             return SettlementActionStatus::disabled("Already integrated.");
         }
+        if independent.integration_state == IntegrationState::Resistant {
+            return SettlementActionStatus::disabled(
+                "Resistant; improve trust or reduce pressure.",
+            );
+        }
         if independent.trust < 45 {
             return SettlementActionStatus::disabled("Needs trust 45+.");
+        }
+        if independent.autonomy >= 82 || independent.rival_pressure >= 62 {
+            return SettlementActionStatus::disabled(
+                "Autonomy or rival pressure is too high for integration.",
+            );
         }
 
         SettlementActionStatus::enabled("Begin integration: +30 progress, autonomy falls.")
@@ -475,7 +485,12 @@ impl GameSession {
             }
             FactionGoal::Confront => {
                 self.rival_faction.hostility = (self.rival_faction.hostility + 5).clamp(0, 100);
-                "issued a border demand".to_owned()
+                if self.close_route_near_target(data, target_site_id) {
+                    self.add_chronicle_entry(data, "rival_close_pass", Some(target_site_id));
+                    "issued a border demand and closed a pass".to_owned()
+                } else {
+                    "issued a border demand".to_owned()
+                }
             }
             FactionGoal::Appease => {
                 self.rival_faction.hostility = (self.rival_faction.hostility - 6).clamp(0, 100);
@@ -490,6 +505,11 @@ impl GameSession {
         } else {
             -10
         };
+        let road_target = self.routes.iter().position(|route| {
+            route.connects(target_site_id)
+                && route.level.is_built()
+                && route.condition == RouteCondition::Clear
+        });
         let Some(settlement) = self
             .settlements
             .iter_mut()
@@ -508,7 +528,17 @@ impl GameSession {
             settlement.rival_pressure += 10;
             self.rival_faction.hostility = (self.rival_faction.hostility + 4).clamp(0, 100);
             self.add_chronicle_entry(data, "rival_major_raid", Some(target_site_id));
-            "raided successfully after reading weak supply".to_owned()
+            if let Some(route_index) = road_target {
+                self.routes[route_index].condition = RouteCondition::Damaged;
+                add_unique_issue(
+                    &mut self.routes[route_index].active_warning_ids,
+                    "rival_road_raid",
+                );
+                self.add_chronicle_entry(data, "rival_road_attack", Some(target_site_id));
+                "raided successfully and damaged a supply road".to_owned()
+            } else {
+                "raided successfully after reading weak supply".to_owned()
+            }
         } else {
             settlement.defence = (settlement.defence + 2).clamp(0, 100);
             self.rival_faction.recent_losses += 3;
@@ -519,6 +549,9 @@ impl GameSession {
 
     fn update_independents(&mut self, data: &GameData) -> usize {
         let mut requests = Vec::new();
+        let mut protection_requests = Vec::new();
+        let mut resistances = Vec::new();
+        let mut defections = Vec::new();
         for independent in &mut self.independent_settlements {
             if independent.integration_state == IntegrationState::Integrated {
                 continue;
@@ -532,6 +565,24 @@ impl GameSession {
                 independent.autonomy = (independent.autonomy + 4).clamp(0, 100);
                 requests.push(independent.site_id.clone());
             }
+            if independent.rival_pressure > 50
+                && !independent.protection_relationship
+                && independent.local_need != "protection"
+            {
+                independent.local_need = "protection".to_owned();
+                protection_requests.push(independent.site_id.clone());
+            }
+            if independent.integration_state == IntegrationState::Integrating
+                && (independent.autonomy >= 82 || independent.rival_pressure >= 62)
+            {
+                independent.integration_state = IntegrationState::Resistant;
+                independent.integration_progress = (independent.integration_progress - 20).max(0);
+                resistances.push(independent.site_id.clone());
+            }
+            if independent.rival_pressure >= 78 && independent.trust <= 20 {
+                independent.integration_state = IntegrationState::Resistant;
+                defections.push(independent.site_id.clone());
+            }
         }
         for site_id in &requests {
             self.add_chronicle_entry(data, "independent_request", Some(site_id));
@@ -544,7 +595,21 @@ impl GameSession {
                 result: "the settlement asked the charter for aid or trade".to_owned(),
             });
         }
-        requests.len()
+        for site_id in &protection_requests {
+            self.add_chronicle_entry(data, "independent_protection", Some(site_id));
+        }
+        for site_id in &resistances {
+            self.add_chronicle_entry(data, "independent_resists", Some(site_id));
+        }
+        for site_id in &defections {
+            if !self.rival_controls_site(site_id) {
+                self.rival_faction
+                    .controlled_locations
+                    .push(site_id.clone());
+            }
+            self.add_chronicle_entry(data, "independent_joined_rival", Some(site_id));
+        }
+        requests.len() + protection_requests.len()
     }
 
     fn update_wilderness_pressure(&mut self, data: &GameData) -> usize {
@@ -554,6 +619,7 @@ impl GameSession {
             .iter()
             .map(|project| project.region_id.clone())
             .collect();
+        let wilderness_modifier = self.wilderness_modifier(data);
         for pressure in &mut self.wilderness_pressure {
             let old_pressure = pressure.pressure;
             let isolated = self
@@ -589,7 +655,7 @@ impl GameSession {
             let patrol = completed_project_regions
                 .iter()
                 .any(|region_id| region_id == &pressure.region_id);
-            let mut delta = 2 + isolated;
+            let mut delta = 2 + isolated + wilderness_modifier;
             delta -= roads * data.faction_balance.road_pressure_reduction;
             delta -= fortifications * data.faction_balance.fortification_pressure_reduction;
             if patrol {
@@ -621,6 +687,19 @@ impl GameSession {
             .map(|settlement| target_weakness(self, data, &settlement.location_id))
             .max()
             .unwrap_or(0)
+    }
+
+    fn close_route_near_target(&mut self, _data: &GameData, target_site_id: &str) -> bool {
+        let Some(route) = self.routes.iter_mut().find(|route| {
+            route.connects(target_site_id)
+                && route.level.is_built()
+                && route.condition != RouteCondition::Blocked
+        }) else {
+            return false;
+        };
+        route.condition = RouteCondition::Blocked;
+        add_unique_issue(&mut route.active_warning_ids, "rival_closed_pass");
+        true
     }
 }
 

@@ -590,7 +590,8 @@ pub(super) fn draw_chronicle_overlay(
     let mut y = content.y + 48.0;
     for entry in ctx.session.chronicle.iter().rev().take(8) {
         let title = format!(
-            "{} Year {} - {}",
+            "[{}] {} Year {} - {}",
+            entry.tag,
             entry.season.label(),
             entry.year,
             entry.title

@@ -11,6 +11,12 @@ pub enum EventStage {
     Resolution,
 }
 
+impl Default for EventStage {
+    fn default() -> Self {
+        Self::Opening
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ActiveIssueState {
@@ -30,6 +36,12 @@ pub struct EventFamilyDef {
     pub opening_template_id: String,
     pub followup_template_id: String,
     pub resolution_template_id: String,
+    #[serde(default)]
+    pub opening_template_ids: Vec<String>,
+    #[serde(default)]
+    pub followup_template_ids: Vec<String>,
+    #[serde(default)]
+    pub resolution_template_ids: Vec<String>,
     pub severity_levels: Vec<i32>,
     pub local_cooldown: u32,
     pub global_cooldown: u32,
@@ -37,6 +49,22 @@ pub struct EventFamilyDef {
     pub memory_tags: Vec<String>,
     pub opening_chronicle_template_id: String,
     pub resolution_chronicle_template_id: String,
+}
+
+impl EventFamilyDef {
+    pub fn template_ids_for_stage(&self, stage: EventStage) -> Vec<&str> {
+        let (primary, variants) = match stage {
+            EventStage::Opening => (&self.opening_template_id, &self.opening_template_ids),
+            EventStage::FollowUp => (&self.followup_template_id, &self.followup_template_ids),
+            EventStage::Resolution => (&self.resolution_template_id, &self.resolution_template_ids),
+        };
+
+        let mut ids: Vec<&str> = variants.iter().map(String::as_str).collect();
+        if !ids.iter().any(|id| *id == primary) {
+            ids.insert(0, primary.as_str());
+        }
+        ids
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

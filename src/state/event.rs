@@ -1,6 +1,6 @@
 //! Active issue state machine, event triggering, and choice resolution.
 
-use super::{GameSession, SettlementActionStatus, SettlementStatus};
+use super::{event_candidates::EventCandidate, GameSession, SettlementActionStatus};
 use crate::data::{
     ActiveIssueState, EventChoiceDef, EventChoiceEffects, EventFamilyDef, EventStage,
     EventTemplateDef, GameData, ResourceStock,
@@ -41,21 +41,14 @@ pub struct EventHistoryEntry {
     pub family_id: String,
     pub target_site_id: String,
     pub turn: u32,
+    #[serde(default)]
+    pub stage: EventStage,
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct EventAdvanceReport {
     pub events_triggered: usize,
     pub issues_escalated: usize,
-}
-
-#[derive(Debug, Clone)]
-struct EventCandidate {
-    family_id: String,
-    target_site_id: String,
-    severity: i32,
-    weight: i32,
-    cause: String,
 }
 
 impl GameSession {
@@ -141,6 +134,7 @@ impl GameSession {
         Ok("Deferred event; the issue will keep aging.".to_owned())
     }
 
+    #[cfg(test)]
     pub fn force_next_event(&mut self, data: &GameData) -> Result<String, String> {
         if self.pending_event.is_some() {
             return Err("Resolve or defer the current event first.".to_owned());
@@ -149,7 +143,18 @@ impl GameSession {
             % data.event_families.len().max(1);
         for offset in 0..data.event_families.len() {
             let family = &data.event_families[(family_index + offset) % data.event_families.len()];
-            if let Some(candidate) = self.candidate_for_family(data, family) {
+            if let Some(mut candidate) = self.candidate_for_family(data, family) {
+                let Some(template_id) = self.select_template_for_stage(
+                    data,
+                    family,
+                    EventStage::Opening,
+                    &candidate.target_site_id,
+                    candidate.severity,
+                    &candidate.cause,
+                ) else {
+                    continue;
+                };
+                candidate.template_id = template_id;
                 self.open_event_for_candidate(data, candidate);
                 return Ok("Forced next eligible event.".to_owned());
             }
@@ -206,7 +211,7 @@ impl GameSession {
 
         let pending = PendingEventRuntimeState {
             family_id: family.id.clone(),
-            template_id: family.opening_template_id.clone(),
+            template_id: candidate.template_id,
             target_site_id: candidate.target_site_id,
             issue_id,
             severity: candidate.severity,
@@ -232,6 +237,9 @@ impl GameSession {
             })
             .collect();
         let unmanaged_strain = self.unmanaged_strain;
+        let event_history = self.event_history.clone();
+        let current_turn = self.clock.turn;
+        let campaign_seed = self.campaign_seed;
 
         for issue in &mut self.active_issues {
             if matches!(
@@ -251,13 +259,25 @@ impl GameSession {
             };
             if issue.response_score >= issue.improvement_threshold {
                 issue.state = ActiveIssueState::Resolution;
-                pending_events.push(make_pending_for_issue(
+                if let Some(template_id) = select_template_for_stage(
+                    &event_history,
+                    current_turn,
+                    campaign_seed,
+                    data,
                     family,
-                    issue,
-                    &family.resolution_template_id,
                     EventStage::Resolution,
+                    &issue.target_site_id,
+                    issue.severity,
                     "Player response improved the issue.",
-                ));
+                ) {
+                    pending_events.push(make_pending_for_issue(
+                        family,
+                        issue,
+                        &template_id,
+                        EventStage::Resolution,
+                        "Player response improved the issue.",
+                    ));
+                }
                 issue.response_score = 0;
                 continue;
             }
@@ -284,13 +304,25 @@ impl GameSession {
                 if issue.state == ActiveIssueState::Escalating {
                     issue.severity = (issue.severity + 1).clamp(1, 3);
                 }
-                pending_events.push(make_pending_for_issue(
+                if let Some(template_id) = select_template_for_stage(
+                    &event_history,
+                    current_turn,
+                    campaign_seed,
+                    data,
                     family,
-                    issue,
-                    &family.followup_template_id,
                     EventStage::FollowUp,
+                    &issue.target_site_id,
+                    issue.severity,
                     "The active issue escalated after neglect.",
-                ));
+                ) {
+                    pending_events.push(make_pending_for_issue(
+                        family,
+                        issue,
+                        &template_id,
+                        EventStage::FollowUp,
+                        "The active issue escalated after neglect.",
+                    ));
+                }
             }
             issue.response_score = (issue.response_score - 4).max(0);
         }
@@ -304,184 +336,47 @@ impl GameSession {
     fn best_event_candidate(&self, data: &GameData) -> Option<EventCandidate> {
         data.event_families
             .iter()
-            .filter_map(|family| self.candidate_for_family(data, family))
-            .filter(|candidate| {
-                let Some(family) = data.event_family(&candidate.family_id) else {
-                    return false;
-                };
-                let pending = PendingEventRuntimeState {
-                    family_id: family.id.clone(),
-                    template_id: family.opening_template_id.clone(),
-                    target_site_id: candidate.target_site_id.clone(),
-                    issue_id: issue_id(&family.id, &candidate.target_site_id),
-                    severity: candidate.severity,
-                    cause: candidate.cause.clone(),
-                    stage: EventStage::Opening,
-                };
-                self.can_present_event(data, &pending)
+            .filter_map(|family| {
+                let mut candidate = self.candidate_for_family(data, family)?;
+                candidate.weight =
+                    self.adjust_event_weight(data, family, candidate.weight, candidate.severity);
+                candidate.template_id = self.select_template_for_stage(
+                    data,
+                    family,
+                    EventStage::Opening,
+                    &candidate.target_site_id,
+                    candidate.severity,
+                    &candidate.cause,
+                )?;
+                Some(candidate)
             })
             .max_by_key(|candidate| candidate.weight)
     }
 
-    fn candidate_for_family(
+    fn select_template_for_stage(
         &self,
         data: &GameData,
         family: &EventFamilyDef,
-    ) -> Option<EventCandidate> {
-        match family.trigger_kind.as_str() {
-            "low_food" => self.low_food_candidate(family),
-            "road_warning" => self.road_warning_candidate(family),
-            "isolated" => self.isolation_candidate(data, family),
-            "trade_pressure" => self.trade_pressure_candidate(family),
-            "migration_pressure" => self.migration_candidate(family),
-            "low_loyalty" => self.low_loyalty_candidate(family),
-            _ => None,
-        }
-    }
-
-    fn low_food_candidate(&self, family: &EventFamilyDef) -> Option<EventCandidate> {
-        self.settlements
-            .iter()
-            .filter(|settlement| settlement.status == SettlementStatus::Active)
-            .filter(|settlement| settlement.stored.food < settlement.population * 2)
-            .map(|settlement| {
-                let severity = if settlement.stored.food < settlement.population / 2 {
-                    2
-                } else {
-                    1
-                };
-                EventCandidate {
-                    family_id: family.id.clone(),
-                    target_site_id: settlement.location_id.clone(),
-                    severity,
-                    weight: 40 + severity * 10 - settlement.stored.food / 10,
-                    cause: "Food stores are below two seasons of population need.".to_owned(),
-                }
-            })
-            .max_by_key(|candidate| candidate.weight)
-    }
-
-    fn road_warning_candidate(&self, family: &EventFamilyDef) -> Option<EventCandidate> {
-        self.routes
-            .iter()
-            .filter(|route| !route.active_warning_ids.is_empty())
-            .map(|route| EventCandidate {
-                family_id: family.id.clone(),
-                target_site_id: route.site_a.clone(),
-                severity: if route.condition == super::RouteCondition::Blocked {
-                    2
-                } else {
-                    1
-                },
-                weight: 55 + route.active_warning_ids.len() as i32 * 5,
-                cause: "A route warning is active.".to_owned(),
-            })
-            .max_by_key(|candidate| candidate.weight)
-    }
-
-    fn isolation_candidate(
-        &self,
-        data: &GameData,
-        family: &EventFamilyDef,
-    ) -> Option<EventCandidate> {
-        self.settlements
-            .iter()
-            .filter(|settlement| settlement.status == SettlementStatus::Active)
-            .filter(|settlement| settlement.location_id != data.road_balance.source_site_id)
-            .filter(|settlement| !self.is_site_in_capital_network(data, &settlement.location_id))
-            .map(|settlement| EventCandidate {
-                family_id: family.id.clone(),
-                target_site_id: settlement.location_id.clone(),
-                severity: 1 + (settlement.autonomy_pressure / 4).clamp(0, 2),
-                weight: 45 + settlement.autonomy_pressure * 2,
-                cause: "No built, unblocked road reaches the capital network.".to_owned(),
-            })
-            .max_by_key(|candidate| candidate.weight)
-    }
-
-    fn trade_pressure_candidate(&self, family: &EventFamilyDef) -> Option<EventCandidate> {
-        self.settlements
-            .iter()
-            .filter(|settlement| settlement.status == SettlementStatus::Active)
-            .filter(|settlement| settlement.focus_id == "trade" || settlement.prosperity >= 55)
-            .map(|settlement| EventCandidate {
-                family_id: family.id.clone(),
-                target_site_id: settlement.location_id.clone(),
-                severity: 1,
-                weight: 30 + settlement.prosperity / 2,
-                cause: "Prosperity and trade have created local ambition.".to_owned(),
-            })
-            .max_by_key(|candidate| candidate.weight)
-    }
-
-    fn migration_candidate(&self, family: &EventFamilyDef) -> Option<EventCandidate> {
-        self.settlements
-            .iter()
-            .filter(|settlement| settlement.status == SettlementStatus::Active)
-            .filter(|settlement| {
-                settlement.stored.food > settlement.population && settlement.stability > 55
-            })
-            .map(|settlement| EventCandidate {
-                family_id: family.id.clone(),
-                target_site_id: settlement.location_id.clone(),
-                severity: 1,
-                weight: 32 + settlement.stability / 2,
-                cause: "Food security and order attracted migrant families.".to_owned(),
-            })
-            .max_by_key(|candidate| candidate.weight)
-    }
-
-    fn low_loyalty_candidate(&self, family: &EventFamilyDef) -> Option<EventCandidate> {
-        self.settlements
-            .iter()
-            .filter(|settlement| settlement.status == SettlementStatus::Active)
-            .filter(|settlement| {
-                settlement.loyalty <= 68
-                    || settlement.autonomy_pressure > 0
-                    || settlement
-                        .active_issue_ids
-                        .iter()
-                        .any(|issue| issue == "isolated")
-            })
-            .map(|settlement| EventCandidate {
-                family_id: family.id.clone(),
-                target_site_id: settlement.location_id.clone(),
-                severity: 1 + ((70 - settlement.loyalty).max(0) / 20).clamp(0, 2),
-                weight: 35 + (70 - settlement.loyalty).max(0) + settlement.autonomy_pressure,
-                cause: "Low loyalty or autonomy pressure made civic unrest likely.".to_owned(),
-            })
-            .max_by_key(|candidate| candidate.weight)
+        stage: EventStage,
+        target_site_id: &str,
+        severity: i32,
+        cause: &str,
+    ) -> Option<String> {
+        select_template_for_stage(
+            &self.event_history,
+            self.clock.turn,
+            self.campaign_seed,
+            data,
+            family,
+            stage,
+            target_site_id,
+            severity,
+            cause,
+        )
     }
 
     fn can_present_event(&self, data: &GameData, pending: &PendingEventRuntimeState) -> bool {
-        let Some(family) = data.event_family(&pending.family_id) else {
-            return false;
-        };
-        let per_target_count = self
-            .event_history
-            .iter()
-            .filter(|entry| {
-                entry.template_id == pending.template_id
-                    && entry.target_site_id == pending.target_site_id
-            })
-            .count() as u32;
-        if per_target_count >= family.max_per_target {
-            return false;
-        }
-        let current_turn = self.clock.turn;
-        let local_blocked = self.event_history.iter().any(|entry| {
-            entry.template_id == pending.template_id
-                && entry.target_site_id == pending.target_site_id
-                && current_turn.saturating_sub(entry.turn) < family.local_cooldown
-        });
-        if local_blocked {
-            return false;
-        }
-        let global_blocked = self.event_history.iter().any(|entry| {
-            entry.template_id == pending.template_id
-                && current_turn.saturating_sub(entry.turn) < family.global_cooldown
-        });
-        !global_blocked
+        can_present_event_from_history(data, &self.event_history, self.clock.turn, pending)
     }
 
     fn record_event_appearance(&mut self, pending: &PendingEventRuntimeState) {
@@ -490,6 +385,7 @@ impl GameSession {
             family_id: pending.family_id.clone(),
             target_site_id: pending.target_site_id.clone(),
             turn: self.clock.turn,
+            stage: pending.stage,
         });
     }
 
@@ -541,6 +437,84 @@ impl GameSession {
 
 fn issue_id(family_id: &str, target_site_id: &str) -> String {
     format!("{}:{}", family_id, target_site_id)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn select_template_for_stage(
+    event_history: &[EventHistoryEntry],
+    current_turn: u32,
+    campaign_seed: u64,
+    data: &GameData,
+    family: &EventFamilyDef,
+    stage: EventStage,
+    target_site_id: &str,
+    severity: i32,
+    cause: &str,
+) -> Option<String> {
+    let ids = family.template_ids_for_stage(stage);
+    if ids.is_empty() {
+        return None;
+    }
+
+    let start = (campaign_seed as usize
+        + current_turn as usize
+        + event_history.len()
+        + target_site_id.len()
+        + severity.max(0) as usize)
+        % ids.len();
+    for offset in 0..ids.len() {
+        let template_id = ids[(start + offset) % ids.len()];
+        if data.event_template(template_id).is_none() {
+            continue;
+        }
+        let pending = PendingEventRuntimeState {
+            family_id: family.id.clone(),
+            template_id: template_id.to_owned(),
+            target_site_id: target_site_id.to_owned(),
+            issue_id: issue_id(&family.id, target_site_id),
+            severity,
+            cause: cause.to_owned(),
+            stage,
+        };
+        if can_present_event_from_history(data, event_history, current_turn, &pending) {
+            return Some(template_id.to_owned());
+        }
+    }
+    None
+}
+
+fn can_present_event_from_history(
+    data: &GameData,
+    event_history: &[EventHistoryEntry],
+    current_turn: u32,
+    pending: &PendingEventRuntimeState,
+) -> bool {
+    let Some(family) = data.event_family(&pending.family_id) else {
+        return false;
+    };
+    let per_target_count = event_history
+        .iter()
+        .filter(|entry| {
+            entry.template_id == pending.template_id
+                && entry.target_site_id == pending.target_site_id
+        })
+        .count() as u32;
+    if per_target_count >= family.max_per_target {
+        return false;
+    }
+    let local_blocked = event_history.iter().any(|entry| {
+        entry.template_id == pending.template_id
+            && entry.target_site_id == pending.target_site_id
+            && current_turn.saturating_sub(entry.turn) < family.local_cooldown
+    });
+    if local_blocked {
+        return false;
+    }
+    let global_blocked = event_history.iter().any(|entry| {
+        entry.template_id == pending.template_id
+            && current_turn.saturating_sub(entry.turn) < family.global_cooldown
+    });
+    !global_blocked
 }
 
 fn make_pending_for_issue(

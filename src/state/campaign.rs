@@ -1,6 +1,8 @@
 //! Complete prototype campaign flow, ambitions, projects, institutions, and endings.
 
-use super::{GameSession, SeasonAdvanceReport, SettlementActionStatus, SettlementStatus};
+use super::{
+    GameSession, SeasonAdvanceReport, SeasonSummaryRow, SettlementActionStatus, SettlementStatus,
+};
 use crate::data::{GameData, ProjectDef, SettlementTier};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -41,7 +43,7 @@ pub struct CampaignAdvanceReport {
 impl GameSession {
     pub fn guidance_text(&self) -> String {
         if self.known_site_count() <= 8 {
-            return "Guidance: scout an adjacent question marker to expand the map.".to_owned();
+            return "Guidance - scouting: inspect an adjacent question marker before committing actions.".to_owned();
         }
         if self
             .settlements
@@ -50,32 +52,71 @@ impl GameSession {
             .count()
             < 2
         {
-            return "Guidance: found a camp at a known settlement-capable site.".to_owned();
+            return "Guidance - founding: choose a known settlement site and found the first frontier camp.".to_owned();
         }
         if !self.routes.iter().any(|route| route.level.is_built()) {
-            return "Guidance: build a path so new settlements can reach the capital network."
-                .to_owned();
-        }
-        if self.selected_ambition_id.is_none() {
-            return "Guidance: open Faction Pressure with F and declare a realm ambition."
+            return "Guidance - roads: build a path so new settlements can reach the capital network."
                 .to_owned();
         }
         if self.pending_event.is_some() || !self.active_issues.is_empty() {
-            return "Guidance: respond to warnings before they become lasting crises.".to_owned();
+            return "Guidance - first crisis: resolve warnings by reading causes and choosing a response.".to_owned();
+        }
+        if self
+            .rival_faction
+            .action_log
+            .iter()
+            .any(|entry| entry.action == "Independent Request")
+        {
+            return "Guidance - independent request: aid, trade, or protection changes trust and autonomy.".to_owned();
         }
         if self.rival_faction.action_log.is_empty() {
-            return "Guidance: advance seasons and watch the rival faction log with F.".to_owned();
+            return "Guidance - rival pressure: advance seasons and watch the faction log with F."
+                .to_owned();
+        }
+        if self.rival_faction.action_log.len() == 1 {
+            return "Guidance - first rival action: the log explains target, reason, and result."
+                .to_owned();
+        }
+        if self.selected_ambition_id.is_none() {
+            return "Guidance - ambition: open Faction Pressure with F and declare a realm ambition."
+                .to_owned();
         }
         if self
             .independent_settlements
             .iter()
             .all(|independent| !independent.trade_relationship)
         {
-            return "Guidance: select an independent settlement and open trade or integration."
+            return "Guidance - independents: select an independent settlement and open trade or integration."
                 .to_owned();
         }
         "Guidance: build projects, unlock institutions, and shape the realm's final legacy."
             .to_owned()
+    }
+
+    pub fn ambition_objective_text(&self, data: &GameData, ambition_id: &str) -> String {
+        let progress = self.ambition_progress(data, ambition_id);
+        match ambition_id {
+            "breadbasket" => format!(
+                "Objective: keep food reserves high, answer hunger events, and finish granary projects. Progress {}.",
+                progress
+            ),
+            "roadbound" => format!(
+                "Objective: connect settlements, upgrade roads, and reduce isolation. Progress {}.",
+                progress
+            ),
+            "civic" => format!(
+                "Objective: sustain loyalty/stability, settle disputes, and integrate independents. Progress {}.",
+                progress
+            ),
+            _ => format!("Objective progress {}.", progress),
+        }
+    }
+
+    pub fn wilderness_modifier(&self, data: &GameData) -> i32 {
+        data.campaign_balance
+            .difficulty(&self.selected_difficulty_id)
+            .map(|preset| preset.wilderness_modifier)
+            .unwrap_or(0)
     }
 
     pub fn select_ambition(
@@ -359,16 +400,68 @@ impl GameSession {
     }
 
     fn record_last_season_summary(&mut self, report: &SeasonAdvanceReport) {
-        self.last_season_summary = format!(
-            "Season summary: settlements produced and consumed local resources; food shortages {}; road warnings {}; isolated settlements {}; events {}; rival actions {}; independent requests {}; wilderness changes {}.",
-            report.food_shortages,
-            report.road_warnings,
-            report.isolated_settlements,
-            report.events_triggered,
-            report.rival_actions,
-            report.independent_requests,
-            report.wilderness_changes
-        );
+        let mut rows = vec![SeasonSummaryRow {
+            label: "Production".to_owned(),
+            detail: format!(
+                "+{} food, +{} timber, +{} stone, +{} wealth; consumed {} food; population {:+}.",
+                report.produced.food,
+                report.produced.timber,
+                report.produced.stone,
+                report.produced.wealth,
+                report.food_consumed,
+                report.population_delta
+            ),
+            site_id: None,
+            tag: "player_progress".to_owned(),
+        }];
+        if report.food_shortages > 0 || report.settlements_lost > 0 {
+            rows.push(SeasonSummaryRow {
+                label: "Warnings".to_owned(),
+                detail: format!(
+                    "{} food shortages; {} settlements lost.",
+                    report.food_shortages, report.settlements_lost
+                ),
+                site_id: report
+                    .first_food_shortage_site_id
+                    .clone()
+                    .or_else(|| report.first_lost_site_id.clone()),
+                tag: "crisis".to_owned(),
+            });
+        }
+        rows.push(SeasonSummaryRow {
+            label: "Roads".to_owned(),
+            detail: format!(
+                "{} road warnings; {} isolated settlements; unmanaged strain {}.",
+                report.road_warnings, report.isolated_settlements, report.unmanaged_strain
+            ),
+            site_id: None,
+            tag: "road".to_owned(),
+        });
+        rows.push(SeasonSummaryRow {
+            label: "Issues".to_owned(),
+            detail: format!(
+                "{} events triggered; {} issue follow-ups.",
+                report.events_triggered, report.issues_escalated
+            ),
+            site_id: None,
+            tag: "crisis".to_owned(),
+        });
+        rows.push(SeasonSummaryRow {
+            label: "World Pressure".to_owned(),
+            detail: format!(
+                "{} rival actions; {} independent requests; {} wilderness changes.",
+                report.rival_actions, report.independent_requests, report.wilderness_changes
+            ),
+            site_id: None,
+            tag: "faction".to_owned(),
+        });
+
+        self.last_season_summary = rows
+            .iter()
+            .map(|row| format!("{}: {}", row.label, row.detail))
+            .collect::<Vec<_>>()
+            .join(" ");
+        self.last_season_rows = rows;
     }
 
     fn build_endgame_summary(&self, data: &GameData) -> EndgameSummary {
@@ -562,26 +655,61 @@ fn chronicle_years(session: &GameSession) -> (u32, u32) {
 
 fn build_arc_labels(session: &GameSession) -> Vec<String> {
     let mut arcs = Vec::new();
-    if !session.completed_projects.is_empty() {
+    let mut site_mentions: HashMap<String, usize> = HashMap::new();
+    for entry in &session.chronicle {
+        if let Some(site_id) = &entry.site_id {
+            *site_mentions.entry(site_id.clone()).or_insert(0) += 1;
+        }
+    }
+
+    if session
+        .chronicle
+        .iter()
+        .any(|entry| entry.tag == "settlement" || entry.tag == "road")
+        && site_mentions.values().any(|mentions| *mentions >= 2)
+    {
+        arcs.push("Settlement Rise".to_owned());
+    }
+    if !session.completed_projects.is_empty()
+        || session
+            .chronicle
+            .iter()
+            .any(|entry| entry.tag == "ambition" || entry.tag == "project")
+    {
         arcs.push("Ambition and Projects".to_owned());
     }
-    if !session.active_institutions.is_empty() {
+    if !session.active_institutions.is_empty()
+        || session
+            .chronicle
+            .iter()
+            .any(|entry| entry.tag == "institution")
+    {
         arcs.push("Institutions".to_owned());
+    }
+    if session
+        .chronicle
+        .iter()
+        .any(|entry| entry.tag == "crisis" || entry.tag == "wilderness")
+    {
+        arcs.push("Frontier Trial".to_owned());
     }
     if session
         .independent_settlements
         .iter()
         .any(|independent| independent.integration_progress > 0)
+        || session
+            .chronicle
+            .iter()
+            .any(|entry| entry.tag == "independent")
     {
         arcs.push("Integration".to_owned());
     }
-    if !session.rival_faction.action_log.is_empty() {
+    if !session.rival_faction.action_log.is_empty()
+        || session.chronicle.iter().any(|entry| entry.tag == "faction")
+    {
         arcs.push("Frontier Rivalry".to_owned());
     }
-    if arcs.len() < 2 {
-        arcs.push("Settlement Rise".to_owned());
-        arcs.push("Frontier Trial".to_owned());
-    }
+    arcs.dedup();
     arcs.truncate(4);
     arcs
 }
@@ -589,74 +717,5 @@ fn build_arc_labels(session: &GameSession) -> Vec<String> {
 fn add_unique_tag(tags: &mut Vec<String>, tag: &str) {
     if !tags.iter().any(|existing| existing == tag) {
         tags.push(tag.to_owned());
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::state::GameSession;
-
-    fn test_data() -> GameData {
-        GameData::load().unwrap()
-    }
-
-    fn resolve_pending_with_first_choice(session: &mut GameSession, data: &GameData) {
-        if let Some(template) = session.pending_event_template(data) {
-            if let Some(choice) = template.choices.first() {
-                let choice_id = choice.id.clone();
-                let _ = session.resolve_pending_event_choice(data, &choice_id);
-            }
-        }
-    }
-
-    #[test]
-    fn ambition_project_and_institution_flow_work() {
-        let data = test_data();
-        let mut session = GameSession::new(&data);
-        session.select_ambition(&data, "breadbasket").unwrap();
-        session.complete_project(&data, "expand_granaries").unwrap();
-        assert!(session.ambition_progress(&data, "breadbasket") > 0);
-    }
-
-    #[test]
-    fn campaign_generates_endgame_summary_at_turn_limit() {
-        let data = test_data();
-        let mut session = GameSession::new(&data);
-        session.clock.turn = 80;
-        let report = SeasonAdvanceReport::default();
-        let campaign_report = session.advance_campaign_systems(&data, &report);
-        assert!(campaign_report.campaign_finished);
-        assert!(session.endgame_summary.is_some());
-    }
-
-    #[test]
-    fn thirty_turn_validation_exercises_events_and_factions() {
-        let data = test_data();
-        let mut session = GameSession::new(&data);
-        assert!(session.select_site(&data, "lowmeadow"));
-        session.found_selected_camp(&data).unwrap();
-
-        for _ in 0..30 {
-            resolve_pending_with_first_choice(&mut session, &data);
-            session.advance_season(&data);
-        }
-
-        assert!(session.event_history.len() >= 3);
-        assert!(!session.rival_faction.action_log.is_empty());
-        assert!(session.chronicle.len() >= 5);
-    }
-
-    #[test]
-    fn full_campaign_validation_reaches_end_summary() {
-        let data = test_data();
-        let mut session = GameSession::new(&data);
-
-        for _ in 0..80 {
-            resolve_pending_with_first_choice(&mut session, &data);
-            session.advance_season(&data);
-        }
-
-        assert!(session.endgame_summary.is_some());
     }
 }

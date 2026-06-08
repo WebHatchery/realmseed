@@ -3,90 +3,384 @@
     "id": "food_crisis",
     "family_type": "settlement",
     "trigger_kind": "low_food",
-    "opening_template_id": "food_crisis_opening",
-    "followup_template_id": "food_crisis_followup",
+    "opening_template_id": "food_crisis_opening_a",
+    "followup_template_id": "food_crisis_followup_a",
     "resolution_template_id": "food_crisis_resolution",
-    "severity_levels": [1, 2, 3],
-    "local_cooldown": 12,
-    "global_cooldown": 3,
+    "opening_template_ids": [
+      "food_crisis_opening_a",
+      "food_crisis_opening_b"
+    ],
+    "followup_template_ids": [
+      "food_crisis_followup_a",
+      "food_crisis_followup_b"
+    ],
+    "resolution_template_ids": [
+      "food_crisis_resolution"
+    ],
+    "severity_levels": [
+      1,
+      2,
+      3
+    ],
+    "local_cooldown": 10,
+    "global_cooldown": 2,
     "max_per_target": 1,
-    "memory_tags": ["remembers_hunger"],
+    "memory_tags": [
+      "remembers_hunger"
+    ],
     "opening_chronicle_template_id": "event_food_crisis_opened",
     "resolution_chronicle_template_id": "event_food_crisis_resolved"
+  },
+  {
+    "id": "settlement_unrest",
+    "family_type": "settlement",
+    "trigger_kind": "low_loyalty",
+    "opening_template_id": "settlement_unrest_opening_a",
+    "followup_template_id": "settlement_unrest_followup_a",
+    "resolution_template_id": "settlement_unrest_resolution",
+    "opening_template_ids": [
+      "settlement_unrest_opening_a",
+      "settlement_unrest_opening_b"
+    ],
+    "followup_template_ids": [
+      "settlement_unrest_followup_a",
+      "settlement_unrest_followup_b"
+    ],
+    "resolution_template_ids": [
+      "settlement_unrest_resolution"
+    ],
+    "severity_levels": [
+      1,
+      2,
+      3
+    ],
+    "local_cooldown": 10,
+    "global_cooldown": 2,
+    "max_per_target": 1,
+    "memory_tags": [
+      "civic_grievance"
+    ],
+    "opening_chronicle_template_id": "event_settlement_unrest_opened",
+    "resolution_chronicle_template_id": "event_settlement_unrest_resolved"
   },
   {
     "id": "road_trouble",
     "family_type": "route",
     "trigger_kind": "road_warning",
-    "opening_template_id": "road_trouble_opening",
-    "followup_template_id": "road_trouble_followup",
+    "opening_template_id": "road_trouble_opening_a",
+    "followup_template_id": "road_trouble_followup_a",
     "resolution_template_id": "road_trouble_resolution",
-    "severity_levels": [1, 2, 3],
+    "opening_template_ids": [
+      "road_trouble_opening_a",
+      "road_trouble_opening_b"
+    ],
+    "followup_template_ids": [
+      "road_trouble_followup_a",
+      "road_trouble_followup_b"
+    ],
+    "resolution_template_ids": [
+      "road_trouble_resolution"
+    ],
+    "severity_levels": [
+      1,
+      2,
+      3
+    ],
     "local_cooldown": 10,
-    "global_cooldown": 3,
+    "global_cooldown": 2,
     "max_per_target": 1,
-    "memory_tags": ["road_trouble"],
+    "memory_tags": [
+      "road_trouble"
+    ],
     "opening_chronicle_template_id": "event_road_trouble_opened",
     "resolution_chronicle_template_id": "event_road_trouble_resolved"
   },
   {
-    "id": "isolation",
+    "id": "bandit_pressure",
     "family_type": "settlement",
-    "trigger_kind": "isolated",
-    "opening_template_id": "isolation_opening",
-    "followup_template_id": "isolation_followup",
-    "resolution_template_id": "isolation_resolution",
-    "severity_levels": [1, 2, 3],
-    "local_cooldown": 12,
-    "global_cooldown": 3,
+    "trigger_kind": "bandit_pressure",
+    "opening_template_id": "bandit_pressure_opening_a",
+    "followup_template_id": "bandit_pressure_followup_a",
+    "resolution_template_id": "bandit_pressure_resolution",
+    "opening_template_ids": [
+      "bandit_pressure_opening_a",
+      "bandit_pressure_opening_b"
+    ],
+    "followup_template_ids": [
+      "bandit_pressure_followup_a",
+      "bandit_pressure_followup_b"
+    ],
+    "resolution_template_ids": [
+      "bandit_pressure_resolution"
+    ],
+    "severity_levels": [
+      1,
+      2,
+      3
+    ],
+    "local_cooldown": 10,
+    "global_cooldown": 2,
     "max_per_target": 1,
-    "memory_tags": ["isolated_memory"],
-    "opening_chronicle_template_id": "event_isolation_opened",
-    "resolution_chronicle_template_id": "event_isolation_resolved"
+    "memory_tags": [
+      "bandit_memory"
+    ],
+    "opening_chronicle_template_id": "event_bandit_pressure_opened",
+    "resolution_chronicle_template_id": "event_bandit_pressure_resolved"
   },
   {
-    "id": "market_dispute",
+    "id": "border_tension",
     "family_type": "settlement",
-    "trigger_kind": "trade_pressure",
-    "opening_template_id": "market_dispute_opening",
-    "followup_template_id": "market_dispute_followup",
-    "resolution_template_id": "market_dispute_resolution",
-    "severity_levels": [1, 2, 3],
-    "local_cooldown": 12,
-    "global_cooldown": 3,
+    "trigger_kind": "border_tension",
+    "opening_template_id": "border_tension_opening_a",
+    "followup_template_id": "border_tension_followup_a",
+    "resolution_template_id": "border_tension_resolution",
+    "opening_template_ids": [
+      "border_tension_opening_a",
+      "border_tension_opening_b"
+    ],
+    "followup_template_ids": [
+      "border_tension_followup_a",
+      "border_tension_followup_b"
+    ],
+    "resolution_template_ids": [
+      "border_tension_resolution"
+    ],
+    "severity_levels": [
+      1,
+      2,
+      3
+    ],
+    "local_cooldown": 10,
+    "global_cooldown": 2,
     "max_per_target": 1,
-    "memory_tags": ["market_memory"],
-    "opening_chronicle_template_id": "event_market_dispute_opened",
-    "resolution_chronicle_template_id": "event_market_dispute_resolved"
+    "memory_tags": [
+      "border_tension"
+    ],
+    "opening_chronicle_template_id": "event_border_tension_opened",
+    "resolution_chronicle_template_id": "event_border_tension_resolved"
+  },
+  {
+    "id": "tax_dispute",
+    "family_type": "settlement",
+    "trigger_kind": "tax_dispute",
+    "opening_template_id": "tax_dispute_opening_a",
+    "followup_template_id": "tax_dispute_followup_a",
+    "resolution_template_id": "tax_dispute_resolution",
+    "opening_template_ids": [
+      "tax_dispute_opening_a",
+      "tax_dispute_opening_b"
+    ],
+    "followup_template_ids": [
+      "tax_dispute_followup_a",
+      "tax_dispute_followup_b"
+    ],
+    "resolution_template_ids": [
+      "tax_dispute_resolution"
+    ],
+    "severity_levels": [
+      1,
+      2,
+      3
+    ],
+    "local_cooldown": 10,
+    "global_cooldown": 2,
+    "max_per_target": 1,
+    "memory_tags": [
+      "tax_grievance"
+    ],
+    "opening_chronicle_template_id": "event_tax_dispute_opened",
+    "resolution_chronicle_template_id": "event_tax_dispute_resolved"
   },
   {
     "id": "migration_wave",
     "family_type": "settlement",
     "trigger_kind": "migration_pressure",
-    "opening_template_id": "migration_wave_opening",
-    "followup_template_id": "migration_wave_followup",
+    "opening_template_id": "migration_wave_opening_a",
+    "followup_template_id": "migration_wave_followup_a",
     "resolution_template_id": "migration_wave_resolution",
-    "severity_levels": [1, 2, 3],
-    "local_cooldown": 12,
-    "global_cooldown": 3,
+    "opening_template_ids": [
+      "migration_wave_opening_a",
+      "migration_wave_opening_b"
+    ],
+    "followup_template_ids": [
+      "migration_wave_followup_a",
+      "migration_wave_followup_b"
+    ],
+    "resolution_template_ids": [
+      "migration_wave_resolution"
+    ],
+    "severity_levels": [
+      1,
+      2,
+      3
+    ],
+    "local_cooldown": 10,
+    "global_cooldown": 2,
     "max_per_target": 1,
-    "memory_tags": ["migrant_memory"],
+    "memory_tags": [
+      "migrant_memory"
+    ],
     "opening_chronicle_template_id": "event_migration_wave_opened",
     "resolution_chronicle_template_id": "event_migration_wave_resolved"
   },
   {
-    "id": "civic_unrest",
+    "id": "local_leadership",
     "family_type": "settlement",
-    "trigger_kind": "low_loyalty",
-    "opening_template_id": "civic_unrest_opening",
-    "followup_template_id": "civic_unrest_followup",
-    "resolution_template_id": "civic_unrest_resolution",
-    "severity_levels": [1, 2, 3],
-    "local_cooldown": 12,
-    "global_cooldown": 3,
+    "trigger_kind": "local_leadership",
+    "opening_template_id": "local_leadership_opening_a",
+    "followup_template_id": "local_leadership_followup_a",
+    "resolution_template_id": "local_leadership_resolution",
+    "opening_template_ids": [
+      "local_leadership_opening_a",
+      "local_leadership_opening_b"
+    ],
+    "followup_template_ids": [
+      "local_leadership_followup_a",
+      "local_leadership_followup_b"
+    ],
+    "resolution_template_ids": [
+      "local_leadership_resolution"
+    ],
+    "severity_levels": [
+      1,
+      2,
+      3
+    ],
+    "local_cooldown": 10,
+    "global_cooldown": 2,
     "max_per_target": 1,
-    "memory_tags": ["civic_grievance"],
-    "opening_chronicle_template_id": "event_civic_unrest_opened",
-    "resolution_chronicle_template_id": "event_civic_unrest_resolved"
+    "memory_tags": [
+      "local_leader_memory"
+    ],
+    "opening_chronicle_template_id": "event_local_leadership_opened",
+    "resolution_chronicle_template_id": "event_local_leadership_resolved"
+  },
+  {
+    "id": "resource_boom",
+    "family_type": "settlement",
+    "trigger_kind": "resource_boom",
+    "opening_template_id": "resource_boom_opening_a",
+    "followup_template_id": "resource_boom_followup_a",
+    "resolution_template_id": "resource_boom_resolution",
+    "opening_template_ids": [
+      "resource_boom_opening_a",
+      "resource_boom_opening_b"
+    ],
+    "followup_template_ids": [
+      "resource_boom_followup_a",
+      "resource_boom_followup_b"
+    ],
+    "resolution_template_ids": [
+      "resource_boom_resolution"
+    ],
+    "severity_levels": [
+      1,
+      2,
+      3
+    ],
+    "local_cooldown": 10,
+    "global_cooldown": 2,
+    "max_per_target": 1,
+    "memory_tags": [
+      "boom_memory"
+    ],
+    "opening_chronicle_template_id": "event_resource_boom_opened",
+    "resolution_chronicle_template_id": "event_resource_boom_resolved"
+  },
+  {
+    "id": "disaster",
+    "family_type": "settlement",
+    "trigger_kind": "disaster",
+    "opening_template_id": "disaster_opening_a",
+    "followup_template_id": "disaster_followup_a",
+    "resolution_template_id": "disaster_resolution",
+    "opening_template_ids": [
+      "disaster_opening_a",
+      "disaster_opening_b"
+    ],
+    "followup_template_ids": [
+      "disaster_followup_a",
+      "disaster_followup_b"
+    ],
+    "resolution_template_ids": [
+      "disaster_resolution"
+    ],
+    "severity_levels": [
+      1,
+      2,
+      3
+    ],
+    "local_cooldown": 10,
+    "global_cooldown": 2,
+    "max_per_target": 1,
+    "memory_tags": [
+      "disaster_memory"
+    ],
+    "opening_chronicle_template_id": "event_disaster_opened",
+    "resolution_chronicle_template_id": "event_disaster_resolved"
+  },
+  {
+    "id": "independent_request",
+    "family_type": "settlement",
+    "trigger_kind": "independent_request",
+    "opening_template_id": "independent_request_opening_a",
+    "followup_template_id": "independent_request_followup_a",
+    "resolution_template_id": "independent_request_resolution",
+    "opening_template_ids": [
+      "independent_request_opening_a",
+      "independent_request_opening_b"
+    ],
+    "followup_template_ids": [
+      "independent_request_followup_a",
+      "independent_request_followup_b"
+    ],
+    "resolution_template_ids": [
+      "independent_request_resolution"
+    ],
+    "severity_levels": [
+      1,
+      2,
+      3
+    ],
+    "local_cooldown": 10,
+    "global_cooldown": 2,
+    "max_per_target": 1,
+    "memory_tags": [
+      "independent_memory"
+    ],
+    "opening_chronicle_template_id": "event_independent_request_opened",
+    "resolution_chronicle_template_id": "event_independent_request_resolved"
+  },
+  {
+    "id": "rival_faction_move",
+    "family_type": "settlement",
+    "trigger_kind": "rival_move",
+    "opening_template_id": "rival_faction_move_opening_a",
+    "followup_template_id": "rival_faction_move_followup_a",
+    "resolution_template_id": "rival_faction_move_resolution",
+    "opening_template_ids": [
+      "rival_faction_move_opening_a",
+      "rival_faction_move_opening_b"
+    ],
+    "followup_template_ids": [
+      "rival_faction_move_followup_a",
+      "rival_faction_move_followup_b"
+    ],
+    "resolution_template_ids": [
+      "rival_faction_move_resolution"
+    ],
+    "severity_levels": [
+      1,
+      2,
+      3
+    ],
+    "local_cooldown": 10,
+    "global_cooldown": 2,
+    "max_per_target": 1,
+    "memory_tags": [
+      "rival_move_memory"
+    ],
+    "opening_chronicle_template_id": "event_rival_faction_move_opened",
+    "resolution_chronicle_template_id": "event_rival_faction_move_resolved"
   }
 ]

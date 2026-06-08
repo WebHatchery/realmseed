@@ -46,6 +46,12 @@ pub struct InstitutionDef {
 }
 
 impl CampaignBalance {
+    pub fn difficulty(&self, id: &str) -> Option<&DifficultyPresetDef> {
+        self.difficulty_presets
+            .iter()
+            .find(|difficulty| difficulty.id == id)
+    }
+
     pub fn ambition(&self, id: &str) -> Option<&AmbitionDef> {
         self.ambitions.iter().find(|ambition| ambition.id == id)
     }

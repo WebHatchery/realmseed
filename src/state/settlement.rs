@@ -130,6 +130,9 @@ impl SettlementActionStatus {
 pub struct SeasonAdvanceReport {
     pub food_shortages: usize,
     pub settlements_lost: usize,
+    pub produced: ResourceStock,
+    pub food_consumed: i32,
+    pub population_delta: i32,
     pub isolated_settlements: usize,
     pub road_warnings: usize,
     pub unmanaged_strain: i32,
@@ -139,6 +142,8 @@ pub struct SeasonAdvanceReport {
     pub independent_requests: usize,
     pub wilderness_changes: usize,
     pub campaign_finished: bool,
+    pub first_food_shortage_site_id: Option<String>,
+    pub first_lost_site_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -146,6 +151,9 @@ struct SettlementSeasonOutcome {
     started_famine: bool,
     food_shortage: bool,
     lost: bool,
+    produced: ResourceStock,
+    food_consumed: i32,
+    population_delta: i32,
 }
 
 impl GameSession {
@@ -463,14 +471,23 @@ impl GameSession {
             let outcome = apply_season_to_settlement(settlement, data);
             if outcome.food_shortage {
                 report.food_shortages += 1;
+                if report.first_food_shortage_site_id.is_none() {
+                    report.first_food_shortage_site_id = Some(settlement.location_id.clone());
+                }
             }
             if outcome.started_famine {
                 chronicle_events.push(("settlement_starvation", settlement.location_id.clone()));
             }
             if outcome.lost {
                 report.settlements_lost += 1;
+                if report.first_lost_site_id.is_none() {
+                    report.first_lost_site_id = Some(settlement.location_id.clone());
+                }
                 chronicle_events.push(("settlement_lost", settlement.location_id.clone()));
             }
+            report.produced.add(outcome.produced);
+            report.food_consumed += outcome.food_consumed;
+            report.population_delta += outcome.population_delta;
         }
 
         self.council_actions_remaining = data.settlement_balance.council_actions_per_season;
@@ -519,10 +536,13 @@ fn apply_season_to_settlement(
     }
 
     let mut outcome = SettlementSeasonOutcome::default();
+    let starting_population = settlement.population;
     let production = production_for(settlement, data);
+    outcome.produced = production;
     settlement.stored.add(production);
 
     let consumption = food_consumption_for(settlement, data);
+    outcome.food_consumed = consumption;
     settlement.stored.food -= consumption;
     let had_shortage = settlement.stored.food < 0;
     if had_shortage {
@@ -555,6 +575,7 @@ fn apply_season_to_settlement(
         outcome.lost = true;
     }
 
+    outcome.population_delta = settlement.population - starting_population;
     outcome
 }
 

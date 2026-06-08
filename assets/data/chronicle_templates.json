@@ -3,222 +3,672 @@
     "id": "campaign_start",
     "title": "The Charter Is Raised",
     "body": "In Spring of Year {year}, the council raised its first banners at {site}. Eight known places formed the first map of the realm.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "settlement"
   },
   {
     "id": "site_scouted",
     "title": "{site} Enters the Map",
     "body": "Scouts returned from {site} in {season} of Year {year}, adding {region} to the council's living map.",
-    "importance": "notable"
+    "importance": "notable",
+    "tag": "settlement"
   },
   {
     "id": "new_year",
     "title": "A New Year Opens",
     "body": "Year {year} began with the council still measuring promise against distance.",
-    "importance": "minor"
+    "importance": "minor",
+    "tag": "memory"
   },
   {
     "id": "settlement_founded",
     "title": "{site} Is Founded",
     "body": "In {season} of Year {year}, settlers raised a charter camp at {site}, carrying stores and hard promises into {region}.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "settlement"
   },
   {
     "id": "settlement_upgraded",
     "title": "{site} Grows",
     "body": "{site} crossed a new threshold in {season} of Year {year}, proving that a frontier holding could become something sturdier.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "settlement"
   },
   {
     "id": "settlement_starvation",
     "title": "Hunger Reaches {site}",
     "body": "Food stores failed at {site} in {season} of Year {year}. Stability and loyalty began to bend under empty granaries.",
-    "importance": "notable"
+    "importance": "notable",
+    "tag": "crisis"
   },
   {
     "id": "settlement_lost",
     "title": "{site} Is Abandoned",
     "body": "Neglect and hunger broke {site} in {season} of Year {year}. The chronicle marked the place as a warning to the realm.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "crisis"
   },
   {
     "id": "road_built",
     "title": "A First Path Is Funded",
     "body": "In {season} of Year {year}, the council funded a new path near {site}, turning a map line into a working promise.",
-    "importance": "notable"
+    "importance": "notable",
+    "tag": "road"
   },
   {
     "id": "road_upgraded",
     "title": "A Road Is Strengthened",
     "body": "Workers improved the route near {site} in {season} of Year {year}, giving the capital network a sturdier reach.",
-    "importance": "notable"
+    "importance": "notable",
+    "tag": "road"
   },
   {
     "id": "road_bridge_washout",
     "title": "A Bridge Washes Out",
     "body": "Spring water damaged the route near {site} in Year {year}, slowing supply until repairs could be organized.",
-    "importance": "minor"
+    "importance": "minor",
+    "tag": "road"
   },
   {
     "id": "road_caravan_attacked",
     "title": "A Caravan Is Attacked",
     "body": "Trouble found the road near {site} in {season} of Year {year}; traders began asking whether the council could protect its own routes.",
-    "importance": "minor"
+    "importance": "minor",
+    "tag": "road"
   },
   {
     "id": "road_winter_blockage",
     "title": "Winter Blocks a Path",
     "body": "Snow and neglect blocked the path near {site} in Winter of Year {year}, cutting into the realm's supply confidence.",
-    "importance": "minor"
+    "importance": "minor",
+    "tag": "road"
   },
   {
     "id": "settlement_isolated",
     "title": "{site} Feels Isolated",
     "body": "{site} suffered from weak road supply in {season} of Year {year}. Loyalty and stability began to drift away from the capital.",
-    "importance": "notable"
+    "importance": "notable",
+    "tag": "settlement"
   },
   {
     "id": "regional_project_completed",
     "title": "Trail Wardens Take Post",
     "body": "The council completed a regional patrol project around {site} in {season} of Year {year}, reducing future road trouble and frontier danger.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "project"
   },
   {
     "id": "administrative_backlog",
     "title": "The Council Falls Behind",
     "body": "By {season} of Year {year}, petitions and road duties outpaced the council's reach. Unmanaged strain became part of the realm's story.",
-    "importance": "notable"
+    "importance": "notable",
+    "tag": "crisis"
   },
   {
     "id": "event_food_crisis_opened",
     "title": "{site} Faces Hunger",
     "body": "A food warning at {site} entered the council ledger in {season} of Year {year}.",
-    "importance": "notable"
+    "importance": "notable",
+    "tag": "crisis"
   },
   {
     "id": "event_food_crisis_resolved",
     "title": "{site} Survives Hunger",
     "body": "The food crisis at {site} eased in {season} of Year {year}, leaving memories of the council's answer.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "crisis"
   },
   {
     "id": "event_road_trouble_opened",
     "title": "Road Trouble Near {site}",
     "body": "Route trouble near {site} became a council matter in {season} of Year {year}.",
-    "importance": "notable"
+    "importance": "notable",
+    "tag": "road"
   },
   {
     "id": "event_road_trouble_resolved",
     "title": "Road Order Restored",
     "body": "The troubled route near {site} returned to order in {season} of Year {year}.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "road"
   },
   {
     "id": "event_isolation_opened",
     "title": "{site} Demands Attention",
     "body": "{site} pressed the council over its isolation in {season} of Year {year}.",
-    "importance": "notable"
+    "importance": "notable",
+    "tag": "crisis"
   },
   {
     "id": "event_isolation_resolved",
     "title": "{site} Reaffirms the Charter",
     "body": "The isolation grievance at {site} softened in {season} of Year {year}.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "crisis"
   },
   {
     "id": "event_market_dispute_opened",
     "title": "{site} Argues Market Rights",
     "body": "Market rights at {site} became a public dispute in {season} of Year {year}.",
-    "importance": "notable"
+    "importance": "notable",
+    "tag": "crisis"
   },
   {
     "id": "event_market_dispute_resolved",
     "title": "{site} Signs Market Terms",
     "body": "The market dispute at {site} settled into a new charter memory in {season} of Year {year}.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "crisis"
   },
   {
     "id": "event_migration_wave_opened",
     "title": "Migrants Reach {site}",
     "body": "Families seeking land reached {site} in {season} of Year {year}.",
-    "importance": "notable"
+    "importance": "notable",
+    "tag": "crisis"
   },
   {
     "id": "event_migration_wave_resolved",
     "title": "{site} Adds New Names",
     "body": "The migrant families near {site} joined the settlement rolls in {season} of Year {year}.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "crisis"
   },
   {
     "id": "event_civic_unrest_opened",
     "title": "{site} Questions the Council",
     "body": "Civic unrest at {site} became visible in {season} of Year {year}.",
-    "importance": "notable"
+    "importance": "notable",
+    "tag": "crisis"
   },
   {
     "id": "event_civic_unrest_resolved",
     "title": "{site} Accepts a Compact",
     "body": "The council settled civic demands at {site} in {season} of Year {year}.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "crisis"
   },
   {
     "id": "rival_first_move",
     "title": "The Ashthorn Clan Moves",
     "body": "The rival clan made its first visible move near {site} in {season} of Year {year}.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "faction"
   },
   {
     "id": "rival_major_raid",
     "title": "Ashthorn Raiders Strike {site}",
     "body": "A major raid hit {site} in {season} of Year {year}, exposing weaknesses in defence, loyalty, or road supply.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "faction"
   },
   {
     "id": "independent_request",
     "title": "{site} Requests Aid",
     "body": "Independent voices at {site} asked the charter for help in {season} of Year {year}, wary of rival pressure.",
-    "importance": "notable"
+    "importance": "notable",
+    "tag": "independent"
   },
   {
     "id": "independent_integration_started",
     "title": "{site} Begins Integration",
     "body": "{site} began formal integration talks with the charter in {season} of Year {year}.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "independent"
   },
   {
     "id": "independent_integrated",
     "title": "{site} Joins the Charter",
     "body": "{site} joined the realm in {season} of Year {year}, turning independence into a charter bond.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "independent"
   },
   {
     "id": "wilderness_escalation",
     "title": "Wilderness Pressure Rises",
     "body": "The wilderness around {site} became dangerous in {season} of Year {year}, threatening roads and frontier confidence.",
-    "importance": "notable"
+    "importance": "notable",
+    "tag": "wilderness"
   },
   {
     "id": "wilderness_recovery",
     "title": "The Frontier Calms",
     "body": "Pressure around {site} receded in {season} of Year {year}, helped by roads, patrols, or fortified settlements.",
-    "importance": "notable"
+    "importance": "notable",
+    "tag": "wilderness"
   },
   {
     "id": "ambition_declared",
     "title": "The Council Declares an Ambition",
     "body": "In {season} of Year {year}, the council gave the realm a deliberate direction from {site}.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "ambition"
   },
   {
     "id": "project_completed",
     "title": "A Project Changes {site}",
     "body": "A proactive charter project was completed at or near {site} in {season} of Year {year}.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "project"
   },
   {
     "id": "institution_unlocked",
     "title": "An Institution Takes Root",
     "body": "The council established a lasting office near {site} in {season} of Year {year}, reducing repeated pressure across the realm.",
-    "importance": "major"
+    "importance": "major",
+    "tag": "institution"
+  },
+  {
+    "id": "event_food_crisis_turning_point",
+    "title": "Food Shortage Turns",
+    "body": "Food Shortage became a turning point for {site} and {region}.",
+    "importance": "notable",
+    "tag": "crisis"
+  },
+  {
+    "id": "event_food_crisis_neglect",
+    "title": "Food Shortage Neglected",
+    "body": "Neglect around food shortage left {site} wary of the charter.",
+    "importance": "notable",
+    "tag": "crisis"
+  },
+  {
+    "id": "event_food_crisis_legacy",
+    "title": "Food Shortage Legacy",
+    "body": "{site} carried the legacy of food shortage into later years.",
+    "importance": "major",
+    "tag": "crisis"
+  },
+  {
+    "id": "event_settlement_unrest_opened",
+    "title": "Settlement Unrest at {site}",
+    "body": "Settlement Unrest tested {site} in {season} of Year {year}.",
+    "importance": "notable",
+    "tag": "crisis"
+  },
+  {
+    "id": "event_settlement_unrest_resolved",
+    "title": "Settlement Unrest Answered at {site}",
+    "body": "The council's answer to settlement unrest at {site} shaped local memory in {season} of Year {year}.",
+    "importance": "major",
+    "tag": "crisis"
+  },
+  {
+    "id": "event_settlement_unrest_turning_point",
+    "title": "Settlement Unrest Turns",
+    "body": "Settlement Unrest became a turning point for {site} and {region}.",
+    "importance": "notable",
+    "tag": "crisis"
+  },
+  {
+    "id": "event_settlement_unrest_neglect",
+    "title": "Settlement Unrest Neglected",
+    "body": "Neglect around settlement unrest left {site} wary of the charter.",
+    "importance": "notable",
+    "tag": "crisis"
+  },
+  {
+    "id": "event_settlement_unrest_legacy",
+    "title": "Settlement Unrest Legacy",
+    "body": "{site} carried the legacy of settlement unrest into later years.",
+    "importance": "major",
+    "tag": "crisis"
+  },
+  {
+    "id": "event_road_trouble_turning_point",
+    "title": "Road Trouble Turns",
+    "body": "Road Trouble became a turning point for {site} and {region}.",
+    "importance": "notable",
+    "tag": "road"
+  },
+  {
+    "id": "event_road_trouble_neglect",
+    "title": "Road Trouble Neglected",
+    "body": "Neglect around road trouble left {site} wary of the charter.",
+    "importance": "notable",
+    "tag": "road"
+  },
+  {
+    "id": "event_road_trouble_legacy",
+    "title": "Road Trouble Legacy",
+    "body": "{site} carried the legacy of road trouble into later years.",
+    "importance": "major",
+    "tag": "road"
+  },
+  {
+    "id": "event_bandit_pressure_opened",
+    "title": "Bandit Pressure at {site}",
+    "body": "Bandit Pressure tested {site} in {season} of Year {year}.",
+    "importance": "notable",
+    "tag": "wilderness"
+  },
+  {
+    "id": "event_bandit_pressure_resolved",
+    "title": "Bandit Pressure Answered at {site}",
+    "body": "The council's answer to bandit pressure at {site} shaped local memory in {season} of Year {year}.",
+    "importance": "major",
+    "tag": "wilderness"
+  },
+  {
+    "id": "event_bandit_pressure_turning_point",
+    "title": "Bandit Pressure Turns",
+    "body": "Bandit Pressure became a turning point for {site} and {region}.",
+    "importance": "notable",
+    "tag": "wilderness"
+  },
+  {
+    "id": "event_bandit_pressure_neglect",
+    "title": "Bandit Pressure Neglected",
+    "body": "Neglect around bandit pressure left {site} wary of the charter.",
+    "importance": "notable",
+    "tag": "wilderness"
+  },
+  {
+    "id": "event_bandit_pressure_legacy",
+    "title": "Bandit Pressure Legacy",
+    "body": "{site} carried the legacy of bandit pressure into later years.",
+    "importance": "major",
+    "tag": "wilderness"
+  },
+  {
+    "id": "event_border_tension_opened",
+    "title": "Border Tension at {site}",
+    "body": "Border Tension tested {site} in {season} of Year {year}.",
+    "importance": "notable",
+    "tag": "faction"
+  },
+  {
+    "id": "event_border_tension_resolved",
+    "title": "Border Tension Answered at {site}",
+    "body": "The council's answer to border tension at {site} shaped local memory in {season} of Year {year}.",
+    "importance": "major",
+    "tag": "faction"
+  },
+  {
+    "id": "event_border_tension_turning_point",
+    "title": "Border Tension Turns",
+    "body": "Border Tension became a turning point for {site} and {region}.",
+    "importance": "notable",
+    "tag": "faction"
+  },
+  {
+    "id": "event_border_tension_neglect",
+    "title": "Border Tension Neglected",
+    "body": "Neglect around border tension left {site} wary of the charter.",
+    "importance": "notable",
+    "tag": "faction"
+  },
+  {
+    "id": "event_border_tension_legacy",
+    "title": "Border Tension Legacy",
+    "body": "{site} carried the legacy of border tension into later years.",
+    "importance": "major",
+    "tag": "faction"
+  },
+  {
+    "id": "event_tax_dispute_opened",
+    "title": "Tax Dispute at {site}",
+    "body": "Tax Dispute tested {site} in {season} of Year {year}.",
+    "importance": "notable",
+    "tag": "crisis"
+  },
+  {
+    "id": "event_tax_dispute_resolved",
+    "title": "Tax Dispute Answered at {site}",
+    "body": "The council's answer to tax dispute at {site} shaped local memory in {season} of Year {year}.",
+    "importance": "major",
+    "tag": "crisis"
+  },
+  {
+    "id": "event_tax_dispute_turning_point",
+    "title": "Tax Dispute Turns",
+    "body": "Tax Dispute became a turning point for {site} and {region}.",
+    "importance": "notable",
+    "tag": "crisis"
+  },
+  {
+    "id": "event_tax_dispute_neglect",
+    "title": "Tax Dispute Neglected",
+    "body": "Neglect around tax dispute left {site} wary of the charter.",
+    "importance": "notable",
+    "tag": "crisis"
+  },
+  {
+    "id": "event_tax_dispute_legacy",
+    "title": "Tax Dispute Legacy",
+    "body": "{site} carried the legacy of tax dispute into later years.",
+    "importance": "major",
+    "tag": "crisis"
+  },
+  {
+    "id": "event_migration_wave_turning_point",
+    "title": "Migration Turns",
+    "body": "Migration became a turning point for {site} and {region}.",
+    "importance": "notable",
+    "tag": "settlement"
+  },
+  {
+    "id": "event_migration_wave_neglect",
+    "title": "Migration Neglected",
+    "body": "Neglect around migration left {site} wary of the charter.",
+    "importance": "notable",
+    "tag": "settlement"
+  },
+  {
+    "id": "event_migration_wave_legacy",
+    "title": "Migration Legacy",
+    "body": "{site} carried the legacy of migration into later years.",
+    "importance": "major",
+    "tag": "settlement"
+  },
+  {
+    "id": "event_local_leadership_opened",
+    "title": "Local Leadership at {site}",
+    "body": "Local Leadership tested {site} in {season} of Year {year}.",
+    "importance": "notable",
+    "tag": "settlement"
+  },
+  {
+    "id": "event_local_leadership_resolved",
+    "title": "Local Leadership Answered at {site}",
+    "body": "The council's answer to local leadership at {site} shaped local memory in {season} of Year {year}.",
+    "importance": "major",
+    "tag": "settlement"
+  },
+  {
+    "id": "event_local_leadership_turning_point",
+    "title": "Local Leadership Turns",
+    "body": "Local Leadership became a turning point for {site} and {region}.",
+    "importance": "notable",
+    "tag": "settlement"
+  },
+  {
+    "id": "event_local_leadership_neglect",
+    "title": "Local Leadership Neglected",
+    "body": "Neglect around local leadership left {site} wary of the charter.",
+    "importance": "notable",
+    "tag": "settlement"
+  },
+  {
+    "id": "event_local_leadership_legacy",
+    "title": "Local Leadership Legacy",
+    "body": "{site} carried the legacy of local leadership into later years.",
+    "importance": "major",
+    "tag": "settlement"
+  },
+  {
+    "id": "event_resource_boom_opened",
+    "title": "Resource Boom at {site}",
+    "body": "Resource Boom tested {site} in {season} of Year {year}.",
+    "importance": "notable",
+    "tag": "settlement"
+  },
+  {
+    "id": "event_resource_boom_resolved",
+    "title": "Resource Boom Answered at {site}",
+    "body": "The council's answer to resource boom at {site} shaped local memory in {season} of Year {year}.",
+    "importance": "major",
+    "tag": "settlement"
+  },
+  {
+    "id": "event_resource_boom_turning_point",
+    "title": "Resource Boom Turns",
+    "body": "Resource Boom became a turning point for {site} and {region}.",
+    "importance": "notable",
+    "tag": "settlement"
+  },
+  {
+    "id": "event_resource_boom_neglect",
+    "title": "Resource Boom Neglected",
+    "body": "Neglect around resource boom left {site} wary of the charter.",
+    "importance": "notable",
+    "tag": "settlement"
+  },
+  {
+    "id": "event_resource_boom_legacy",
+    "title": "Resource Boom Legacy",
+    "body": "{site} carried the legacy of resource boom into later years.",
+    "importance": "major",
+    "tag": "settlement"
+  },
+  {
+    "id": "event_disaster_opened",
+    "title": "Disaster at {site}",
+    "body": "Disaster tested {site} in {season} of Year {year}.",
+    "importance": "notable",
+    "tag": "wilderness"
+  },
+  {
+    "id": "event_disaster_resolved",
+    "title": "Disaster Answered at {site}",
+    "body": "The council's answer to disaster at {site} shaped local memory in {season} of Year {year}.",
+    "importance": "major",
+    "tag": "wilderness"
+  },
+  {
+    "id": "event_disaster_turning_point",
+    "title": "Disaster Turns",
+    "body": "Disaster became a turning point for {site} and {region}.",
+    "importance": "notable",
+    "tag": "wilderness"
+  },
+  {
+    "id": "event_disaster_neglect",
+    "title": "Disaster Neglected",
+    "body": "Neglect around disaster left {site} wary of the charter.",
+    "importance": "notable",
+    "tag": "wilderness"
+  },
+  {
+    "id": "event_disaster_legacy",
+    "title": "Disaster Legacy",
+    "body": "{site} carried the legacy of disaster into later years.",
+    "importance": "major",
+    "tag": "wilderness"
+  },
+  {
+    "id": "event_independent_request_opened",
+    "title": "Independent Settlement Request at {site}",
+    "body": "Independent Settlement Request tested {site} in {season} of Year {year}.",
+    "importance": "notable",
+    "tag": "independent"
+  },
+  {
+    "id": "event_independent_request_resolved",
+    "title": "Independent Settlement Request Answered at {site}",
+    "body": "The council's answer to independent settlement request at {site} shaped local memory in {season} of Year {year}.",
+    "importance": "major",
+    "tag": "independent"
+  },
+  {
+    "id": "event_independent_request_turning_point",
+    "title": "Independent Settlement Request Turns",
+    "body": "Independent Settlement Request became a turning point for {site} and {region}.",
+    "importance": "notable",
+    "tag": "independent"
+  },
+  {
+    "id": "event_independent_request_neglect",
+    "title": "Independent Settlement Request Neglected",
+    "body": "Neglect around independent settlement request left {site} wary of the charter.",
+    "importance": "notable",
+    "tag": "independent"
+  },
+  {
+    "id": "event_independent_request_legacy",
+    "title": "Independent Settlement Request Legacy",
+    "body": "{site} carried the legacy of independent settlement request into later years.",
+    "importance": "major",
+    "tag": "independent"
+  },
+  {
+    "id": "event_rival_faction_move_opened",
+    "title": "Rival Faction Move at {site}",
+    "body": "Rival Faction Move tested {site} in {season} of Year {year}.",
+    "importance": "notable",
+    "tag": "faction"
+  },
+  {
+    "id": "event_rival_faction_move_resolved",
+    "title": "Rival Faction Move Answered at {site}",
+    "body": "The council's answer to rival faction move at {site} shaped local memory in {season} of Year {year}.",
+    "importance": "major",
+    "tag": "faction"
+  },
+  {
+    "id": "event_rival_faction_move_turning_point",
+    "title": "Rival Faction Move Turns",
+    "body": "Rival Faction Move became a turning point for {site} and {region}.",
+    "importance": "notable",
+    "tag": "faction"
+  },
+  {
+    "id": "event_rival_faction_move_neglect",
+    "title": "Rival Faction Move Neglected",
+    "body": "Neglect around rival faction move left {site} wary of the charter.",
+    "importance": "notable",
+    "tag": "faction"
+  },
+  {
+    "id": "event_rival_faction_move_legacy",
+    "title": "Rival Faction Move Legacy",
+    "body": "{site} carried the legacy of rival faction move into later years.",
+    "importance": "major",
+    "tag": "faction"
+  },
+  {
+    "id": "independent_protection",
+    "title": "{site} Asks Protection",
+    "body": "{site} asked for protection as rival pressure rose in {season} of Year {year}.",
+    "importance": "notable",
+    "tag": "independent"
+  },
+  {
+    "id": "independent_resists",
+    "title": "{site} Resists Integration",
+    "body": "{site} resisted integration after autonomy and outside pressure hardened local opinion.",
+    "importance": "major",
+    "tag": "independent"
+  },
+  {
+    "id": "independent_joined_rival",
+    "title": "{site} Turns to the Rival",
+    "body": "{site} drifted into rival hands after trust failed and pressure mounted.",
+    "importance": "major",
+    "tag": "independent"
+  },
+  {
+    "id": "rival_road_attack",
+    "title": "Rival Raiders Cut a Road",
+    "body": "A rival raid damaged the road near {site}, proving supply lines could become targets.",
+    "importance": "major",
+    "tag": "faction"
+  },
+  {
+    "id": "rival_close_pass",
+    "title": "A Pass Is Closed",
+    "body": "The rival clan closed a pass near {site}, turning border pressure into a road crisis.",
+    "importance": "major",
+    "tag": "faction"
   }
 ]

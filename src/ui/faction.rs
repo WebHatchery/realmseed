@@ -143,7 +143,17 @@ fn draw_campaign_controls(
             y,
             TextStyle::new(14.0, dark::TEXT).params(),
         );
-        y += 24.0;
+        draw_text_block(
+            &ctx.session.ambition_objective_text(ctx.data, ambition_id),
+            rect.x,
+            y + 4.0,
+            rect.w,
+            30.0,
+            12.0,
+            2.0,
+            dark::TEXT_DIM,
+        );
+        y += 42.0;
     } else {
         let button_w = (rect.w - 12.0) / 3.0;
         for (index, ambition) in ctx.data.campaign_balance.ambitions.iter().enumerate() {
@@ -165,17 +175,46 @@ fn draw_campaign_controls(
         y += 34.0;
     }
 
-    draw_text_block(
-        &ctx.session.last_season_summary,
-        rect.x,
-        y - 8.0,
-        rect.w,
-        42.0,
-        12.0,
-        2.0,
-        dark::TEXT_DIM,
-    );
-    y += 42.0;
+    if ctx.session.last_season_rows.is_empty() {
+        draw_text_block(
+            &ctx.session.last_season_summary,
+            rect.x,
+            y - 8.0,
+            rect.w,
+            34.0,
+            12.0,
+            2.0,
+            dark::TEXT_DIM,
+        );
+        y += 34.0;
+    } else {
+        for row in ctx.session.last_season_rows.iter().take(3) {
+            let label = format!("{}: {}", row.label, row.detail);
+            if let Some(site_id) = &row.site_id {
+                if virtual_button(
+                    Rect::new(rect.x, y - 14.0, rect.w, 22.0),
+                    &label,
+                    true,
+                    ButtonTone::Secondary,
+                    mouse,
+                ) {
+                    actions.push(UiAction::SelectSite(site_id.clone()));
+                }
+            } else {
+                draw_text_block(
+                    &label,
+                    rect.x,
+                    y - 18.0,
+                    rect.w,
+                    22.0,
+                    11.0,
+                    1.0,
+                    dark::TEXT_DIM,
+                );
+            }
+            y += 24.0;
+        }
+    }
 
     let project_w = (rect.w - 12.0) / 3.0;
     for (index, project) in ctx.data.campaign_balance.projects.iter().enumerate() {
