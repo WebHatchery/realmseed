@@ -1,4 +1,4 @@
-//! Macroquad game template wired to macroquad-toolkit.
+//! Realmseed entry point wired to macroquad-toolkit.
 
 use macroquad::prelude::*;
 
@@ -11,7 +11,7 @@ use game::Game;
 
 fn window_conf() -> Conf {
     Conf {
-        window_title: "Game Template".to_owned(),
+        window_title: "Realmseed".to_owned(),
         window_width: ui::LOGICAL_WIDTH as i32,
         window_height: ui::LOGICAL_HEIGHT as i32,
         window_resizable: true,

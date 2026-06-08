@@ -1,212 +1,384 @@
-//! Runtime state, save data, and save migration helpers.
+//! Runtime campaign state, seasonal turns, scouting, and save migration.
 
-use crate::data::{ActionDef, GameConfig};
-use macroquad_toolkit::grid::{
-    calculate_visible_tiles, update_flat_fog_states, FlatGrid, FogState, TilePos,
-};
+use crate::data::{ChronicleTemplateDef, GameData, SiteDef};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashSet;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PlayerState {
-    pub points: i64,
-    pub energy: f32,
-    pub selected_tile: TilePos,
-    pub turn: u32,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Season {
+    Spring,
+    Summer,
+    Autumn,
+    Winter,
+}
+
+impl Season {
+    pub fn from_config(value: &str) -> Self {
+        match value {
+            "summer" => Self::Summer,
+            "autumn" => Self::Autumn,
+            "winter" => Self::Winter,
+            _ => Self::Spring,
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Spring => "Spring",
+            Self::Summer => "Summer",
+            Self::Autumn => "Autumn",
+            Self::Winter => "Winter",
+        }
+    }
+
+    fn next(self) -> Self {
+        match self {
+            Self::Spring => Self::Summer,
+            Self::Summer => Self::Autumn,
+            Self::Autumn => Self::Winter,
+            Self::Winter => Self::Spring,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WorldState {
-    pub fog: FlatGrid<FogState>,
-    pub reachable: HashSet<TilePos>,
+pub struct CampaignClock {
+    pub year: u32,
+    pub season: Season,
+    pub turn: u32,
+}
+
+impl CampaignClock {
+    pub fn new(year: u32, season: Season) -> Self {
+        Self {
+            year: year.max(1),
+            season,
+            turn: 1,
+        }
+    }
+
+    pub fn advance(&mut self) -> bool {
+        let next = self.season.next();
+        let year_advanced = self.season == Season::Winter;
+        self.season = next;
+        if year_advanced {
+            self.year += 1;
+        }
+        self.turn += 1;
+        year_advanced
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SiteKnowledge {
+    Unknown,
+    Known,
+}
+
+impl SiteKnowledge {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Unknown => "Unknown",
+            Self::Known => "Known",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SiteRuntimeState {
+    pub site_id: String,
+    pub knowledge: SiteKnowledge,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChronicleEntry {
+    pub year: u32,
+    pub season: Season,
+    pub title: String,
+    pub body: String,
+    pub site_id: Option<String>,
+    pub importance: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SaveData {
     pub version: String,
-    pub player: PlayerState,
-    pub world: WorldState,
+    pub clock: CampaignClock,
+    pub selected_site_id: String,
+    pub site_states: Vec<SiteRuntimeState>,
+    pub chronicle: Vec<ChronicleEntry>,
+    pub campaign_seed: u64,
 }
 
 #[derive(Debug, Clone)]
 pub struct GameSession {
-    pub player: PlayerState,
-    pub world: WorldState,
+    pub clock: CampaignClock,
+    pub selected_site_id: String,
+    pub site_states: Vec<SiteRuntimeState>,
+    pub chronicle: Vec<ChronicleEntry>,
+    pub campaign_seed: u64,
 }
 
 impl GameSession {
-    pub fn new(config: &GameConfig) -> Self {
-        let start = TilePos::new(
-            (config.world_width / 2) as i32,
-            (config.world_height / 2) as i32,
+    pub fn new(data: &GameData) -> Self {
+        let clock = CampaignClock::new(
+            data.config.starting_year,
+            Season::from_config(&data.config.starting_season),
         );
+        let selected_site_id = data
+            .sites
+            .iter()
+            .find(|site| site.id == "charter_hall")
+            .or_else(|| data.sites.iter().find(|site| site.initially_visible))
+            .map(|site| site.id.clone())
+            .unwrap_or_default();
+
         let mut session = Self {
-            player: PlayerState {
-                points: config.starting_points,
-                energy: config.starting_energy,
-                selected_tile: start,
-                turn: 1,
-            },
-            world: WorldState {
-                fog: FlatGrid::new(config.world_width, config.world_height, FogState::Hidden),
-                reachable: HashSet::new(),
-            },
+            clock,
+            selected_site_id,
+            site_states: data
+                .sites
+                .iter()
+                .map(|site| SiteRuntimeState {
+                    site_id: site.id.clone(),
+                    knowledge: if site.initially_visible {
+                        SiteKnowledge::Known
+                    } else {
+                        SiteKnowledge::Unknown
+                    },
+                })
+                .collect(),
+            chronicle: Vec::new(),
+            campaign_seed: data.config.campaign_seed,
         };
-        session.refresh_visibility();
+        session.add_chronicle_entry(data, "campaign_start", Some("charter_hall"));
         session
     }
 
     pub fn from_save(save: SaveData) -> Self {
         Self {
-            player: save.player,
-            world: save.world,
+            clock: save.clock,
+            selected_site_id: save.selected_site_id,
+            site_states: save.site_states,
+            chronicle: save.chronicle,
+            campaign_seed: save.campaign_seed,
         }
     }
 
     pub fn to_save(&self, version: &str) -> SaveData {
         SaveData {
             version: version.to_owned(),
-            player: self.player.clone(),
-            world: self.world.clone(),
+            clock: self.clock.clone(),
+            selected_site_id: self.selected_site_id.clone(),
+            site_states: self.site_states.clone(),
+            chronicle: self.chronicle.clone(),
+            campaign_seed: self.campaign_seed,
         }
     }
 
-    pub fn update_energy(&mut self, config: &GameConfig, dt: f32) {
-        self.player.energy =
-            (self.player.energy + config.energy_per_second * dt).min(config.max_energy);
+    pub fn selected_site<'a>(&self, data: &'a GameData) -> Option<&'a SiteDef> {
+        data.site(&self.selected_site_id)
     }
 
-    pub fn can_run_action(&self, action: &ActionDef) -> bool {
-        self.player.energy >= action.energy_cost
+    pub fn site_knowledge(&self, site_id: &str) -> SiteKnowledge {
+        self.site_states
+            .iter()
+            .find(|state| state.site_id == site_id)
+            .map(|state| state.knowledge)
+            .unwrap_or(SiteKnowledge::Unknown)
     }
 
-    pub fn apply_action(&mut self, action: &ActionDef) -> bool {
-        if !self.can_run_action(action) {
+    pub fn is_known(&self, site_id: &str) -> bool {
+        self.site_knowledge(site_id) == SiteKnowledge::Known
+    }
+
+    pub fn is_adjacent_unknown(&self, data: &GameData, site_id: &str) -> bool {
+        if self.is_known(site_id) {
             return false;
         }
 
-        self.player.energy -= action.energy_cost;
-        self.player.points += action.points_reward;
-        self.player.turn += 1;
-        self.refresh_visibility();
-        true
+        data.roads_for_site(site_id)
+            .filter_map(|road| road.other_end(site_id))
+            .any(|neighbor_id| self.is_known(neighbor_id))
     }
 
-    pub fn move_selection(&mut self, dx: i32, dy: i32) {
-        let next = TilePos::new(
-            self.player.selected_tile.x + dx,
-            self.player.selected_tile.y + dy,
-        );
-        self.select_tile(next);
+    pub fn can_select_site(&self, data: &GameData, site_id: &str) -> bool {
+        data.site(site_id).is_some()
+            && (self.is_known(site_id) || self.is_adjacent_unknown(data, site_id))
     }
 
-    pub fn select_tile(&mut self, next: TilePos) {
-        if self.world.fog.is_valid(next) {
-            self.player.selected_tile = next;
-            self.refresh_visibility();
+    pub fn select_site(&mut self, data: &GameData, site_id: &str) -> bool {
+        if self.can_select_site(data, site_id) {
+            self.selected_site_id = site_id.to_owned();
+            true
+        } else {
+            false
         }
     }
 
-    fn refresh_visibility(&mut self) {
-        let visible = calculate_visible_tiles(self.player.selected_tile, 4, |_| false);
-        update_flat_fog_states(&mut self.world.fog, &visible);
-        self.world.reachable =
-            self.world
-                .fog
-                .flood_fill(self.player.selected_tile, false, |_, fog| {
-                    *fog != FogState::Hidden
-                });
+    pub fn can_scout_selected_site(&self, data: &GameData) -> bool {
+        self.is_adjacent_unknown(data, &self.selected_site_id)
+    }
+
+    pub fn scout_selected_site(&mut self, data: &GameData) -> bool {
+        if !self.can_scout_selected_site(data) {
+            return false;
+        }
+
+        let site_id = self.selected_site_id.clone();
+        if let Some(state) = self
+            .site_states
+            .iter_mut()
+            .find(|state| state.site_id == site_id)
+        {
+            state.knowledge = SiteKnowledge::Known;
+        }
+        self.add_chronicle_entry(data, "site_scouted", Some(&site_id));
+        true
+    }
+
+    pub fn advance_season(&mut self, data: &GameData) {
+        if self.clock.advance() {
+            self.add_chronicle_entry(data, "new_year", None);
+        }
+    }
+
+    pub fn known_site_count(&self) -> usize {
+        self.site_states
+            .iter()
+            .filter(|state| state.knowledge == SiteKnowledge::Known)
+            .count()
+    }
+
+    pub fn adjacent_unknown_count(&self, data: &GameData) -> usize {
+        data.sites
+            .iter()
+            .filter(|site| self.is_adjacent_unknown(data, &site.id))
+            .count()
+    }
+
+    fn add_chronicle_entry(&mut self, data: &GameData, template_id: &str, site_id: Option<&str>) {
+        let Some(template) = data.chronicle_template(template_id) else {
+            return;
+        };
+        self.chronicle
+            .push(self.render_chronicle_entry(data, template, site_id));
+    }
+
+    fn render_chronicle_entry(
+        &self,
+        data: &GameData,
+        template: &ChronicleTemplateDef,
+        site_id: Option<&str>,
+    ) -> ChronicleEntry {
+        let site = site_id.and_then(|id| data.site(id));
+        let region_name = site
+            .and_then(|site_def| data.region(&site_def.region_id))
+            .map(|region| region.name.as_str())
+            .unwrap_or("the frontier");
+        let site_name = site
+            .map(|site_def| site_def.name.as_str())
+            .unwrap_or("the charter map");
+
+        ChronicleEntry {
+            year: self.clock.year,
+            season: self.clock.season,
+            title: fill_template(
+                &template.title,
+                self.clock.year,
+                self.clock.season,
+                site_name,
+                region_name,
+            ),
+            body: fill_template(
+                &template.body,
+                self.clock.year,
+                self.clock.season,
+                site_name,
+                region_name,
+            ),
+            site_id: site_id.map(str::to_owned),
+            importance: template.importance.clone(),
+        }
     }
 }
 
-#[derive(Debug, Deserialize)]
-struct LegacySave {
-    points: Option<i64>,
-    energy: Option<f32>,
-    turn: Option<u32>,
+fn fill_template(
+    text: &str,
+    year: u32,
+    season: Season,
+    site_name: &str,
+    region_name: &str,
+) -> String {
+    text.replace("{year}", &year.to_string())
+        .replace("{season}", season.label())
+        .replace("{site}", site_name)
+        .replace("{region}", region_name)
 }
 
 pub fn migrate_save_value(
-    detected_version: Option<String>,
+    _detected_version: Option<String>,
     value: Value,
-    config: &GameConfig,
+    data: &GameData,
 ) -> Result<SaveData, String> {
     let payload = value.get("data").cloned().unwrap_or(value);
 
-    if let Ok(mut current) = serde_json::from_value::<SaveData>(payload.clone()) {
-        current.version = config.version.clone();
+    if let Ok(mut current) = serde_json::from_value::<SaveData>(payload) {
+        current.version = data.config.version.clone();
         return Ok(current);
     }
 
-    let legacy: LegacySave = serde_json::from_value(payload)
-        .map_err(|err| format!("Unsupported save format {:?}: {}", detected_version, err))?;
-
-    let mut session = GameSession::new(config);
-    if let Some(points) = legacy.points {
-        session.player.points = points;
-    }
-    if let Some(energy) = legacy.energy {
-        session.player.energy = energy.clamp(0.0, config.max_energy);
-    }
-    if let Some(turn) = legacy.turn {
-        session.player.turn = turn.max(1);
-    }
-
-    Ok(session.to_save(&config.version))
+    Ok(GameSession::new(data).to_save(&data.config.version))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn test_config() -> GameConfig {
-        GameConfig {
-            game_name: "game_template".to_owned(),
-            display_name: "Game Template".to_owned(),
-            save_slot: "autosave".to_owned(),
-            version: "1.0.0".to_owned(),
-            starting_points: 10,
-            starting_energy: 5.0,
-            max_energy: 10.0,
-            energy_per_second: 1.0,
-            world_width: 8,
-            world_height: 8,
-        }
+    fn test_data() -> GameData {
+        GameData::load().unwrap()
     }
 
     #[test]
-    fn action_spends_energy_and_rewards_points() {
-        let config = test_config();
-        let action = ActionDef {
-            id: "test".to_owned(),
-            name: "Test".to_owned(),
-            description: "Test action".to_owned(),
-            energy_cost: 3.0,
-            points_reward: 7,
-        };
-        let mut session = GameSession::new(&config);
+    fn new_campaign_starts_with_eight_known_sites_and_chronicle() {
+        let data = test_data();
+        let session = GameSession::new(&data);
 
-        assert!(session.apply_action(&action));
-        assert_eq!(session.player.points, 17);
-        assert_eq!(session.player.turn, 2);
-        assert!((session.player.energy - 2.0).abs() < f32::EPSILON);
+        assert_eq!(session.known_site_count(), 8);
+        assert_eq!(session.selected_site_id, "charter_hall");
+        assert_eq!(session.clock.season, Season::Spring);
+        assert_eq!(session.clock.year, 1);
+        assert_eq!(session.chronicle.len(), 1);
     }
 
     #[test]
-    fn legacy_save_migrates_to_current_shape() {
-        let config = test_config();
-        let value = serde_json::json!({
-            "points": 42,
-            "energy": 99.0,
-            "turn": 3
-        });
+    fn scouting_reveals_adjacent_unknown_sites() {
+        let data = test_data();
+        let mut session = GameSession::new(&data);
 
-        let migrated = migrate_save_value(Some("0.1.0".to_owned()), value, &config).unwrap();
+        assert!(session.select_site(&data, "old_king_road"));
+        assert!(session.can_scout_selected_site(&data));
+        assert!(session.scout_selected_site(&data));
+        assert!(session.is_known("old_king_road"));
+        assert_eq!(session.known_site_count(), 9);
+        assert_eq!(session.chronicle.len(), 2);
+    }
 
-        assert_eq!(migrated.version, "1.0.0");
-        assert_eq!(migrated.player.points, 42);
-        assert_eq!(migrated.player.energy, 10.0);
-        assert_eq!(migrated.player.turn, 3);
+    #[test]
+    fn seasons_cycle_and_year_advances_after_winter() {
+        let data = test_data();
+        let mut session = GameSession::new(&data);
+
+        session.advance_season(&data);
+        assert_eq!(session.clock.season, Season::Summer);
+        session.advance_season(&data);
+        assert_eq!(session.clock.season, Season::Autumn);
+        session.advance_season(&data);
+        assert_eq!(session.clock.season, Season::Winter);
+        session.advance_season(&data);
+        assert_eq!(session.clock.season, Season::Spring);
+        assert_eq!(session.clock.year, 2);
     }
 }

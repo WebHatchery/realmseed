@@ -128,7 +128,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "game_template"
+name = "realmseed"
 version = "0.1.0"
 dependencies = [
  "macroquad",

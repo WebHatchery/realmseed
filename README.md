@@ -1,45 +1,36 @@
-# Macroquad Toolkit Game Template
+# Realmseed
 
-This is a working starter crate for new Rust + Macroquad games in this workspace.
-It intentionally uses `macroquad-toolkit` heavily so new projects begin with the
-same shared patterns as the existing games.
+Realmseed is a Rust + Macroquad fantasy realm-building prototype. Phase 1
+implements the first playable shell: a small strategic map, seasonal turns,
+site inspection, scouting unknown adjacent sites, and a chronicle that records
+the realm's opening history.
 
-## Toolkit Features Already Wired
+## Current Phase
 
-- `AssetManager` with a texture manifest at `assets/data/texture_manifest.json`
-- `DataRegistry` and embedded JSON loading for data-driven actions
-- `save_to_slot_with_version`, `load_from_slot_with_migration`, `delete_slot`, and `get_save_slots`
-- `NotificationManager` with toolkit toast rendering
-- `VirtualUi`, `SurfaceStyle`, `TextStyle`, `GridLayout`, meters, badges, tooltips, and text fitting
-- `FlatGrid`, `FogState`, `TilePos`, line-of-sight visibility, and flood-fill reachability
-- `Camera2D` with bounds, right-mouse drag, keyboard pan, and zoom limits
-- `EventBus<UiAction>` so UI returns intents and game logic applies them
-- Rust 2018 module layout using `data.rs`, `state.rs`, and `ui.rs` parent
-  files instead of `mod.rs`
+- 60 x 40 terrain map.
+- 6 authored regions.
+- 30 total map sites.
+- 8 starting visible sites.
+- 18 settlement-capable sites.
+- 4 independent settlements.
+- 8 landmark, resource, pass, ford, ruin, or hazard sites.
+- 50 authored route links.
+- Toolkit-backed save/load for the current campaign state.
 
-The template avoids browser-incompatible filesystem access. Static data is
-embedded with `include_str!()`, runtime browser assets go through Macroquad or
-toolkit async loaders, and save data uses macroquad-toolkit persistence.
-Shared UI math, such as grid layout and mouse selection, is kept in helper
-types so rendering and input do not duplicate coordinate calculations.
+## Controls
 
-## Run
+- Click a solid marker to inspect a known site.
+- Click a question marker, then use `Scout Selected Site` to reveal it.
+- Press `Space` or use `Advance Season` to move through Spring, Summer,
+  Autumn, and Winter.
+- Press `C` or use `Chronicle` to open the chronicle.
+- Use right mouse drag and `+ / -` to adjust the map view.
+- Use `S / L` to save or load the toolkit campaign slot.
+
+## Validation
+
+Use the project publisher as the validation path:
 
 ```powershell
-cargo run --manifest-path template/Cargo.toml
+.\publish.ps1
 ```
-
-## Test
-
-```powershell
-cargo test --manifest-path template/Cargo.toml
-```
-
-## Rename For A New Game
-
-1. Copy `template/` to your new game folder.
-2. Rename the package in `Cargo.toml`.
-3. Update `assets/data/game_config.json`.
-4. Replace `actions.json` with your game data.
-5. Add textures to `assets/data/texture_manifest.json`.
-6. Update `index.html` to load the new wasm filename.

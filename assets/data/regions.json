@@ -1,0 +1,44 @@
+[
+  {
+    "id": "greenvale_basin",
+    "name": "Greenvale Basin",
+    "description": "The charter heartland: fertile river fields and the first council roads.",
+    "label_position": { "x": 29, "y": 20 },
+    "tint": [0.30, 0.48, 0.25, 0.18]
+  },
+  {
+    "id": "blackwood_march",
+    "name": "Blackwood March",
+    "description": "Deep timber, old barrows, and villages that trust the forest more than charters.",
+    "label_position": { "x": 13, "y": 15 },
+    "tint": [0.10, 0.30, 0.18, 0.20]
+  },
+  {
+    "id": "stoneback_hills",
+    "name": "Stoneback Hills",
+    "description": "Quarries, ridge tracks, and hard country between valley and pass.",
+    "label_position": { "x": 47, "y": 18 },
+    "tint": [0.42, 0.36, 0.24, 0.18]
+  },
+  {
+    "id": "northwatch_pass",
+    "name": "Northwatch Pass",
+    "description": "Cold approaches where any realm road must become a watch road.",
+    "label_position": { "x": 39, "y": 6 },
+    "tint": [0.38, 0.40, 0.44, 0.20]
+  },
+  {
+    "id": "ash_coast",
+    "name": "Ash Coast",
+    "description": "Wind-cut shoreland, salt stacks, and boat villages beyond easy council reach.",
+    "label_position": { "x": 23, "y": 35 },
+    "tint": [0.25, 0.36, 0.45, 0.18]
+  },
+  {
+    "id": "duskvale_lowlands",
+    "name": "Duskvale Lowlands",
+    "description": "Marsh road, reed trade, hidden causeways, and slow-moving danger.",
+    "label_position": { "x": 48, "y": 32 },
+    "tint": [0.20, 0.34, 0.30, 0.20]
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "campaign_start",
+    "title": "The Charter Is Raised",
+    "body": "In Spring of Year {year}, the council raised its first banners at {site}. Eight known places formed the first map of the realm.",
+    "importance": "major"
+  },
+  {
+    "id": "site_scouted",
+    "title": "{site} Enters the Map",
+    "body": "Scouts returned from {site} in {season} of Year {year}, adding {region} to the council's living map.",
+    "importance": "notable"
+  },
+  {
+    "id": "new_year",
+    "title": "A New Year Opens",
+    "body": "Year {year} began with the council still measuring promise against distance.",
+    "importance": "minor"
+  }
+]

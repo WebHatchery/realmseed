@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Template | Web Hatchery Games</title>
+    <title>Realmseed | Web Hatchery Games</title>
     <link rel="stylesheet" href="../shared.css">
     <style>
         .game-container canvas {
@@ -17,7 +17,7 @@
 <body>
     <div class="game-page">
         <header class="game-header">
-            <h1>Game Template</h1>
+            <h1>Realmseed</h1>
             <a href="../" class="back-link">Back to All Games</a>
         </header>
 
@@ -44,18 +44,19 @@
                 <section class="info-section">
                     <h2>About This Game</h2>
                     <p>
-                        A starter Rust + Macroquad game wired to macroquad-toolkit for UI,
-                        save/load, data loading, notifications, grid helpers, and camera controls.
+                        A fantasy realm-building strategy prototype about scouting a frontier,
+                        advancing seasons, and recording the first history of a young realm.
                     </p>
                 </section>
 
                 <section class="info-section" style="margin-top: 1rem;">
                     <h2>Controls</h2>
                     <ul class="controls-list">
-                        <li><kbd>Arrow Keys</kbd><span>Move selected tile</span></li>
+                        <li><kbd>Arrow Keys / WASD</kbd><span>Pan the map</span></li>
                         <li><kbd>Right Mouse</kbd><span>Drag camera</span></li>
                         <li><kbd>+ / -</kbd><span>Zoom camera</span></li>
-                        <li><kbd>Space</kbd><span>Run first data action</span></li>
+                        <li><kbd>Space</kbd><span>Advance season</span></li>
+                        <li><kbd>C</kbd><span>Open chronicle</span></li>
                         <li><kbd>S / L</kbd><span>Save / load toolkit slot</span></li>
                     </ul>
                 </section>
@@ -70,7 +71,7 @@
                 <div class="sidebar-section">
                     <h3>Details</h3>
                     <ul class="meta-list">
-                        <li><span class="label">Genre</span><span class="value">Template</span></li>
+                        <li><span class="label">Genre</span><span class="value">Strategy simulation</span></li>
                         <li><span class="label">Engine</span><span class="value">Macroquad + Toolkit</span></li>
                         <li><span class="label">Platform</span><span class="value">Browser, Windows</span></li>
                     </ul>
@@ -88,8 +89,7 @@
     <script>
         document.getElementById('loading').style.display = 'none';
         
-        // Rename this when you rename the Cargo package.
-        load("game_template.wasm");
+        load("realmseed.wasm");
 
         function toggleFullscreen() {
             const container = document.getElementById('game-container');

@@ -1,12 +1,11 @@
 {
-  "game_name": "game_template",
-  "display_name": "Macroquad Toolkit Game Template",
-  "save_slot": "autosave",
+  "game_name": "realmseed",
+  "display_name": "Realmseed",
+  "save_slot": "campaign",
   "version": "1.0.0",
-  "starting_points": 25,
-  "starting_energy": 60.0,
-  "max_energy": 100.0,
-  "energy_per_second": 4.0,
-  "world_width": 14,
-  "world_height": 9
+  "world_width": 60,
+  "world_height": 40,
+  "starting_year": 1,
+  "starting_season": "spring",
+  "campaign_seed": 104729
 }

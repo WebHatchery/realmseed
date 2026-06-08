@@ -1,14 +1,17 @@
-//! Embedded game data and asset manifests.
+//! Embedded Realmseed campaign data and validation helpers.
 
 use macroquad_toolkit::assets::TextureConfig;
-use macroquad_toolkit::data_loader::{
-    load_embedded_json, load_embedded_json_labeled, DataRegistry,
-};
+use macroquad_toolkit::data_loader::load_embedded_json;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 const GAME_CONFIG_JSON: &str = include_str!("../assets/data/game_config.json");
-const ACTIONS_JSON: &str = include_str!("../assets/data/actions.json");
 const TEXTURE_MANIFEST_JSON: &str = include_str!("../assets/data/texture_manifest.json");
+const TERRAIN_JSON: &str = include_str!("../assets/data/terrain.json");
+const REGIONS_JSON: &str = include_str!("../assets/data/regions.json");
+const SITES_JSON: &str = include_str!("../assets/data/sites.json");
+const ROADS_JSON: &str = include_str!("../assets/data/roads.json");
+const CHRONICLE_TEMPLATES_JSON: &str = include_str!("../assets/data/chronicle_templates.json");
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameConfig {
@@ -16,41 +19,258 @@ pub struct GameConfig {
     pub display_name: String,
     pub save_slot: String,
     pub version: String,
-    pub starting_points: i64,
-    pub starting_energy: f32,
-    pub max_energy: f32,
-    pub energy_per_second: f32,
     pub world_width: usize,
     pub world_height: usize,
+    pub starting_year: u32,
+    pub starting_season: String,
+    pub campaign_seed: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ActionDef {
+pub struct MapPoint {
+    pub x: i32,
+    pub y: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TerrainDef {
+    pub id: String,
+    pub code: String,
+    pub name: String,
+    pub fertility: i32,
+    pub timber: i32,
+    pub stone: i32,
+    pub danger: i32,
+    pub travel_cost: f32,
+    pub color: [f32; 4],
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TerrainMapDef {
+    pub width: usize,
+    pub height: usize,
+    pub terrains: Vec<TerrainDef>,
+    pub tiles: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RegionDef {
     pub id: String,
     pub name: String,
     pub description: String,
-    pub energy_cost: f32,
-    pub points_reward: i64,
+    pub label_position: MapPoint,
+    pub tint: [f32; 4],
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SiteCategory {
+    Settlement,
+    Independent,
+    Landmark,
+}
+
+impl SiteCategory {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Settlement => "Settlement-capable",
+            Self::Independent => "Independent settlement",
+            Self::Landmark => "Landmark",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SiteDef {
+    pub id: String,
+    pub name: String,
+    pub region_id: String,
+    pub site_type: String,
+    pub category: SiteCategory,
+    pub position: MapPoint,
+    pub traits: Vec<String>,
+    pub owner: Option<String>,
+    pub initially_visible: bool,
+    pub description: String,
+}
+
+impl SiteDef {
+    pub fn type_label(&self) -> String {
+        self.site_type.replace('_', " ")
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoadDef {
+    pub id: String,
+    pub from: String,
+    pub to: String,
+    pub route_type: String,
+    pub level: u8,
+}
+
+impl RoadDef {
+    pub fn connects(&self, site_id: &str) -> bool {
+        self.from == site_id || self.to == site_id
+    }
+
+    pub fn other_end<'a>(&'a self, site_id: &str) -> Option<&'a str> {
+        if self.from == site_id {
+            Some(&self.to)
+        } else if self.to == site_id {
+            Some(&self.from)
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChronicleTemplateDef {
+    pub id: String,
+    pub title: String,
+    pub body: String,
+    pub importance: String,
 }
 
 #[derive(Debug, Clone)]
 pub struct GameData {
     pub config: GameConfig,
-    pub actions: DataRegistry<ActionDef>,
+    pub terrain: TerrainMapDef,
+    pub regions: Vec<RegionDef>,
+    pub sites: Vec<SiteDef>,
+    pub roads: Vec<RoadDef>,
+    pub chronicle_templates: Vec<ChronicleTemplateDef>,
     pub texture_manifest: Vec<TextureConfig>,
 }
 
 impl GameData {
     pub fn load() -> Result<Self, String> {
-        let config = load_embedded_json_labeled("game_config", GAME_CONFIG_JSON)?;
-        let actions = DataRegistry::from_embedded_json(ACTIONS_JSON, "id")?;
-        let texture_manifest = load_embedded_json(TEXTURE_MANIFEST_JSON)?;
+        let data = Self {
+            config: load_embedded_json(GAME_CONFIG_JSON)?,
+            terrain: load_embedded_json(TERRAIN_JSON)?,
+            regions: load_embedded_json(REGIONS_JSON)?,
+            sites: load_embedded_json(SITES_JSON)?,
+            roads: load_embedded_json(ROADS_JSON)?,
+            chronicle_templates: load_embedded_json(CHRONICLE_TEMPLATES_JSON)?,
+            texture_manifest: load_embedded_json(TEXTURE_MANIFEST_JSON)?,
+        };
+        data.validate()?;
+        Ok(data)
+    }
 
-        Ok(Self {
-            config,
-            actions,
-            texture_manifest,
-        })
+    pub fn site(&self, id: &str) -> Option<&SiteDef> {
+        self.sites.iter().find(|site| site.id == id)
+    }
+
+    pub fn region(&self, id: &str) -> Option<&RegionDef> {
+        self.regions.iter().find(|region| region.id == id)
+    }
+
+    pub fn chronicle_template(&self, id: &str) -> Option<&ChronicleTemplateDef> {
+        self.chronicle_templates
+            .iter()
+            .find(|template| template.id == id)
+    }
+
+    pub fn terrain_at(&self, x: i32, y: i32) -> Option<&TerrainDef> {
+        if x < 0 || y < 0 || x as usize >= self.terrain.width || y as usize >= self.terrain.height {
+            return None;
+        }
+
+        let row = self.terrain.tiles.get(y as usize)?;
+        let code = row.as_bytes().get(x as usize)?;
+        self.terrain
+            .terrains
+            .iter()
+            .find(|terrain| terrain.code.as_bytes().first() == Some(code))
+    }
+
+    pub fn roads_for_site<'a>(&'a self, site_id: &'a str) -> impl Iterator<Item = &'a RoadDef> {
+        self.roads.iter().filter(move |road| road.connects(site_id))
+    }
+
+    fn validate(&self) -> Result<(), String> {
+        if self.config.world_width != self.terrain.width
+            || self.config.world_height != self.terrain.height
+        {
+            return Err("game_config world size must match terrain size".to_owned());
+        }
+        if self.terrain.tiles.len() != self.terrain.height {
+            return Err("terrain row count does not match terrain height".to_owned());
+        }
+        for (index, row) in self.terrain.tiles.iter().enumerate() {
+            if row.len() != self.terrain.width {
+                return Err(format!(
+                    "terrain row {} is not {} tiles",
+                    index, self.terrain.width
+                ));
+            }
+        }
+
+        let terrain_codes: HashSet<&str> = self
+            .terrain
+            .terrains
+            .iter()
+            .map(|terrain| terrain.code.as_str())
+            .collect();
+        for row in &self.terrain.tiles {
+            for byte in row.as_bytes() {
+                let code = (*byte as char).to_string();
+                if !terrain_codes.contains(code.as_str()) {
+                    return Err(format!("terrain uses unknown code {}", code));
+                }
+            }
+        }
+
+        let site_ids: HashSet<&str> = self.sites.iter().map(|site| site.id.as_str()).collect();
+        if self.sites.len() != 30 {
+            return Err(format!("expected 30 sites, found {}", self.sites.len()));
+        }
+        if self
+            .sites
+            .iter()
+            .filter(|site| site.category == SiteCategory::Settlement)
+            .count()
+            != 18
+        {
+            return Err("expected 18 settlement-capable sites".to_owned());
+        }
+        if self
+            .sites
+            .iter()
+            .filter(|site| site.category == SiteCategory::Independent)
+            .count()
+            != 4
+        {
+            return Err("expected 4 independent settlements".to_owned());
+        }
+        if self
+            .sites
+            .iter()
+            .filter(|site| site.category == SiteCategory::Landmark)
+            .count()
+            != 8
+        {
+            return Err("expected 8 landmark/resource/pass sites".to_owned());
+        }
+        if self
+            .sites
+            .iter()
+            .filter(|site| site.initially_visible)
+            .count()
+            < 8
+        {
+            return Err("expected at least 8 starting visible sites".to_owned());
+        }
+
+        for road in &self.roads {
+            if !site_ids.contains(road.from.as_str()) || !site_ids.contains(road.to.as_str()) {
+                return Err(format!("road {} references an unknown site", road.id));
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -59,12 +279,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn embedded_data_loads() {
+    fn embedded_data_loads_and_matches_phase_contract() {
         let data = GameData::load().unwrap();
 
-        assert!(!data.config.game_name.is_empty());
-        assert!(data.actions.contains("gather"));
-        assert!(data.config.world_width > 0);
-        assert!(data.config.world_height > 0);
+        assert_eq!(data.config.game_name, "realmseed");
+        assert_eq!(data.terrain.width, 60);
+        assert_eq!(data.terrain.height, 40);
+        assert_eq!(data.sites.len(), 30);
+        assert_eq!(data.roads.len(), 50);
+        assert_eq!(
+            data.sites
+                .iter()
+                .filter(|site| site.initially_visible)
+                .count(),
+            8
+        );
     }
 }
