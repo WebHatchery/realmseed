@@ -27,10 +27,13 @@ The first complete playable target is intentionally smaller than the eventual fu
 | Seasonal turns | 80 turns |
 | Terrain map | 60 x 40 hidden terrain tiles |
 | Regions | 6 |
-| Strategic sites | 30 |
+| Total map sites | 30 |
+| Starting visible sites | 8 |
+| Settlement-capable sites | 18 |
+| Independent settlements | 4 |
+| Landmark, resource, or pass sites | 8 |
 | Route links | 50 |
 | Player settlements | 4 to 8 |
-| Independent settlements | 2 to 4 |
 | Rival factions | 1 |
 | Wilderness pressure systems | 1 |
 | Event families | 12 |
@@ -44,10 +47,13 @@ The full seed campaign expands the same systems rather than replacing them.
 | --- | --- |
 | Campaign length | 50 years |
 | Seasonal turns | 200 turns |
-| Strategic locations | 20 to 28 core visible sites, expandable by regions |
+| Total map sites | 48 to 60 |
+| Settlement-capable sites | 30 to 36 |
 | Player settlements | 8 to 14 |
 | Rival factions | 2 |
 | Independent settlements | 4 to 8 |
+| Landmark, resource, or pass sites | 14 to 18 |
+| Route links | 80 to 110 |
 | Event families | 24 |
 | Crisis chains | Multiple simultaneous chains |
 
@@ -141,9 +147,12 @@ Sites are the main strategic objects.
 
 Prototype site target:
 
-- 30 settlement sites.
-- 8 independent settlements.
-- 10 to 15 landmarks, passes, fords, ports, old roads, ruins, or resource sites.
+- 30 total map sites.
+- 8 starting visible sites.
+- 18 settlement-capable sites that can be founded, claimed, or occupied.
+- 4 independent settlements, counted as occupied map sites.
+- 8 landmark, resource, pass, ford, port, old road, ruin, or hazard sites.
+- 50 route links between sites.
 
 A site calculates its qualities from nearby terrain. The player sees a named place such as Redford Crossing, not the individual terrain cells that make it valuable.
 
@@ -174,6 +183,34 @@ Prototype region examples:
 - Duskvale Lowlands.
 
 Regions matter for faction control, unrest, trade routes, migration, disasters, border pressure, and future expansions.
+
+### Region Control
+
+Each faction has a region control score per region. The highest score defines visual control if it is at least 25 points ahead of the next faction. If no faction clears that margin, the region is contested.
+
+```text
+region_control =
+    controlled_major_sites * 25
+  + controlled_minor_sites * 10
+  + road_network_presence * 15
+  + local_population_share * 0.2
+  + regional_capital_bonus
+  + active_patrol_or_watch_bonus
+  - active_rebellion_penalty
+```
+
+Baseline values:
+
+| Input | Prototype Value |
+| --- | ---: |
+| Major site controlled | +25 |
+| Minor site controlled | +10 |
+| Connected road presence | +15 |
+| Regional capital controlled | +30 |
+| Active patrol or watch decree | +10 |
+| Active rebellion in region | -35 |
+
+Region control affects faction action weights, border tension, migration direction, trade safety, and the color or banner treatment shown on the map.
 
 ## 7. Setting
 
@@ -298,6 +335,18 @@ Base production is modified by settlement tier, traits, roads, region conditions
 | Town | 1.8x | 1.2x |
 | City | 3.0x | 1.5x |
 
+### Upgrade Requirements
+
+Tier upgrades require population, settlement health, road access, and resource investment. These numbers are prototype defaults and should be tuned after simulated 20-year runs.
+
+| Upgrade | Requirements | Resource Cost |
+| --- | --- | --- |
+| Camp to Village | Population 80+, stability 45+ | 80 timber, 30 wealth |
+| Village to Town | Population 250+, prosperity 50+, road connection to capital network | 120 timber, 80 stone, 150 wealth |
+| Town to City | Population 800+, prosperity 70+, stability 55+, stone road or port connection | 300 stone, 400 wealth |
+
+A settlement cannot upgrade while under active famine, rebellion, occupation, or unresolved severity 3 crisis.
+
 ### Population Rules
 
 Food consumed per season:
@@ -312,6 +361,19 @@ Population growth:
 - If food is insecure: no growth.
 - If famine is active: -3 percent to -12 percent per year, based on severity.
 
+Natural growth is intentionally slow. The prototype must rely on migration and founding waves to reach midgame tiers inside 80 turns.
+
+| Growth Source | Role | Prototype Rule |
+| --- | --- | --- |
+| Natural growth | Slow baseline | +0.5 percent per season when food secure and stability > 50 |
+| Founding wave | Early boost | Founding a camp moves 30 to 60 population from the capital or migrant pool |
+| Prosperity attraction | Medium ongoing growth | +2 to +8 migrants per season when prosperity > 65 and food is secure |
+| Safety attraction | Stability-driven migration | +1 to +5 migrants per season when stability > 70 and danger < 35 |
+| Refugee event | Burst growth | +20 to +120 population through event chains, with stability or food pressure |
+| Crisis flight | Negative migration | -10 to -80 population from famine, raids, rebellion, or forced relocation |
+
+Population transfer must be visible. If founding draws people from an existing settlement, that source settlement loses population and may gain pride, grievance, or frontier-duty memory tags.
+
 ### Loyalty Drift
 
 Per season:
@@ -325,6 +387,35 @@ Per season:
 | Active crisis ignored | -3 |
 | Harsh event choice | -5 |
 | Major aid during crisis | +5 to +15 |
+
+Background drift should be slow enough to avoid random whiplash. Active issues provide the faster crisis movement.
+
+| Active Issue State | Stability Change Per Season | Loyalty Change Per Season |
+| --- | ---: | ---: |
+| Warning severity 1 | -1 | 0 |
+| Active severity 1 | -1 | -1 |
+| Active severity 2 | -3 | -2 |
+| Escalating severity 2 | -4 | -3 |
+| Escalating severity 3 | -5 | -4 |
+
+Prototype crisis pace target:
+
+- A stable settlement should not collapse from one bad season.
+- A neglected severity 2 crisis should become dangerous within 3 to 5 seasons.
+- A settlement with poor food, poor road supply, and ignored events should be able to move from safe to rebellion risk within 6 to 10 seasons.
+- The UI must show the top causes so the player can understand the arc before collapse.
+
+Example crisis arc:
+
+| Season | State |
+| --- | --- |
+| 1 | Food drops below threshold; Hungry Winter warning appears |
+| 2 | Player ignores warning; issue becomes active severity 1 |
+| 3 | Poor road blocks relief; issue becomes active severity 2 |
+| 4 | Stability and loyalty penalties stack; migration begins |
+| 5 | Player still ignores issue; escalation score crosses threshold |
+| 6 | Famine Riot or Winter Graves event triggers |
+| 7 to 8 | Resolution creates recovery, grievance, migration, or rebellion follow-up |
 
 ### Personality Tags
 
@@ -357,6 +448,27 @@ The seed version uses four core resources.
 | Wealth | Trade focus, connected towns, taxes, events | Diplomacy, construction, aid, stabilization, special decisions |
 
 Avoid adding new resources in the prototype unless a system cannot work without them.
+
+### First-Pass Resource Costs
+
+These values are rough balance targets, not final tuning. Missing costs are worse than imperfect costs because the economy cannot be tested without resource pressure.
+
+| Action | Food | Timber | Stone | Wealth | Notes |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Scout nearby site | 0 | 0 | 0 | 10 | Waived for first tutorial scout |
+| Found camp | 40 | 60 | 0 | 20 | Also transfers 30 to 60 population |
+| Upgrade camp to village | 0 | 80 | 0 | 30 | Requires population and stability gate |
+| Upgrade village to town | 0 | 120 | 80 | 150 | Requires road connection |
+| Upgrade town to city | 0 | 0 | 300 | 400 | Requires stone road or port |
+| Build path | 0 | 40 | 0 | 20 | Terrain can add 0 to 60 percent cost |
+| Upgrade path to road | 0 | 80 | 40 | 60 | Bridge or pass traits add cost |
+| Upgrade road to stone road | 0 | 60 | 120 | 120 | Strong disaster resistance |
+| Fortify village | 0 | 30 | 80 | 50 | Raises defence, may raise local pride |
+| Fortify town | 0 | 60 | 160 | 120 | Stronger border deterrent |
+| Emergency food aid | 60 | 0 | 0 | 0 | Alternative to wealth aid |
+| Emergency wealth aid | 0 | 0 | 0 | 80 | Converts to local relief |
+| Negotiate autonomy | 0 | 0 | 0 | 60 | Adds concession memory |
+| Suppress rebellion | 0 | 0 | 0 | 120 | Also uses conflict resolver |
 
 ## 11. Roads and Supply
 
@@ -400,7 +512,19 @@ Administrative strain is tracked separately:
 
 ```text
 strain = controlled_settlements + active_crises + disconnected_settlements
+unmanaged_strain = max(0, strain - council_actions)
 ```
+
+Unmanaged strain applies at the end of each season:
+
+| Unmanaged Strain Effect | Per Point |
+| --- | ---: |
+| Crisis escalation chance | +3 percent |
+| Realm stability | -1 |
+| Autonomy pressure in disconnected or distant settlements | +1 |
+| Rival influence action weight against weak settlements | +2 |
+
+If unmanaged strain is 5 or higher for 3 consecutive seasons, generate a realm administration event such as court backlog, corrupt reeves, unpaid road crews, or ignored petitions.
 
 The expected pressure curve:
 
@@ -410,6 +534,24 @@ The expected pressure curve:
 | 3 to 4 settlements | 3 | 2 to 4 |
 | 5 to 7 settlements | 4 | 4 to 7 |
 | 8+ settlements | 5 | 6 to 10 |
+
+### Pacing Guardrails
+
+Council capacity is tight, but the first campaign must teach pressure before punishing it.
+
+Opening rules:
+
+- Spring Year 1 grants 1 bonus charter action usable only for scouting, founding the first camp, or building the first path.
+- No random severity 3 event can appear before Year 2 unless caused directly by a player choice.
+- The first 4 seasons favor warnings and active severity 1 issues over collapse outcomes.
+- Tutorial prompts should explain why a problem appeared and which actions can respond to it.
+
+Late-game overwhelm rules:
+
+- A maximum of 2 new non-faction active issues can appear in one season.
+- Existing active issues can still escalate, so neglect remains dangerous.
+- First Town unlocks a basic delegation action: spend 1 council action and 60 wealth to reduce unmanaged strain by 2 for one season.
+- Problems should have different urgency classes: immediate, seasonal, and long-term. Not every warning should demand instant action.
 
 ### Action Costs
 
@@ -498,31 +640,53 @@ The prototype needs 12 event families:
 11. Independent Settlement Request.
 12. Rival Faction Move.
 
-Each family should provide at least:
+Event families mature in tiers. Milestones should use the smallest tier that proves the mechanic.
 
-- 3 severity levels.
-- 3 opening events.
-- 3 follow-up events.
-- 2 resolution events.
-- 5 chronicle templates.
+| Family Tier | Use | Per-Family Content |
+| --- | --- | --- |
+| Skeleton family | Milestone 4 mechanical proof | 1 opening, 1 follow-up, 1 resolution, 2 chronicle templates |
+| Prototype-ready family | Complete 80-turn prototype | 2 openings, 2 follow-ups, 1 resolution, 5 chronicle templates |
+| Content-complete family | Polished prototype content pass | 3 openings, 3 follow-ups, 2 resolutions, 10 chronicle templates |
 
-### Prototype Content Target
+### Event Content Ramp
 
-| Content Type | Target |
+Milestone 4 does not require the full content-complete target. It only needs enough content to prove triggering, escalation, follow-up, cooldowns, memories, and chronicle output.
+
+| Content Type | Milestone 4 Mechanical Slice |
+| --- | ---: |
+| Event families | 6 |
+| Core event templates | 18 minimum |
+| Event variants | 36+ |
+| Chronicle templates | 12+ |
+| Follow-up links | 12+ |
+
+The complete 80-turn prototype should use all 12 families, but can ship with prototype-ready family depth before the larger content pass.
+
+| Content Type | Complete 80-Turn Prototype |
 | --- | ---: |
 | Event families | 12 |
-| Individual event templates | 60 |
-| Event variants | 180+ |
+| Core event templates | 60 minimum |
+| Event variants | 120+ |
+| Chronicle templates | 60+ |
+| Follow-up links | 36+ |
+
+The content-complete prototype target is a later writing and balance pass, not a blocker for proving the prototype loop.
+
+| Content Type | Content-Complete Prototype |
+| --- | ---: |
+| Event families | 12 |
+| Core event templates | 96 minimum |
+| Event variants | 240+ |
 | Chronicle templates | 120+ |
-| Follow-up links | 40+ |
+| Follow-up links | 60+ |
 
 ### Full Seed Content Target
 
 | Content Type | Target |
 | --- | ---: |
 | Event families | 24 |
-| Individual event templates | 140 |
-| Event variants | 400+ |
+| Core event templates | 192 minimum |
+| Event variants | 480+ |
 | Chronicle templates | 250+ |
 | Follow-up links | 100+ |
 
@@ -541,6 +705,52 @@ Outcomes: recovery, grievance, migration, deaths, riot
 ```
 
 The important behavior is continuity. The game should not only say that Blackwood is hungry. It should remember whether the player ignored the hunger, whether winter worsened it, whether people died, and whether the settlement blamed the council.
+
+### Active Issue State Machine
+
+Active issues move through explicit states.
+
+```text
+Warning -> Active -> Escalating -> Resolution
+             |            |
+             v            v
+          Dormant      Collapse
+```
+
+| State | Meaning | Exit Conditions |
+| --- | --- | --- |
+| Warning | Risk is visible but not yet a crisis | Trigger improves, or threshold worsens |
+| Active | Crisis is ongoing and can be acted on | Player response, timeout, or escalation threshold |
+| Escalating | Crisis has worsened and will force stronger outcomes | Severity reduced, resolution event, or collapse |
+| Resolution | One-time outcome applies memories, resources, and chronicle entries | Issue closes |
+| Dormant | Issue cooled down but leaves memory and future weighting | Cooldown expires |
+| Collapse | Settlement loss, rebellion, deaths, occupation, or major damage | Follow-up chain starts |
+
+Each active issue tracks:
+
+- family id.
+- severity 1 to 3.
+- affected settlement, road, faction, or region.
+- age in seasons.
+- ignored seasons.
+- last player response.
+- escalation threshold.
+- improvement threshold.
+- cooldown after resolution.
+- memory tags to apply.
+
+Escalation rule:
+
+```text
+escalation_score =
+    severity * 10
+  + ignored_seasons * 8
+  + unmanaged_strain * 3
+  + local_risk_modifier
+  - relevant_player_response
+```
+
+If escalation score is 35 or higher, the issue advances one state or increases severity.
 
 ### Repetition Controls
 
@@ -576,6 +786,87 @@ Follow-up: crackdown, concession, rebel_speaker
 | Independent Settlements | Existing towns and villages with local agendas |
 | Wilderness Pressure | Bandits, danger, harsh terrain, lawless zones, and frontier instability |
 
+### Independent Settlements
+
+Independent settlements are occupied sites that are not initially controlled by the player or rival clan. They use settlement stats, but track trust and autonomy instead of loyalty to the player.
+
+| Stat | Meaning |
+| --- | --- |
+| Trust | Willingness to trade, request help, accept envoys, or consider integration |
+| Autonomy | Desire to remain self-governing |
+| Integration progress | Progress toward joining the player's realm |
+| Rival pressure | Influence from a rival faction |
+| Local need | Current need for food, safety, roads, wealth, or dispute settlement |
+
+Independent settlement actions:
+
+- Request aid during food, road, bandit, or disaster issues.
+- Offer trade if roads and trust are high enough.
+- Reject integration if autonomy or rival pressure is high.
+- Ask for protection when wilderness or rival pressure rises.
+- Join the rival if rival pressure is high and player trust is low.
+
+Integration score:
+
+```text
+integration_score =
+    trust * 0.4
+  + road_connection_to_player * 20
+  + aid_memory_bonus
+  + trade_relationship_bonus
+  - autonomy * 0.3
+  - rival_pressure * 0.4
+  - recent_threat_or_harsh_choice_penalty
+```
+
+Integration can begin when the score is 50 or higher. Peaceful integration completes after 3 successful integration seasons or one major integration event resolution. Forced integration is out of scope for the prototype except as a harsh event choice that creates grievance and instability.
+
+### Wilderness Pressure
+
+Wilderness pressure is the second external pressure system beside the rival clan. It is not a political faction; it is a regional danger model that creates bandit, disaster, road, migration, and settlement safety events.
+
+Each region tracks wilderness pressure from 0 to 100.
+
+Pressure increases through:
+
+- High danger terrain.
+- Disconnected roads.
+- Logging focus near deep forest.
+- Unpatrolled passes, forests, and old roads.
+- Famine migration and abandoned settlements.
+- Rival raids that weaken order.
+
+Pressure decreases through:
+
+- Connected roads.
+- Fortified sites.
+- Border Watch or patrol projects.
+- Settlements with high stability.
+- Resolving bandit, road, and disaster event chains.
+
+Seasonal pressure update:
+
+```text
+wilderness_pressure_delta =
+    average_site_danger * 0.05
+  + disconnected_sites * 3
+  + active_bandit_issues * 5
+  + abandoned_or_ruined_sites * 2
+  - connected_fortified_sites * 4
+  - active_patrol_projects * 8
+```
+
+Pressure bands:
+
+| Pressure | Behavior |
+| ---: | --- |
+| 0 to 24 | Quiet; only minor flavor and rare travel trouble |
+| 25 to 49 | Watchful; road trouble and bandit warnings can appear |
+| 50 to 74 | Dangerous; bandit pressure, migration fear, and supply disruption are common |
+| 75 to 100 | Lawless; roads can be cut, settlements may lose population, and collapse events can trigger |
+
+Player responses include patrol region, fortify pass, repair road, sponsor watch, send aid, clear bandit camp, negotiate local rights, or abandon an exposed site.
+
 ### Rival Faction State
 
 Each rival faction tracks:
@@ -595,32 +886,86 @@ Each rival faction tracks:
 
 ### Goal Selection
 
-Every 4 seasons, a rival faction chooses a main goal.
+Every 4 seasons, a rival faction scores all available goals and chooses the highest score. Scores use 0 to 100 state values unless noted.
 
-| Goal | Chosen When |
+```text
+resource_need = max(food_need, wealth_need)
+target_weakness = 100 - target_defence
+open_site_value = best_nearby_open_site_value
+```
+
+| Goal | Prototype Score |
 | --- | --- |
-| Expand | High confidence and nearby open sites |
-| Fortify | Low security or player nearby |
-| Raid | Hostile, resource need, and weak target visible |
-| Trade | Low hostility and resource need |
-| Influence | Player settlement nearby has low loyalty |
-| Recover | Recent loss or crisis |
-| Confront | Border pressure high |
-| Appease | Fear high and hostility low |
+| Expand | confidence * 0.4 + open_site_value * 0.4 + expansion_need * 0.3 - recent_losses * 0.3 |
+| Fortify | security_need * 0.5 + fear_of_player * 0.3 + border_pressure * 0.2 |
+| Raid | hostility_to_player * 0.4 + resource_need * 0.3 + target_weakness * 0.3 - fear_of_player * 0.2 |
+| Trade | resource_need * 0.4 + (100 - hostility_to_player) * 0.4 + confidence * 0.1 |
+| Influence | border_pressure * 0.3 + target_low_loyalty * 0.4 + hostility_to_player * 0.2 |
+| Recover | recent_losses * 0.5 + resource_need * 0.2 + security_need * 0.2 |
+| Confront | border_pressure * 0.5 + confidence * 0.3 + hostility_to_player * 0.2 - fear_of_player * 0.2 |
+| Appease | fear_of_player * 0.5 + (100 - hostility_to_player) * 0.3 + recent_losses * 0.2 |
+
+Tie-breakers:
+
+1. Prefer the current goal if it is within 8 points of the best score.
+2. Prefer actions with visible targets over abstract goals.
+3. Prefer personality-favored goals.
+4. If still tied, choose the lower-risk goal.
 
 ### Personality Modifiers
 
 | Personality | Behavior |
 | --- | --- |
-| Expansionist | Prefers claiming sites |
-| Vengeful | Remembers attacks longer |
-| Mercantile | Prefers trade before raids |
-| Proud | Reacts strongly to threats |
-| Cautious | Fortifies before expanding |
-| Opportunist | Targets weak or disloyal settlements |
-| Traditionalist | Resists diplomacy but honors agreements |
+| Expansionist | +20 Expand, +10 Confront |
+| Vengeful | +20 Raid after player harm memory, hostility decays 50 percent slower |
+| Mercantile | +20 Trade, -10 Raid unless hostility > 70 |
+| Proud | +15 Confront after threats, -15 Appease |
+| Cautious | +20 Fortify when fear > 40, -10 Expand after recent losses |
+| Opportunist | +20 Raid or Influence against weak or disloyal settlements |
+| Traditionalist | -15 Trade and Appease, +15 Fortify, agreement memory lasts longer |
 
 Faction actions must be visible and explainable. The player should be able to understand why a rival supported separatists, claimed a pass, offered trade, or fortified a border.
+
+### Rival Action Execution
+
+The rival chooses a main goal every 4 seasons, but it attempts a concrete action every season if it has a legal target.
+
+Execution loop:
+
+1. Update faction needs, confidence, fear, hostility, and region control.
+2. If the current goal is older than 4 seasons or has no legal target, rescore goals.
+3. Generate candidate actions from the current goal.
+4. Score candidate targets by value, weakness, distance, road access, and risk.
+5. Execute the highest-scoring legal action.
+6. Emit a visible faction log entry and, for major moves, a chronicle entry.
+7. Apply action cooldowns so the same action is not repeated immediately.
+
+Goal-to-action mapping:
+
+| Goal | Concrete Actions |
+| --- | --- |
+| Expand | Claim open site, settle camp, pressure independent settlement |
+| Fortify | Improve border defence, secure road, station clan guard |
+| Raid | Attack road, raid weak settlement, steal supplies, test border |
+| Trade | Offer trade, request market access, send merchants |
+| Influence | Support separatists, fund local speaker, pressure independent village |
+| Recover | Repair own road, restore supplies, reduce recent loss penalty |
+| Confront | Demand withdrawal, close pass, threaten border settlement |
+| Appease | Offer truce, tribute, shared road access, or warning information |
+
+Candidate target score:
+
+```text
+target_score =
+    target_value * 0.4
+  + target_weakness * 0.3
+  + region_control_value * 0.2
+  + road_access * 0.1
+  - action_risk * 0.3
+  - distance_penalty
+```
+
+Action results should use existing systems. A raid creates a conflict resolution. Influence adds rival support or loyalty pressure. Expansion updates site ownership and region control. Trade creates an event offer or relationship modifier.
 
 ## 16. Conflict, Loyalty, and Collapse
 
@@ -658,6 +1003,41 @@ Conflict is abstract. There are no tactical battles in the prototype.
 - Loyalty shifts.
 - Population loss.
 - New grievance created.
+
+### Abstract Conflict Resolver
+
+Raids, sieges, border disputes, road attacks, and armed rebellions use the same score procedure.
+
+```text
+defender_score =
+    defence
+  + road_supply_bonus
+  + local_loyalty * 0.3
+  + stability * 0.2
+  + terrain_bonus
+  + fortification_bonus
+  + relevant_decree_bonus
+
+attacker_score =
+    attacker_strength
+  + surprise
+  + rival_support
+  + local_grievance_bonus
+  + danger_bonus
+  + event_modifier
+
+margin = defender_score - attacker_score
+```
+
+| Margin | Outcome |
+| ---: | --- |
+| +30 or higher | Defender holds cleanly; attacker loses confidence |
+| +10 to +29 | Defender holds with minor damage |
+| -9 to +9 | Stalemate; issue remains active and may escalate |
+| -10 to -29 | Attacker succeeds partially; damage, loyalty loss, or road disruption |
+| -30 or lower | Attacker succeeds decisively; occupation, rebellion victory, settlement loss, or major deaths |
+
+Conflict results should expose the top 2 to 3 causes to the player, such as poor road supply, low loyalty, strong hillfort terrain, or rival support.
 
 ### Rebellion Risk
 
@@ -732,8 +1112,10 @@ The player must end with:
 | Rebellions survived | +15 each |
 | Rebellions prevented through negotiation | +35 each |
 | Settlement lost | -50 each |
-| Famine deaths | Negative scaling |
+| Famine deaths | -1 per 10 deaths, capped at -100 |
 | Realm collapse event | -150 |
+
+`Rival faction contained` means the rival controls no player-founded settlement, controls no more than one contested region, and has not won a decisive conflict in the final 8 seasons.
 
 ### Ending Bands
 
@@ -759,6 +1141,23 @@ Assign 1 to 3 identity tags at the end.
 | Hungry Realm | Repeated famines |
 | Border Realm | Many raids or conflicts |
 | Civic Realm | High stability and loyalty |
+
+### Identity Scoring
+
+Identity tags use separate 0 to 100 style scores. The final ending displays the top 1 to 3 tags that exceed 45 points.
+
+| Identity | Score Inputs |
+| --- | --- |
+| Merchant Realm | Wealth surplus, trade focus settlements, connected market roads, peaceful integration |
+| Iron Realm | Fortification level, raids defeated, border sites held, low settlement loss |
+| Civic Realm | Average loyalty, average stability, negotiated crises, few harsh choices |
+| Frontier Realm | Dangerous sites settled, disasters survived, wilderness issues resolved |
+| Roadbound Realm | Capital-connected roads, stone roads, low disconnected settlement count |
+| Breadbasket Realm | Food surplus, famine prevention, farming settlements supporting others |
+| Fractured Realm | Breakaways, autonomy concessions, unresolved rebellions, contested regions |
+| Hungry Realm | Famine count, famine deaths, emergency aid failures, food insecurity |
+
+Legacy Score determines survival quality. Identity scores determine the story flavor of that survival.
 
 ## 19. Chronicle System
 
@@ -815,11 +1214,84 @@ The final chronicle calculates:
 - Golden year.
 - Final realm identity.
 
+### Summary Generation Passes
+
+Endgame chronicle generation runs in ordered passes:
+
+1. Collect defining events: include all defining entries, top major entries, settlement losses, first town, first city, final rival outcome, and final collapse or survival state.
+2. Rank settlements by importance: score founding age, population, prosperity, loyalty extremes, crisis count, rebellion status, road centrality, and chronicle mentions.
+3. Identify worst and golden years: sum negative and positive importance values per year, then choose the strongest year with at least 2 notable entries.
+4. Assign realm identity tags: use identity scores from the legacy system.
+5. Generate opening paragraph: summarize campaign duration, final ending band, capital status, and realm identity.
+6. Generate middle paragraph: summarize 2 to 4 defining settlement or faction arcs.
+7. Generate ending paragraph: summarize score, losses, survival state, and the strongest legacy tag.
+8. Clean repeated phrasing: avoid using the same settlement name twice in one sentence, avoid the same template family twice in one paragraph, and replace repeated subject names with "the town", "the border", "the council", or "the realm" only when the reference is unambiguous.
+
+### Chronicle Arc Rules
+
+The chronicle groups related entries into arcs before generating endgame prose. An arc is a cluster of entries sharing a settlement, faction, road, region, or event family within a meaningful time window.
+
+Prototype arc types:
+
+| Arc Type | Built From |
+| --- | --- |
+| Rise | Founding, growth, prosperity, upgrade, road connection |
+| Rescue | Crisis warning, player aid, recovery, loyalty memory |
+| Neglect | Warning, ignored seasons, escalation, grievance |
+| Betrayal | Low loyalty, rival influence, tax refusal, rebellion or defection |
+| Frontier Trial | Wilderness pressure, road danger, defence, survival or loss |
+| Integration | Independent request, aid or trade, integration progress, joining outcome |
+| Fall | Famine, raid, rebellion, abandonment, occupation, or collapse |
+
+Chronicle variation rules:
+
+- Similar campaigns should differ through selected arcs, identity tags, ending band, named settlements, and worst/golden years.
+- Each ending band has a tone profile: Fallen Charter, Scarred Survival, Fragile Realm, Enduring Realm, and Founding Legend use different opening and closing template pools.
+- A barely surviving realm should mention losses, concessions, unresolved danger, and survival cost.
+- A thriving realm should mention durable institutions, strong roads, loyal settlements, and defining achievements.
+- Template selection weights should prefer entries with high importance, repeated memories, settlement identity tags, or direct player decisions.
+- The generator should avoid using the same event family as the main example in both the middle and ending paragraph.
+
+Worst year score:
+
+```text
+year_negative_score =
+    famine_deaths
+  + settlements_lost * 40
+  + rebellions_started * 25
+  + decisive_conflicts_lost * 30
+  + collapse_events * 60
+```
+
+Golden year score:
+
+```text
+year_positive_score =
+    settlements_founded * 15
+  + upgrades_completed * 20
+  + rebellions_resolved_by_negotiation * 25
+  + major_roads_completed * 15
+  + decisive_conflicts_won * 25
+  + famine_recoveries * 20
+```
+
 ## 20. User Interface
 
 The interface should feel like a strategic royal map table: readable, calm, and information-dense.
 
 ### Main Screens
+
+Prototype UI must be smaller than the full design. The first playable version needs only:
+
+| Screen | Purpose |
+| --- | --- |
+| Main Map | Terrain backdrop, regions, sites, roads, ownership, warnings, and selection |
+| Selected Site Panel | Site or settlement details, valid actions, traits, memories, and active issues |
+| Event Modal | Current event narrative, choices, visible consequences, and uncertainty |
+| End Season Summary | Production, consumption, faction actions, event changes, and warnings |
+| Chronicle Log | Running list of notable and major entries |
+
+Full seed UI can expand into specialized screens:
 
 | Screen | Purpose |
 | --- | --- |
@@ -838,7 +1310,60 @@ The interface should feel like a strategic royal map table: readable, calm, and 
 - Selected settlement details can slide in or occupy a right panel.
 - Bottom or side actions show only currently valid verbs.
 - Warning markers explain cause and urgency.
-- Overlays show fertility, danger, trade reach, faction influence, supply, unrest, and migration.
+- Prototype overlays are limited to supply, danger, and faction influence.
+- Full seed overlays may add fertility, trade reach, unrest, migration, and regional claims after the simulation proves useful.
+
+### Prototype Interaction Flow
+
+The prototype uses immediate actions, not an action queue.
+
+Site action flow:
+
+1. Player selects a site, road, settlement, or event marker on the main map.
+2. Selected Site Panel shows current stats, traits, memories, active issues, and valid actions.
+3. Each action shows council cost, resource cost, requirements, expected effects, and disabled reasons.
+4. Low-risk 1-action commands can execute immediately.
+5. Destructive actions, 2+ action commands, and actions with hidden risk require confirmation.
+6. On execution, resources and council actions are spent immediately, state changes apply, and a short log entry appears.
+7. If an action creates or resolves a notable issue, the chronicle receives an entry.
+
+Event flow:
+
+1. Event Modal opens for blocking events at the start of the player action phase.
+2. The modal shows cause, affected location, severity, choices, visible consequences, and uncertainty.
+3. The player chooses one option or defers only if the event supports deferral.
+4. Deferred events stay active and usually increase ignored seasons.
+5. Resolved events apply resources, stats, memory tags, follow-up links, and chronicle entries.
+
+End season flow:
+
+1. End Season button is disabled while a blocking event requires resolution.
+2. End Season Summary lists production, consumption, population changes, road changes, faction actions, issue changes, and new warnings.
+3. The player can click summary rows to jump to the affected map object.
+
+The UI must always answer three questions: what is wrong, why it happened, and which actions can affect it.
+
+### Onboarding and Difficulty
+
+The first playable campaign should include a guided opening mode.
+
+Guided opening rules:
+
+- First campaign starts with recommended scouting and founding prompts.
+- First road, first food warning, first active issue, first independent request, and first rival action each trigger a one-time explanation.
+- Tooltips explain stat causes, not just stat names.
+- Warnings include plain-language causes such as "poor road supply", "food below winter need", or "rival influence nearby".
+- The first 4 seasons introduce one major concept at a time: scouting, founding, supply, and crisis response.
+
+Difficulty presets can initially be data values in `balance.json`.
+
+| Preset | Intended Use | Main Modifiers |
+| --- | --- | --- |
+| Charter | Learning mode | Lower event weights, slower escalation, extra starting food and timber |
+| Frontier | Default mode | Baseline values in this GDD |
+| Hard March | Challenge mode | Faster wilderness growth, stronger rival, lower starting wealth |
+
+The prototype should default to Frontier after the guided opening is understood, but Charter should remain available for first-time players.
 
 ### Visual Style
 
@@ -936,6 +1461,22 @@ Location data should include:
 - danger level.
 - settlement id, if occupied.
 
+Region data should include:
+
+- id.
+- name.
+- site ids.
+- major site ids.
+- regional capital site id, if any.
+- controlling faction id.
+- contested status.
+- per-faction control scores.
+- active regional issues.
+- unrest level.
+- danger level.
+- wilderness pressure.
+- trade safety.
+
 Settlement data should include:
 
 - id.
@@ -969,7 +1510,34 @@ Faction data should include:
 - fear.
 - hostility.
 - current goal.
+- current goal age.
+- action cooldowns.
+- last action summary.
+- known target ids.
 - memory tags.
+
+Independent settlement data should include:
+
+- settlement id.
+- trust.
+- autonomy.
+- integration progress.
+- rival pressure.
+- local need.
+- trade relationship.
+- protection relationship.
+- integration state.
+
+Wilderness pressure data should include:
+
+- region id.
+- pressure.
+- pressure band.
+- active bandit issues.
+- disconnected site count.
+- abandoned or ruined site count.
+- active patrol projects.
+- last pressure delta.
 
 Event data should include:
 
@@ -989,6 +1557,22 @@ Event data should include:
 - cooldown rules.
 - follow-up links.
 
+Active issue data should include:
+
+- id.
+- family id.
+- state.
+- severity.
+- affected scope and target ids.
+- age in seasons.
+- ignored seasons.
+- last player response.
+- escalation threshold.
+- improvement threshold.
+- cooldown remaining.
+- memory tags to apply on resolution.
+- follow-up event ids.
+
 ## 23. Prototype Milestones
 
 ### Milestone 1: Map and Turns
@@ -996,7 +1580,8 @@ Event data should include:
 Acceptance criteria:
 
 - Player can start a new campaign.
-- Map has at least 12 playable sites.
+- Map has 30 total map sites, with at least 8 visible on turn 1.
+- Site categories match the prototype count: 18 settlement-capable sites, 4 independent settlements, and 8 landmark/resource/pass sites.
 - Player can select sites.
 - Player can scout unknown adjacent sites.
 - Seasonal turn advances correctly.
@@ -1011,6 +1596,8 @@ Acceptance criteria:
 - Settlements produce and consume resources each season.
 - Food shortages affect stability.
 - At least 3 settlement focuses produce different outcomes.
+- Upgrade requirements block invalid camp, village, town, and city upgrades.
+- Founding population transfer changes the source population or migrant pool.
 - Player can lose a settlement through neglect.
 
 ### Milestone 3: Roads and Isolation
@@ -1022,17 +1609,22 @@ Acceptance criteria:
 - Disconnected settlements suffer measurable penalties.
 - At least 3 road events can trigger.
 - Player can clearly see why a settlement is isolated.
+- Unmanaged strain applies stability, crisis, autonomy, and rival influence pressure.
 
 ### Milestone 4: Event Chains
 
 Acceptance criteria:
 
 - At least 6 event families exist.
+- Each implemented family has at least 1 opening event, 1 follow-up event, 1 resolution event, and 2 chronicle templates.
 - Events can create active issues.
 - Active issues can escalate or resolve.
 - Follow-up events can occur.
 - Event choices apply memory tags.
 - Chronicle records major outcomes.
+- In a 30-turn automated or manual test, no identical event template appears twice for the same settlement.
+- At least 3 active issues create follow-up events in a 30-turn test.
+- At least 2 event chains reach resolution in a 30-turn test.
 
 ### Milestone 5: Rival Faction
 
@@ -1040,9 +1632,13 @@ Acceptance criteria:
 
 - Rival faction has visible personality.
 - Rival chooses goals based on state.
+- Rival converts selected goals into concrete map actions.
 - Rival can claim sites, raid, trade, or influence settlements.
 - Player can understand rival action reasons.
 - Rival behavior changes after player actions.
+- At least 1 faction action in a 30-turn test responds to a player weakness such as low loyalty, poor road supply, or exposed border.
+- At least 1 independent settlement can request aid, trade, and begin integration.
+- At least 1 wilderness pressure event can escalate or reduce based on roads, patrols, or fortification.
 
 ### Milestone 6: Complete Prototype Campaign
 
@@ -1052,8 +1648,13 @@ Acceptance criteria:
 - Player can collapse, partially survive, or earn a strong legacy.
 - End summary is generated from actual campaign data.
 - At least 12 settlements or locations can appear in the chronicle.
-- Player can name three memorable events after one run.
-- No event repeats in a way that feels broken within the first 30 turns.
+- In a 30-turn test, at least 5 chronicle entries reference different settlements or sites.
+- In a 30-turn test, at least 3 active issues create follow-up events.
+- In a 30-turn test, at least 2 event chains reach resolution.
+- In a 30-turn test, at least 1 faction action responds to player weakness.
+- The endgame summary names worst year, golden year, strongest identity tag, largest settlement, and at least one defining event.
+- Guided opening prompts explain scouting, founding, roads, first crisis, independent request, and first rival action.
+- Chronicle output includes at least 2 grouped arcs, not only isolated log entries.
 
 ## 24. Out of Scope for Prototype
 
@@ -1072,20 +1673,17 @@ The prototype should not include:
 - Multiplayer.
 - Large illustration requirements for every event.
 
-## 25. Competitive Positioning
+## 25. Design Differentiators
 
-Realmseed overlaps with grand strategy, settlement simulation, and survival management games, but its center is different.
+Realmseed is differentiated by the way its systems turn strategic pressure into remembered history.
 
-| Reference | Realmseed Difference |
-| --- | --- |
-| Crusader Kings | No dynasty focus; settlements and chronicle are the stars |
-| Dwarf Fortress | Not a deep colony sim; operates at realm and settlement scale |
-| Frostpunk | Similar pressure and moral tradeoffs, but broader map and longer history |
-| Northgard | No unit-led RTS economy; expansion is political, logistical, and historical |
-| Against the Storm | Shared frontier pressure, but Realmseed emphasizes persistent towns and long-term memory |
-| Civilization | Terrain exists, but sites, roads, regions, loyalty, and history are the decision layer |
-
-The pitch should emphasize realm history, settlement memory, road dependency, faction pressure, and endings generated from actual play.
+- Settlement memory: places remember famine aid, neglect, rebellion, autonomy, protection, and betrayal.
+- Generated chronicle endings: the campaign summary is built from real events, not fixed ending text.
+- Region-level politics: control emerges from sites, roads, population, unrest, and claims rather than painted tiles.
+- Road dependency: roads affect supply, loyalty, trade, crisis response, faction pressure, and identity.
+- Event chains: crises escalate, cool down, resolve, or collapse through active issues.
+- Limited council capacity: the realm grows faster than the player's ability to manage it.
+- Identity scoring: different survival styles can produce different realm identities instead of one optimal tidy kingdom.
 
 ## 26. Design Risks and Mitigations
 
@@ -1104,10 +1702,20 @@ Mitigation:
 Mitigation:
 
 - Keep prototype to 80 turns.
-- Use 12 event families, not hundreds of bespoke events.
+- Build event content in tiers: mechanical slice first, complete prototype second, content-complete pass last.
 - Keep resources to four.
 - Avoid tactical combat and tile micromanagement.
 - Require every future hook to have a current mechanical function.
+
+### Risk: Action Economy Feels Punitive
+
+Mitigation:
+
+- Use opening pacing rules and a Year 1 bonus charter action.
+- Prevent early severity 3 random events.
+- Add urgency classes so not every warning demands immediate action.
+- Unlock delegation after the first town.
+- Test 30-turn runs for both frustration and lack of pressure.
 
 ### Risk: Events Feel Random
 
@@ -1125,8 +1733,18 @@ Mitigation:
 
 - Give the rival a visible personality.
 - Choose goals from needs, confidence, fear, hostility, and opportunity.
+- Convert goals into concrete map actions with visible targets.
 - Explain rival actions in the UI.
 - Let past player actions affect faction memory.
+
+### Risk: Wilderness Pressure Is Invisible
+
+Mitigation:
+
+- Track wilderness pressure per region.
+- Show pressure bands through warnings and danger overlay.
+- Tie pressure changes to roads, patrols, fortifications, abandoned sites, and active issues.
+- Ensure wilderness events can both escalate and be reduced by player action.
 
 ### Risk: Chronicle Becomes Flavor Only
 
@@ -1135,7 +1753,18 @@ Mitigation:
 - Generate entries from real event data.
 - Assign importance levels.
 - Use chronicle templates tied to event families.
+- Group entries into arcs before writing final summaries.
 - Build the endgame summary from tracked campaign facts.
+
+### Risk: Learning Curve Is Too Steep
+
+Mitigation:
+
+- Ship a guided opening mode.
+- Use cause-focused tooltips.
+- Introduce one major concept at a time during the first 4 seasons.
+- Provide difficulty presets through data values.
+- Make the UI answer what is wrong, why it happened, and which actions can affect it.
 
 ## 27. Success Criteria
 
