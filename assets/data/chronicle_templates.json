@@ -88,5 +88,77 @@
     "title": "The Council Falls Behind",
     "body": "By {season} of Year {year}, petitions and road duties outpaced the council's reach. Unmanaged strain became part of the realm's story.",
     "importance": "notable"
+  },
+  {
+    "id": "event_food_crisis_opened",
+    "title": "{site} Faces Hunger",
+    "body": "A food warning at {site} entered the council ledger in {season} of Year {year}.",
+    "importance": "notable"
+  },
+  {
+    "id": "event_food_crisis_resolved",
+    "title": "{site} Survives Hunger",
+    "body": "The food crisis at {site} eased in {season} of Year {year}, leaving memories of the council's answer.",
+    "importance": "major"
+  },
+  {
+    "id": "event_road_trouble_opened",
+    "title": "Road Trouble Near {site}",
+    "body": "Route trouble near {site} became a council matter in {season} of Year {year}.",
+    "importance": "notable"
+  },
+  {
+    "id": "event_road_trouble_resolved",
+    "title": "Road Order Restored",
+    "body": "The troubled route near {site} returned to order in {season} of Year {year}.",
+    "importance": "major"
+  },
+  {
+    "id": "event_isolation_opened",
+    "title": "{site} Demands Attention",
+    "body": "{site} pressed the council over its isolation in {season} of Year {year}.",
+    "importance": "notable"
+  },
+  {
+    "id": "event_isolation_resolved",
+    "title": "{site} Reaffirms the Charter",
+    "body": "The isolation grievance at {site} softened in {season} of Year {year}.",
+    "importance": "major"
+  },
+  {
+    "id": "event_market_dispute_opened",
+    "title": "{site} Argues Market Rights",
+    "body": "Market rights at {site} became a public dispute in {season} of Year {year}.",
+    "importance": "notable"
+  },
+  {
+    "id": "event_market_dispute_resolved",
+    "title": "{site} Signs Market Terms",
+    "body": "The market dispute at {site} settled into a new charter memory in {season} of Year {year}.",
+    "importance": "major"
+  },
+  {
+    "id": "event_migration_wave_opened",
+    "title": "Migrants Reach {site}",
+    "body": "Families seeking land reached {site} in {season} of Year {year}.",
+    "importance": "notable"
+  },
+  {
+    "id": "event_migration_wave_resolved",
+    "title": "{site} Adds New Names",
+    "body": "The migrant families near {site} joined the settlement rolls in {season} of Year {year}.",
+    "importance": "major"
+  },
+  {
+    "id": "event_civic_unrest_opened",
+    "title": "{site} Questions the Council",
+    "body": "Civic unrest at {site} became visible in {season} of Year {year}.",
+    "importance": "notable"
+  },
+  {
+    "id": "event_civic_unrest_resolved",
+    "title": "{site} Accepts a Compact",
+    "body": "The council settled civic demands at {site} in {season} of Year {year}.",
+    "importance": "major"
   }
 ]

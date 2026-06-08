@@ -1,8 +1,10 @@
 //! Embedded Realmseed campaign data and validation helpers.
 
+pub mod event;
 pub mod road;
 pub mod settlement;
 
+pub use event::*;
 pub use road::*;
 pub use settlement::*;
 
@@ -20,6 +22,8 @@ const ROADS_JSON: &str = include_str!("../assets/data/roads.json");
 const CHRONICLE_TEMPLATES_JSON: &str = include_str!("../assets/data/chronicle_templates.json");
 const SETTLEMENT_BALANCE_JSON: &str = include_str!("../assets/data/settlement_balance.json");
 const ROAD_BALANCE_JSON: &str = include_str!("../assets/data/road_balance.json");
+const EVENT_FAMILIES_JSON: &str = include_str!("../assets/data/event_families.json");
+const EVENT_TEMPLATES_JSON: &str = include_str!("../assets/data/event_templates.json");
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameConfig {
@@ -151,6 +155,8 @@ pub struct GameData {
     pub chronicle_templates: Vec<ChronicleTemplateDef>,
     pub settlement_balance: SettlementBalance,
     pub road_balance: RoadBalance,
+    pub event_families: Vec<EventFamilyDef>,
+    pub event_templates: Vec<EventTemplateDef>,
     pub texture_manifest: Vec<TextureConfig>,
 }
 
@@ -165,6 +171,8 @@ impl GameData {
             chronicle_templates: load_embedded_json(CHRONICLE_TEMPLATES_JSON)?,
             settlement_balance: load_embedded_json(SETTLEMENT_BALANCE_JSON)?,
             road_balance: load_embedded_json(ROAD_BALANCE_JSON)?,
+            event_families: load_embedded_json(EVENT_FAMILIES_JSON)?,
+            event_templates: load_embedded_json(EVENT_TEMPLATES_JSON)?,
             texture_manifest: load_embedded_json(TEXTURE_MANIFEST_JSON)?,
         };
         data.validate()?;
@@ -181,6 +189,16 @@ impl GameData {
 
     pub fn chronicle_template(&self, id: &str) -> Option<&ChronicleTemplateDef> {
         self.chronicle_templates
+            .iter()
+            .find(|template| template.id == id)
+    }
+
+    pub fn event_family(&self, id: &str) -> Option<&EventFamilyDef> {
+        self.event_families.iter().find(|family| family.id == id)
+    }
+
+    pub fn event_template(&self, id: &str) -> Option<&EventTemplateDef> {
+        self.event_templates
             .iter()
             .find(|template| template.id == id)
     }
@@ -284,6 +302,42 @@ impl GameData {
 
         self.settlement_balance.validate()?;
         self.road_balance.validate()?;
+        self.validate_events()?;
+
+        Ok(())
+    }
+
+    fn validate_events(&self) -> Result<(), String> {
+        if self.event_families.len() < 6 {
+            return Err("expected at least 6 event families".to_owned());
+        }
+        for family in &self.event_families {
+            for template_id in [
+                &family.opening_template_id,
+                &family.followup_template_id,
+                &family.resolution_template_id,
+            ] {
+                if self.event_template(template_id).is_none() {
+                    return Err(format!(
+                        "event family {} references missing template {}",
+                        family.id, template_id
+                    ));
+                }
+            }
+            let chronicle_count = [
+                &family.opening_chronicle_template_id,
+                &family.resolution_chronicle_template_id,
+            ]
+            .iter()
+            .filter(|template_id| self.chronicle_template(template_id).is_some())
+            .count();
+            if chronicle_count < 2 {
+                return Err(format!(
+                    "event family {} needs two chronicle templates",
+                    family.id
+                ));
+            }
+        }
 
         Ok(())
     }
@@ -304,6 +358,7 @@ mod tests {
         assert_eq!(data.roads.len(), 50);
         assert_eq!(data.settlement_balance.focuses.len(), 6);
         assert_eq!(data.road_balance.road_event_issue_ids.len(), 3);
+        assert_eq!(data.event_families.len(), 6);
         assert_eq!(
             data.sites
                 .iter()

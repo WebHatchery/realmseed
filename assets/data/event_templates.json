@@ -1,0 +1,566 @@
+[
+  {
+    "id": "food_crisis_opening",
+    "family_id": "food_crisis",
+    "stage": "opening",
+    "title": "Thin Granaries",
+    "narrative": "{site} reports that stored food will not last through another hard season.",
+    "cause": "Food stores are low compared with local population.",
+    "visible_consequences": "Ignoring this warning can create famine pressure and loyalty loss.",
+    "hidden_consequences": "Repeated hunger increases future civic unrest weight.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "send_food",
+        "label": "Send Relief",
+        "visible_consequence": "+45 food, +8 loyalty, issue can resolve next season.",
+        "effects": {
+          "resource_delta": { "food": 45, "timber": 0, "stone": 0, "wealth": 0 },
+          "stability_delta": 2,
+          "loyalty_delta": 8,
+          "prosperity_delta": 0,
+          "danger_delta": 0,
+          "memory_tags": ["relief_sent"],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 18,
+          "chronicle_template_id": "event_food_crisis_opened"
+        }
+      },
+      {
+        "id": "ration",
+        "label": "Order Rationing",
+        "visible_consequence": "+20 food, -3 loyalty, issue remains active.",
+        "effects": {
+          "resource_delta": { "food": 20, "timber": 0, "stone": 0, "wealth": 0 },
+          "stability_delta": 3,
+          "loyalty_delta": -3,
+          "prosperity_delta": 0,
+          "danger_delta": 0,
+          "memory_tags": ["rationed"],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 10,
+          "chronicle_template_id": "event_food_crisis_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "food_crisis_followup",
+    "family_id": "food_crisis",
+    "stage": "follow_up",
+    "title": "Hunger Turns Bitter",
+    "narrative": "The warning at {site} has become an argument over who the charter protects.",
+    "cause": "The food issue aged without enough relief.",
+    "visible_consequences": "A weak response can push the issue toward collapse.",
+    "hidden_consequences": "The settlement may remember neglect even after recovery.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "open_stores",
+        "label": "Open Stores",
+        "visible_consequence": "+60 food, +6 stability, prepares resolution.",
+        "effects": {
+          "resource_delta": { "food": 60, "timber": 0, "stone": 0, "wealth": -10 },
+          "stability_delta": 6,
+          "loyalty_delta": 4,
+          "prosperity_delta": 0,
+          "danger_delta": 0,
+          "memory_tags": ["stores_opened"],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 22,
+          "chronicle_template_id": "event_food_crisis_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "food_crisis_resolution",
+    "family_id": "food_crisis",
+    "stage": "resolution",
+    "title": "Granaries Recovered",
+    "narrative": "{site} has enough food to leave the crisis ledger.",
+    "cause": "Relief and food security overtook the hunger issue.",
+    "visible_consequences": "The issue becomes dormant and leaves a memory tag.",
+    "hidden_consequences": "Future food warnings will use this memory.",
+    "allow_defer": false,
+    "choices": [
+      {
+        "id": "mark_recovery",
+        "label": "Record Recovery",
+        "visible_consequence": "+4 loyalty, issue resolved.",
+        "effects": {
+          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 0 },
+          "stability_delta": 2,
+          "loyalty_delta": 4,
+          "prosperity_delta": 1,
+          "danger_delta": 0,
+          "memory_tags": ["famine_recovered"],
+          "issue_state": "dormant",
+          "severity_delta": -3,
+          "response_score": 0,
+          "close_issue": true,
+          "chronicle_template_id": "event_food_crisis_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "road_trouble_opening",
+    "family_id": "road_trouble",
+    "stage": "opening",
+    "title": "Road Crews Ask for Protection",
+    "narrative": "A troubled route near {site} is slowing traders and supply carts.",
+    "cause": "A route is damaged or blocked.",
+    "visible_consequences": "Repairing routes reduces follow-up pressure.",
+    "hidden_consequences": "Road trouble increases unmanaged strain.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "fund_crews",
+        "label": "Fund Crews",
+        "visible_consequence": "+5 stability, issue can resolve.",
+        "effects": {
+          "resource_delta": { "food": 0, "timber": -10, "stone": 0, "wealth": -10 },
+          "stability_delta": 5,
+          "loyalty_delta": 2,
+          "prosperity_delta": 1,
+          "danger_delta": -1,
+          "memory_tags": ["road_crews_funded"],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 18,
+          "chronicle_template_id": "event_road_trouble_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "road_trouble_followup",
+    "family_id": "road_trouble",
+    "stage": "follow_up",
+    "title": "Merchants Threaten to Turn Back",
+    "narrative": "The road problem near {site} has become a trade dispute.",
+    "cause": "A route warning remained active.",
+    "visible_consequences": "Delay can lower prosperity and loyalty.",
+    "hidden_consequences": "Trade-focused settlements remember this sharply.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "escort_caravans",
+        "label": "Escort Caravans",
+        "visible_consequence": "+4 loyalty, -3 danger, prepares resolution.",
+        "effects": {
+          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": -15 },
+          "stability_delta": 2,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": -3,
+          "memory_tags": ["caravans_escorted"],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 20,
+          "chronicle_template_id": "event_road_trouble_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "road_trouble_resolution",
+    "family_id": "road_trouble",
+    "stage": "resolution",
+    "title": "The Route Holds",
+    "narrative": "Traffic near {site} is moving again.",
+    "cause": "The route response reduced pressure.",
+    "visible_consequences": "The road issue is resolved.",
+    "hidden_consequences": "Roadbound identity scoring improves later.",
+    "allow_defer": false,
+    "choices": [
+      {
+        "id": "record_safe_route",
+        "label": "Record Safe Route",
+        "visible_consequence": "+2 prosperity, issue resolved.",
+        "effects": {
+          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 0 },
+          "stability_delta": 0,
+          "loyalty_delta": 2,
+          "prosperity_delta": 2,
+          "danger_delta": -1,
+          "memory_tags": ["route_restored"],
+          "issue_state": "dormant",
+          "severity_delta": -3,
+          "response_score": 0,
+          "close_issue": true,
+          "chronicle_template_id": "event_road_trouble_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "isolation_opening",
+    "family_id": "isolation",
+    "stage": "opening",
+    "title": "A Distant Settlement Complains",
+    "narrative": "{site} says the capital only remembers it when levies are due.",
+    "cause": "The settlement is isolated from the capital road network.",
+    "visible_consequences": "Isolation lowers loyalty and raises autonomy pressure.",
+    "hidden_consequences": "Rivals may later exploit this grievance.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "promise_road",
+        "label": "Promise a Road",
+        "visible_consequence": "+5 loyalty now, but the issue remains active.",
+        "effects": {
+          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 0 },
+          "stability_delta": 1,
+          "loyalty_delta": 5,
+          "prosperity_delta": 0,
+          "danger_delta": 0,
+          "memory_tags": ["road_promised"],
+          "issue_state": "active",
+          "severity_delta": 0,
+          "response_score": 8,
+          "chronicle_template_id": "event_isolation_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "isolation_followup",
+    "family_id": "isolation",
+    "stage": "follow_up",
+    "title": "Local Patience Thins",
+    "narrative": "The people of {site} are counting seasons since the council promised better roads.",
+    "cause": "Isolation remained unresolved.",
+    "visible_consequences": "A firm response can keep the settlement in the realm.",
+    "hidden_consequences": "Autonomy pressure grows if ignored.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "send_reeve",
+        "label": "Send a Reeve",
+        "visible_consequence": "+6 stability, +12 response score.",
+        "effects": {
+          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": -20 },
+          "stability_delta": 6,
+          "loyalty_delta": 2,
+          "prosperity_delta": 0,
+          "danger_delta": 0,
+          "memory_tags": ["reeve_sent"],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 18,
+          "chronicle_template_id": "event_isolation_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "isolation_resolution",
+    "family_id": "isolation",
+    "stage": "resolution",
+    "title": "The Charter Is Heard Again",
+    "narrative": "{site} accepts that the council has not forgotten it.",
+    "cause": "A response reduced isolation pressure.",
+    "visible_consequences": "The issue resolves, though road access still matters.",
+    "hidden_consequences": "Future rival pressure is reduced for this settlement.",
+    "allow_defer": false,
+    "choices": [
+      {
+        "id": "confirm_oath",
+        "label": "Confirm the Oath",
+        "visible_consequence": "+5 loyalty, issue resolved.",
+        "effects": {
+          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 0 },
+          "stability_delta": 2,
+          "loyalty_delta": 5,
+          "prosperity_delta": 0,
+          "danger_delta": 0,
+          "memory_tags": ["charter_heard"],
+          "issue_state": "dormant",
+          "severity_delta": -3,
+          "response_score": 0,
+          "close_issue": true,
+          "chronicle_template_id": "event_isolation_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "market_dispute_opening",
+    "family_id": "market_dispute",
+    "stage": "opening",
+    "title": "Market Rights Disputed",
+    "narrative": "{site} is growing richer, and local traders want a clearer charter.",
+    "cause": "Trade focus or prosperity created local ambition.",
+    "visible_consequences": "Ignoring this can cost loyalty but may preserve wealth.",
+    "hidden_consequences": "Granting rights can create a proud market memory.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "grant_stalls",
+        "label": "Grant Stalls",
+        "visible_consequence": "+4 prosperity, +3 loyalty.",
+        "effects": {
+          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 10 },
+          "stability_delta": 0,
+          "loyalty_delta": 3,
+          "prosperity_delta": 4,
+          "danger_delta": 0,
+          "memory_tags": ["market_rights"],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 18,
+          "chronicle_template_id": "event_market_dispute_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "market_dispute_followup",
+    "family_id": "market_dispute",
+    "stage": "follow_up",
+    "title": "Toll Arguments Spread",
+    "narrative": "The market dispute at {site} has become a fight over tolls and exemptions.",
+    "cause": "The market issue remained unsettled.",
+    "visible_consequences": "A compromise can resolve it with a proud memory.",
+    "hidden_consequences": "Harsh refusal may support unrest later.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "broker_compromise",
+        "label": "Broker Compromise",
+        "visible_consequence": "+5 stability, +2 prosperity.",
+        "effects": {
+          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": -10 },
+          "stability_delta": 5,
+          "loyalty_delta": 2,
+          "prosperity_delta": 2,
+          "danger_delta": 0,
+          "memory_tags": ["market_compromise"],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 18,
+          "chronicle_template_id": "event_market_dispute_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "market_dispute_resolution",
+    "family_id": "market_dispute",
+    "stage": "resolution",
+    "title": "Market Charter Signed",
+    "narrative": "{site} accepts a new market charter.",
+    "cause": "The dispute was answered before it became unrest.",
+    "visible_consequences": "+3 prosperity, issue resolved.",
+    "hidden_consequences": "Market identity grows.",
+    "allow_defer": false,
+    "choices": [
+      {
+        "id": "seal_charter",
+        "label": "Seal Charter",
+        "visible_consequence": "+3 prosperity, issue resolved.",
+        "effects": {
+          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 0 },
+          "stability_delta": 1,
+          "loyalty_delta": 2,
+          "prosperity_delta": 3,
+          "danger_delta": 0,
+          "memory_tags": ["market_charter"],
+          "issue_state": "dormant",
+          "severity_delta": -3,
+          "response_score": 0,
+          "close_issue": true,
+          "chronicle_template_id": "event_market_dispute_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "migration_wave_opening",
+    "family_id": "migration_wave",
+    "stage": "opening",
+    "title": "Families Ask for Land",
+    "narrative": "Migrant families arrive near {site}, hoping the charter still has room.",
+    "cause": "Food security and stability made the realm attractive.",
+    "visible_consequences": "Accepting them raises population but strains food.",
+    "hidden_consequences": "Migrant memory can alter future events.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "welcome_families",
+        "label": "Welcome Families",
+        "visible_consequence": "+24 population, -25 food.",
+        "effects": {
+          "resource_delta": { "food": -25, "timber": 0, "stone": 0, "wealth": 0 },
+          "population_delta": 24,
+          "stability_delta": -1,
+          "loyalty_delta": 4,
+          "prosperity_delta": 2,
+          "danger_delta": 0,
+          "memory_tags": ["migrants_welcomed"],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 18,
+          "chronicle_template_id": "event_migration_wave_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "migration_wave_followup",
+    "family_id": "migration_wave",
+    "stage": "follow_up",
+    "title": "Newcomers Need Holdings",
+    "narrative": "The families near {site} need fields, tools, and recognition.",
+    "cause": "The migration wave remained unresolved.",
+    "visible_consequences": "A settlement grant resolves pressure.",
+    "hidden_consequences": "Failure can produce restless newcomers.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "grant_holdings",
+        "label": "Grant Holdings",
+        "visible_consequence": "+8 stability, +6 loyalty.",
+        "effects": {
+          "resource_delta": { "food": 0, "timber": -15, "stone": 0, "wealth": -15 },
+          "stability_delta": 8,
+          "loyalty_delta": 6,
+          "prosperity_delta": 1,
+          "danger_delta": 0,
+          "memory_tags": ["holdings_granted"],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 20,
+          "chronicle_template_id": "event_migration_wave_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "migration_wave_resolution",
+    "family_id": "migration_wave",
+    "stage": "resolution",
+    "title": "New Names Join the Rolls",
+    "narrative": "{site} records the migrant families as charter people.",
+    "cause": "The council absorbed the migration wave.",
+    "visible_consequences": "+2 loyalty, issue resolved.",
+    "hidden_consequences": "Population identity changes future stories.",
+    "allow_defer": false,
+    "choices": [
+      {
+        "id": "record_rolls",
+        "label": "Record Rolls",
+        "visible_consequence": "+2 loyalty, issue resolved.",
+        "effects": {
+          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 0 },
+          "stability_delta": 1,
+          "loyalty_delta": 2,
+          "prosperity_delta": 1,
+          "danger_delta": 0,
+          "memory_tags": ["new_rolls"],
+          "issue_state": "dormant",
+          "severity_delta": -3,
+          "response_score": 0,
+          "close_issue": true,
+          "chronicle_template_id": "event_migration_wave_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "civic_unrest_opening",
+    "family_id": "civic_unrest",
+    "stage": "opening",
+    "title": "Council Orders Questioned",
+    "narrative": "{site} obeys, but not quietly.",
+    "cause": "Low loyalty, autonomy pressure, or unresolved grievances raised unrest.",
+    "visible_consequences": "Unrest can escalate into harsher stability loss.",
+    "hidden_consequences": "Concessions leave memories.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "hear_petition",
+        "label": "Hear Petition",
+        "visible_consequence": "+5 loyalty, +3 stability.",
+        "effects": {
+          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": -10 },
+          "stability_delta": 3,
+          "loyalty_delta": 5,
+          "prosperity_delta": 0,
+          "danger_delta": 0,
+          "memory_tags": ["petition_heard"],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 18,
+          "chronicle_template_id": "event_civic_unrest_opened"
+        }
+      }
+    ]
+  },
+  {
+    "id": "civic_unrest_followup",
+    "family_id": "civic_unrest",
+    "stage": "follow_up",
+    "title": "Petitions Become Demands",
+    "narrative": "Grievances at {site} are now organized enough to worry the council.",
+    "cause": "The unrest issue escalated.",
+    "visible_consequences": "A civic concession can resolve it.",
+    "hidden_consequences": "Ignoring it increases autonomy pressure.",
+    "allow_defer": true,
+    "choices": [
+      {
+        "id": "grant_concession",
+        "label": "Grant Concession",
+        "visible_consequence": "+8 loyalty, -1 prosperity.",
+        "effects": {
+          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": -20 },
+          "stability_delta": 4,
+          "loyalty_delta": 8,
+          "prosperity_delta": -1,
+          "danger_delta": 0,
+          "memory_tags": ["rights_granted"],
+          "issue_state": "active",
+          "severity_delta": -1,
+          "response_score": 20,
+          "chronicle_template_id": "event_civic_unrest_resolved"
+        }
+      }
+    ]
+  },
+  {
+    "id": "civic_unrest_resolution",
+    "family_id": "civic_unrest",
+    "stage": "resolution",
+    "title": "The Commons Settle",
+    "narrative": "{site} returns to ordinary charter business.",
+    "cause": "A civic response reduced unrest pressure.",
+    "visible_consequences": "The issue resolves and leaves a civic memory.",
+    "hidden_consequences": "Future loyalty drift can use this memory.",
+    "allow_defer": false,
+    "choices": [
+      {
+        "id": "record_compact",
+        "label": "Record Compact",
+        "visible_consequence": "+3 loyalty, issue resolved.",
+        "effects": {
+          "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 0 },
+          "stability_delta": 2,
+          "loyalty_delta": 3,
+          "prosperity_delta": 0,
+          "danger_delta": 0,
+          "memory_tags": ["civic_compact"],
+          "issue_state": "dormant",
+          "severity_delta": -3,
+          "response_score": 0,
+          "close_issue": true,
+          "chronicle_template_id": "event_civic_unrest_resolved"
+        }
+      }
+    ]
+  }
+]

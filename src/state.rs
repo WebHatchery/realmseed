@@ -1,8 +1,10 @@
 //! Runtime campaign state, seasonal turns, scouting, and save migration.
 
+pub mod event;
 pub mod road;
 pub mod settlement;
 
+pub use event::*;
 pub use road::*;
 pub use settlement::*;
 
@@ -121,6 +123,12 @@ pub struct SaveData {
     #[serde(default)]
     pub regional_projects: Vec<RegionalProjectRuntimeState>,
     #[serde(default)]
+    pub active_issues: Vec<ActiveIssueRuntimeState>,
+    #[serde(default)]
+    pub pending_event: Option<PendingEventRuntimeState>,
+    #[serde(default)]
+    pub event_history: Vec<EventHistoryEntry>,
+    #[serde(default)]
     pub unmanaged_strain: i32,
     #[serde(default)]
     pub unmanaged_strain_seasons: i32,
@@ -140,6 +148,9 @@ pub struct GameSession {
     pub settlements: Vec<SettlementRuntimeState>,
     pub routes: Vec<RouteRuntimeState>,
     pub regional_projects: Vec<RegionalProjectRuntimeState>,
+    pub active_issues: Vec<ActiveIssueRuntimeState>,
+    pub pending_event: Option<PendingEventRuntimeState>,
+    pub event_history: Vec<EventHistoryEntry>,
     pub unmanaged_strain: i32,
     pub unmanaged_strain_seasons: i32,
     pub migrant_pool: i32,
@@ -180,6 +191,9 @@ impl GameSession {
             settlements: Self::create_starting_settlements(data),
             routes: Self::create_starting_routes(data),
             regional_projects: Vec::new(),
+            active_issues: Vec::new(),
+            pending_event: None,
+            event_history: Vec::new(),
             unmanaged_strain: 0,
             unmanaged_strain_seasons: 0,
             migrant_pool: data.settlement_balance.starting_migrant_pool,
@@ -199,6 +213,9 @@ impl GameSession {
             settlements: save.settlements,
             routes: save.routes,
             regional_projects: save.regional_projects,
+            active_issues: save.active_issues,
+            pending_event: save.pending_event,
+            event_history: save.event_history,
             unmanaged_strain: save.unmanaged_strain,
             unmanaged_strain_seasons: save.unmanaged_strain_seasons,
             migrant_pool: save.migrant_pool,
@@ -219,6 +236,9 @@ impl GameSession {
             settlements: self.settlements.clone(),
             routes: self.routes.clone(),
             regional_projects: self.regional_projects.clone(),
+            active_issues: self.active_issues.clone(),
+            pending_event: self.pending_event.clone(),
+            event_history: self.event_history.clone(),
             unmanaged_strain: self.unmanaged_strain,
             unmanaged_strain_seasons: self.unmanaged_strain_seasons,
             migrant_pool: self.migrant_pool,
@@ -296,6 +316,9 @@ impl GameSession {
         report.isolated_settlements = road_report.isolated_settlements;
         report.road_warnings = road_report.road_warnings;
         report.unmanaged_strain = road_report.unmanaged_strain;
+        let event_report = self.advance_event_chains(data);
+        report.events_triggered = event_report.events_triggered;
+        report.issues_escalated = event_report.issues_escalated;
         if self.clock.advance() {
             self.add_chronicle_entry(data, "new_year", None);
         }

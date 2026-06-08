@@ -133,6 +133,8 @@ pub struct SeasonAdvanceReport {
     pub isolated_settlements: usize,
     pub road_warnings: usize,
     pub unmanaged_strain: i32,
+    pub events_triggered: usize,
+    pub issues_escalated: usize,
 }
 
 #[derive(Debug, Clone, Default)]

@@ -1,6 +1,7 @@
 //! Selected-site panel, campaign controls, and chronicle overlay.
 
 use super::{routes, virtual_button, UiAction, UiContext};
+use crate::data::ActiveIssueState;
 use crate::state::SiteKnowledge;
 use crate::state::{SettlementRuntimeState, SettlementStatus};
 use macroquad::prelude::*;
@@ -197,12 +198,25 @@ fn draw_existing_settlement(
         TextStyle::new(14.0, dark::TEXT_DIM).params(),
     );
 
+    let active_issue_count = ctx
+        .session
+        .active_issues
+        .iter()
+        .filter(|issue| {
+            issue.target_site_id == settlement.location_id
+                && !matches!(
+                    issue.state,
+                    ActiveIssueState::Dormant | ActiveIssueState::Resolution
+                )
+        })
+        .count();
     let resources = format!(
-        "Food {}   Timber {}   Stone {}   Wealth {}",
+        "Food {}   Timber {}   Stone {}   Wealth {}   Issues {}",
         settlement.stored.food,
         settlement.stored.timber,
         settlement.stored.stone,
-        settlement.stored.wealth
+        settlement.stored.wealth,
+        active_issue_count
     );
     draw_text_ex(
         &resources,

@@ -1,5 +1,6 @@
 //! Immediate-mode UI for the Realmseed map, site panel, and chronicle.
 
+mod event;
 mod map;
 mod panel;
 mod routes;
@@ -26,6 +27,9 @@ pub enum UiAction {
     SetSettlementFocus(String),
     BuildOrUpgradeRoute(String),
     CompleteRegionalProject(String),
+    ResolveEventChoice(String),
+    DeferEvent,
+    ForceEvent,
     AdvanceSeason,
     ToggleChronicle,
 }
@@ -45,7 +49,8 @@ pub struct UiContext<'a> {
 pub fn draw_game_ui(ctx: UiContext<'_>) -> Vec<UiAction> {
     let mut actions = Vec::new();
     let mouse = ctx.ui.mouse_position();
-    let input_enabled = !ctx.show_chronicle;
+    let event_open = ctx.session.pending_event.is_some();
+    let input_enabled = !ctx.show_chronicle && !event_open;
 
     draw_header(&ctx);
     map::draw_map_panel(&ctx, mouse, input_enabled, &mut actions);
@@ -54,6 +59,9 @@ pub fn draw_game_ui(ctx: UiContext<'_>) -> Vec<UiAction> {
 
     if ctx.show_chronicle {
         panel::draw_chronicle_overlay(&ctx, mouse, &mut actions);
+    }
+    if event_open {
+        event::draw_event_modal(&ctx, mouse, &mut actions);
     }
 
     actions
@@ -108,7 +116,7 @@ fn draw_footer() {
             .with_border(1.0, Color::new(0.52, 0.47, 0.32, 0.45)),
     );
     draw_text_block(
-        "Click visible markers to inspect sites, found camps, set settlement focus, and upgrade when requirements are met. Question markers are adjacent unknown sites; select one and scout it. Space advances the season. C opens the chronicle.",
+        "Click visible markers to inspect sites, found camps, set settlement focus, and upgrade when requirements are met. Space advances the season. C opens the chronicle. E forces the next eligible event for validation.",
         rect.x + 18.0,
         rect.y + 14.0,
         rect.w - 36.0,

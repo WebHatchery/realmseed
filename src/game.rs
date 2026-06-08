@@ -88,6 +88,9 @@ impl Game {
         if is_key_pressed(KeyCode::C) {
             self.events.push(UiAction::ToggleChronicle);
         }
+        if is_key_pressed(KeyCode::E) {
+            self.events.push(UiAction::ForceEvent);
+        }
         if is_key_pressed(KeyCode::S) {
             self.events.push(UiAction::Save);
         }
@@ -211,6 +214,26 @@ impl Game {
                     Err(reason) => self.notifications.warning(reason),
                 }
             }
+            UiAction::ResolveEventChoice(choice_id) => {
+                match self
+                    .session
+                    .resolve_pending_event_choice(&self.data, &choice_id)
+                {
+                    Ok(message) => {
+                        self.notifications.success(message);
+                        self.show_chronicle = true;
+                    }
+                    Err(reason) => self.notifications.warning(reason),
+                }
+            }
+            UiAction::DeferEvent => match self.session.defer_pending_event() {
+                Ok(message) => self.notifications.warning(message),
+                Err(reason) => self.notifications.warning(reason),
+            },
+            UiAction::ForceEvent => match self.session.force_next_event(&self.data) {
+                Ok(message) => self.notifications.info(message),
+                Err(reason) => self.notifications.warning(reason),
+            },
             UiAction::AdvanceSeason => {
                 let report = self.session.advance_season(&self.data);
                 self.notifications.info(format!(
@@ -246,6 +269,16 @@ impl Game {
                 if report.unmanaged_strain > 0 {
                     self.notifications
                         .info(format!("Unmanaged strain: {}", report.unmanaged_strain));
+                }
+                if report.events_triggered > 0 {
+                    self.notifications
+                        .info(format!("{} event pending", report.events_triggered));
+                }
+                if report.issues_escalated > 0 {
+                    self.notifications.warning(format!(
+                        "{} active issue escalated",
+                        report.issues_escalated
+                    ));
                 }
             }
             UiAction::ToggleChronicle => {
