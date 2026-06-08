@@ -1,0 +1,81 @@
+{
+  "campaign_turns": 80,
+  "difficulty_presets": [
+    {
+      "id": "frontier",
+      "name": "Frontier",
+      "description": "Default prototype pacing.",
+      "event_weight_modifier": 0,
+      "wilderness_modifier": 0
+    },
+    {
+      "id": "charter",
+      "name": "Charter",
+      "description": "Gentler opening pressure.",
+      "event_weight_modifier": -10,
+      "wilderness_modifier": -5
+    },
+    {
+      "id": "hard_march",
+      "name": "Hard March",
+      "description": "Faster pressure and fewer quiet years.",
+      "event_weight_modifier": 10,
+      "wilderness_modifier": 8
+    }
+  ],
+  "ambitions": [
+    {
+      "id": "breadbasket",
+      "name": "Breadbasket Charter",
+      "description": "Feed the frontier and be remembered for famine prevention.",
+      "identity_tag": "Breadbasket Realm"
+    },
+    {
+      "id": "roadbound",
+      "name": "Ash Road Compact",
+      "description": "Bind settlements into a visible capital road network.",
+      "identity_tag": "Roadbound Realm"
+    },
+    {
+      "id": "civic",
+      "name": "Civic Charter",
+      "description": "Build a stable realm of loyal settlements and negotiated crises.",
+      "identity_tag": "Civic Realm"
+    }
+  ],
+  "projects": [
+    {
+      "id": "expand_granaries",
+      "name": "Expand Granaries",
+      "scope": "settlement",
+      "description": "Adds food buffer and famine resilience to the selected settlement.",
+      "cost": { "food": 0, "timber": 35, "stone": 20, "wealth": 35 }
+    },
+    {
+      "id": "charter_market",
+      "name": "Charter Market",
+      "scope": "settlement",
+      "description": "Raises prosperity and wealth in the selected settlement.",
+      "cost": { "food": 0, "timber": 25, "stone": 10, "wealth": 45 }
+    },
+    {
+      "id": "frontier_watch",
+      "name": "Frontier Watch",
+      "scope": "regional",
+      "description": "Reduces wilderness pressure in the selected region.",
+      "cost": { "food": 0, "timber": 45, "stone": 15, "wealth": 45 }
+    }
+  ],
+  "institutions": [
+    {
+      "id": "road_wardens",
+      "name": "Road Wardens",
+      "description": "Reduces repeated wilderness and road pressure after the realm invests in routes."
+    },
+    {
+      "id": "reeve_courts",
+      "name": "Reeve Courts",
+      "description": "Improves low-stability settlements and reduces repeated civic pressure."
+    }
+  ]
+}

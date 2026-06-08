@@ -1,10 +1,12 @@
 //! Embedded Realmseed campaign data and validation helpers.
 
+pub mod campaign;
 pub mod event;
 pub mod faction;
 pub mod road;
 pub mod settlement;
 
+pub use campaign::*;
 pub use event::*;
 pub use faction::*;
 pub use road::*;
@@ -27,6 +29,7 @@ const ROAD_BALANCE_JSON: &str = include_str!("../assets/data/road_balance.json")
 const EVENT_FAMILIES_JSON: &str = include_str!("../assets/data/event_families.json");
 const EVENT_TEMPLATES_JSON: &str = include_str!("../assets/data/event_templates.json");
 const FACTIONS_JSON: &str = include_str!("../assets/data/factions.json");
+const CAMPAIGN_JSON: &str = include_str!("../assets/data/campaign.json");
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameConfig {
@@ -161,6 +164,7 @@ pub struct GameData {
     pub event_families: Vec<EventFamilyDef>,
     pub event_templates: Vec<EventTemplateDef>,
     pub faction_balance: FactionBalance,
+    pub campaign_balance: CampaignBalance,
     pub texture_manifest: Vec<TextureConfig>,
 }
 
@@ -178,6 +182,7 @@ impl GameData {
             event_families: load_embedded_json(EVENT_FAMILIES_JSON)?,
             event_templates: load_embedded_json(EVENT_TEMPLATES_JSON)?,
             faction_balance: load_embedded_json(FACTIONS_JSON)?,
+            campaign_balance: load_embedded_json(CAMPAIGN_JSON)?,
             texture_manifest: load_embedded_json(TEXTURE_MANIFEST_JSON)?,
         };
         data.validate()?;
@@ -309,6 +314,7 @@ impl GameData {
         self.road_balance.validate()?;
         self.validate_events()?;
         self.faction_balance.validate()?;
+        self.campaign_balance.validate()?;
 
         Ok(())
     }
@@ -366,6 +372,7 @@ mod tests {
         assert_eq!(data.road_balance.road_event_issue_ids.len(), 3);
         assert_eq!(data.event_families.len(), 6);
         assert_eq!(data.faction_balance.rival.id, "ashthorn_clan");
+        assert_eq!(data.campaign_balance.campaign_turns, 80);
         assert_eq!(
             data.sites
                 .iter()

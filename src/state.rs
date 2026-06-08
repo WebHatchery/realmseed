@@ -1,10 +1,12 @@
 //! Runtime campaign state, seasonal turns, scouting, and save migration.
 
+pub mod campaign;
 pub mod event;
 pub mod faction;
 pub mod road;
 pub mod settlement;
 
+pub use campaign::*;
 pub use event::*;
 pub use faction::*;
 pub use road::*;
@@ -137,6 +139,16 @@ pub struct SaveData {
     #[serde(default)]
     pub wilderness_pressure: Vec<WildernessPressureState>,
     #[serde(default)]
+    pub selected_ambition_id: Option<String>,
+    #[serde(default)]
+    pub completed_projects: Vec<CompletedProjectState>,
+    #[serde(default)]
+    pub active_institutions: Vec<ActiveInstitutionState>,
+    #[serde(default)]
+    pub last_season_summary: String,
+    #[serde(default)]
+    pub endgame_summary: Option<EndgameSummary>,
+    #[serde(default)]
     pub unmanaged_strain: i32,
     #[serde(default)]
     pub unmanaged_strain_seasons: i32,
@@ -162,6 +174,11 @@ pub struct GameSession {
     pub rival_faction: FactionRuntimeState,
     pub independent_settlements: Vec<IndependentSettlementRuntimeState>,
     pub wilderness_pressure: Vec<WildernessPressureState>,
+    pub selected_ambition_id: Option<String>,
+    pub completed_projects: Vec<CompletedProjectState>,
+    pub active_institutions: Vec<ActiveInstitutionState>,
+    pub last_season_summary: String,
+    pub endgame_summary: Option<EndgameSummary>,
     pub unmanaged_strain: i32,
     pub unmanaged_strain_seasons: i32,
     pub migrant_pool: i32,
@@ -208,6 +225,11 @@ impl GameSession {
             rival_faction: Self::create_starting_rival(data),
             independent_settlements: Self::create_independent_states(data),
             wilderness_pressure: Self::create_wilderness_pressure(data),
+            selected_ambition_id: None,
+            completed_projects: Vec::new(),
+            active_institutions: Vec::new(),
+            last_season_summary: "No season summary yet.".to_owned(),
+            endgame_summary: None,
             unmanaged_strain: 0,
             unmanaged_strain_seasons: 0,
             migrant_pool: data.settlement_balance.starting_migrant_pool,
@@ -233,6 +255,11 @@ impl GameSession {
             rival_faction: save.rival_faction,
             independent_settlements: save.independent_settlements,
             wilderness_pressure: save.wilderness_pressure,
+            selected_ambition_id: save.selected_ambition_id,
+            completed_projects: save.completed_projects,
+            active_institutions: save.active_institutions,
+            last_season_summary: save.last_season_summary,
+            endgame_summary: save.endgame_summary,
             unmanaged_strain: save.unmanaged_strain,
             unmanaged_strain_seasons: save.unmanaged_strain_seasons,
             migrant_pool: save.migrant_pool,
@@ -259,6 +286,11 @@ impl GameSession {
             rival_faction: self.rival_faction.clone(),
             independent_settlements: self.independent_settlements.clone(),
             wilderness_pressure: self.wilderness_pressure.clone(),
+            selected_ambition_id: self.selected_ambition_id.clone(),
+            completed_projects: self.completed_projects.clone(),
+            active_institutions: self.active_institutions.clone(),
+            last_season_summary: self.last_season_summary.clone(),
+            endgame_summary: self.endgame_summary.clone(),
             unmanaged_strain: self.unmanaged_strain,
             unmanaged_strain_seasons: self.unmanaged_strain_seasons,
             migrant_pool: self.migrant_pool,
@@ -343,6 +375,8 @@ impl GameSession {
         report.rival_actions = faction_report.rival_actions;
         report.independent_requests = faction_report.independent_requests;
         report.wilderness_changes = faction_report.wilderness_changes;
+        let campaign_report = self.advance_campaign_systems(data, &report);
+        report.campaign_finished = campaign_report.campaign_finished;
         if self.clock.advance() {
             self.add_chronicle_entry(data, "new_year", None);
         }
@@ -419,6 +453,9 @@ impl GameSession {
         }
         if self.wilderness_pressure.is_empty() {
             self.wilderness_pressure = Self::create_wilderness_pressure(data);
+        }
+        if self.last_season_summary.is_empty() {
+            self.last_season_summary = "No season summary yet.".to_owned();
         }
     }
 }

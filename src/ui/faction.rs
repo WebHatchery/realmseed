@@ -34,7 +34,13 @@ pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, mouse: Vec2, actions: &m
     }
 
     let content = rect.inset(24.0);
-    draw_rival(ctx, Rect::new(content.x, content.y + 48.0, 430.0, 486.0));
+    draw_rival(ctx, Rect::new(content.x, content.y + 48.0, 430.0, 298.0));
+    draw_campaign_controls(
+        ctx,
+        mouse,
+        actions,
+        Rect::new(content.x, content.y + 368.0, 430.0, 166.0),
+    );
     draw_independents(
         ctx,
         Rect::new(content.x + 456.0, content.y + 48.0, 430.0, 210.0),
@@ -78,7 +84,7 @@ fn draw_rival(ctx: &UiContext<'_>, rect: Rect) {
         TextStyle::new(17.0, dark::TEXT_BRIGHT).params(),
     );
     let mut y = rect.y + 118.0;
-    for entry in rival.action_log.iter().rev().take(6) {
+    for entry in rival.action_log.iter().rev().take(3) {
         let target = entry
             .target_site_id
             .as_deref()
@@ -104,6 +110,110 @@ fn draw_rival(ctx: &UiContext<'_>, rect: Rect) {
             dark::TEXT,
         );
         y += 60.0;
+    }
+}
+
+fn draw_campaign_controls(
+    ctx: &UiContext<'_>,
+    mouse: Vec2,
+    actions: &mut Vec<UiAction>,
+    rect: Rect,
+) {
+    draw_text_ex(
+        "Campaign",
+        rect.x,
+        rect.y,
+        TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
+    );
+    let mut y = rect.y + 24.0;
+    if let Some(ambition_id) = &ctx.session.selected_ambition_id {
+        let name = ctx
+            .data
+            .campaign_balance
+            .ambition(ambition_id)
+            .map(|ambition| ambition.name.as_str())
+            .unwrap_or(ambition_id.as_str());
+        draw_text_ex(
+            &format!(
+                "{} progress {}",
+                name,
+                ctx.session.ambition_progress(ctx.data, ambition_id)
+            ),
+            rect.x,
+            y,
+            TextStyle::new(14.0, dark::TEXT).params(),
+        );
+        y += 24.0;
+    } else {
+        let button_w = (rect.w - 12.0) / 3.0;
+        for (index, ambition) in ctx.data.campaign_balance.ambitions.iter().enumerate() {
+            if virtual_button(
+                Rect::new(
+                    rect.x + index as f32 * (button_w + 6.0),
+                    y - 16.0,
+                    button_w,
+                    28.0,
+                ),
+                &ambition.name.replace(" Charter", ""),
+                true,
+                ButtonTone::Primary,
+                mouse,
+            ) {
+                actions.push(UiAction::SelectAmbition(ambition.id.clone()));
+            }
+        }
+        y += 34.0;
+    }
+
+    draw_text_block(
+        &ctx.session.last_season_summary,
+        rect.x,
+        y - 8.0,
+        rect.w,
+        42.0,
+        12.0,
+        2.0,
+        dark::TEXT_DIM,
+    );
+    y += 42.0;
+
+    let project_w = (rect.w - 12.0) / 3.0;
+    for (index, project) in ctx.data.campaign_balance.projects.iter().enumerate() {
+        let status = ctx.session.project_status(ctx.data, &project.id);
+        if virtual_button(
+            Rect::new(
+                rect.x + index as f32 * (project_w + 6.0),
+                y,
+                project_w,
+                26.0,
+            ),
+            &project.name,
+            status.enabled,
+            ButtonTone::Secondary,
+            mouse,
+        ) {
+            actions.push(UiAction::CompleteProject(project.id.clone()));
+        }
+    }
+    y += 34.0;
+
+    let institution_w = (rect.w - 8.0) / 2.0;
+    for (index, institution) in ctx.data.campaign_balance.institutions.iter().enumerate() {
+        let status = ctx.session.institution_status(ctx.data, &institution.id);
+        if virtual_button(
+            Rect::new(
+                rect.x + index as f32 * (institution_w + 8.0),
+                y,
+                institution_w,
+                26.0,
+            ),
+            &institution.name,
+            status.enabled,
+            ButtonTone::Positive,
+            mouse,
+        ) {
+            actions.push(UiAction::ActivateInstitution(institution.id.clone()));
+        }
     }
 }
 

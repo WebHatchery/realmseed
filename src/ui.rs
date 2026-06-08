@@ -1,5 +1,6 @@
 //! Immediate-mode UI for the Realmseed map, site panel, and chronicle.
 
+mod endgame;
 mod event;
 mod faction;
 mod map;
@@ -34,6 +35,9 @@ pub enum UiAction {
     OpenIndependentTrade,
     BeginIndependentIntegration,
     ToggleFactionPanel,
+    SelectAmbition(String),
+    CompleteProject(String),
+    ActivateInstitution(String),
     AdvanceSeason,
     ToggleChronicle,
 }
@@ -60,7 +64,7 @@ pub fn draw_game_ui(ctx: UiContext<'_>) -> Vec<UiAction> {
     draw_header(&ctx);
     map::draw_map_panel(&ctx, mouse, input_enabled, &mut actions);
     panel::draw_side_panel(&ctx, mouse, input_enabled, &mut actions);
-    draw_footer();
+    draw_footer(&ctx);
 
     if ctx.show_chronicle {
         panel::draw_chronicle_overlay(&ctx, mouse, &mut actions);
@@ -70,6 +74,9 @@ pub fn draw_game_ui(ctx: UiContext<'_>) -> Vec<UiAction> {
     }
     if event_open {
         event::draw_event_modal(&ctx, mouse, &mut actions);
+    }
+    if ctx.session.endgame_summary.is_some() {
+        endgame::draw_endgame_summary(&ctx);
     }
 
     actions
@@ -116,7 +123,7 @@ fn draw_header(ctx: &UiContext<'_>) {
     );
 }
 
-fn draw_footer() {
+fn draw_footer(ctx: &UiContext<'_>) {
     let rect = Rect::new(18.0, 632.0, LOGICAL_WIDTH - 36.0, 70.0);
     draw_surface(
         rect,
@@ -124,7 +131,10 @@ fn draw_footer() {
             .with_border(1.0, Color::new(0.52, 0.47, 0.32, 0.45)),
     );
     draw_text_block(
-        "Click visible markers to inspect sites, found camps, set settlement focus, and upgrade when requirements are met. Space advances the season. C opens the chronicle. E forces the next eligible event for validation.",
+        &format!(
+            "{}\nSpace advances the season. C opens the chronicle. F opens faction pressure. E forces the next eligible event for validation.",
+            ctx.session.guidance_text()
+        ),
         rect.x + 18.0,
         rect.y + 14.0,
         rect.w - 36.0,

@@ -138,6 +138,7 @@ pub struct SeasonAdvanceReport {
     pub rival_actions: usize,
     pub independent_requests: usize,
     pub wilderness_changes: usize,
+    pub campaign_finished: bool,
 }
 
 #[derive(Debug, Clone, Default)]

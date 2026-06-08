@@ -202,5 +202,23 @@
     "title": "The Frontier Calms",
     "body": "Pressure around {site} receded in {season} of Year {year}, helped by roads, patrols, or fortified settlements.",
     "importance": "notable"
+  },
+  {
+    "id": "ambition_declared",
+    "title": "The Council Declares an Ambition",
+    "body": "In {season} of Year {year}, the council gave the realm a deliberate direction from {site}.",
+    "importance": "major"
+  },
+  {
+    "id": "project_completed",
+    "title": "A Project Changes {site}",
+    "body": "A proactive charter project was completed at or near {site} in {season} of Year {year}.",
+    "importance": "major"
+  },
+  {
+    "id": "institution_unlocked",
+    "title": "An Institution Takes Root",
+    "body": "The council established a lasting office near {site} in {season} of Year {year}, reducing repeated pressure across the realm.",
+    "importance": "major"
   }
 ]

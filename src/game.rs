@@ -256,6 +256,36 @@ impl Game {
                     Err(reason) => self.notifications.warning(reason),
                 }
             }
+            UiAction::SelectAmbition(ambition_id) => {
+                match self.session.select_ambition(&self.data, &ambition_id) {
+                    Ok(message) => {
+                        self.notifications.success(message);
+                        self.show_chronicle = true;
+                    }
+                    Err(reason) => self.notifications.warning(reason),
+                }
+            }
+            UiAction::CompleteProject(project_id) => {
+                match self.session.complete_project(&self.data, &project_id) {
+                    Ok(message) => {
+                        self.notifications.success(message);
+                        self.show_chronicle = true;
+                    }
+                    Err(reason) => self.notifications.warning(reason),
+                }
+            }
+            UiAction::ActivateInstitution(institution_id) => {
+                match self
+                    .session
+                    .activate_institution(&self.data, &institution_id)
+                {
+                    Ok(message) => {
+                        self.notifications.success(message);
+                        self.show_chronicle = true;
+                    }
+                    Err(reason) => self.notifications.warning(reason),
+                }
+            }
             UiAction::AdvanceSeason => {
                 let report = self.session.advance_season(&self.data);
                 self.notifications.info(format!(
@@ -316,6 +346,10 @@ impl Game {
                         "{} wilderness pressure band changed",
                         report.wilderness_changes
                     ));
+                }
+                if report.campaign_finished {
+                    self.notifications
+                        .success("The 20-year campaign is complete");
                 }
             }
             UiAction::ToggleChronicle => {

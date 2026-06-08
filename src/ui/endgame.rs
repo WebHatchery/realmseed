@@ -1,0 +1,64 @@
+//! Endgame legacy summary modal.
+
+use super::UiContext;
+use macroquad::prelude::*;
+use macroquad_toolkit::prelude::*;
+use macroquad_toolkit::ui::RectExt;
+
+pub(super) fn draw_endgame_summary(ctx: &UiContext<'_>) {
+    let Some(summary) = &ctx.session.endgame_summary else {
+        return;
+    };
+    draw_rectangle(
+        0.0,
+        0.0,
+        super::LOGICAL_WIDTH,
+        super::LOGICAL_HEIGHT,
+        Color::new(0.02, 0.025, 0.02, 0.70),
+    );
+    let rect = Rect::new(206.0, 92.0, 868.0, 520.0);
+    draw_surface_with_title(
+        rect,
+        Some("20-Year Chronicle Summary"),
+        &SurfaceStyle::new(Color::new(0.075, 0.070, 0.055, 0.99))
+            .with_border(1.0, Color::new(0.64, 0.55, 0.34, 0.85))
+            .with_header(48.0, Color::new(0.10, 0.095, 0.075, 1.0))
+            .with_header_divider(1.0, Color::new(0.64, 0.55, 0.34, 0.45)),
+        TextStyle::new(20.0, dark::TEXT_BRIGHT),
+    );
+    let content = rect.inset(26.0);
+    draw_text_ex(
+        &format!("{} - {} points", summary.ending_band, summary.legacy_score),
+        content.x,
+        content.y + 54.0,
+        TextStyle::new(24.0, dark::TEXT_BRIGHT).params(),
+    );
+    draw_text_block(
+        &summary.summary_text,
+        content.x,
+        content.y + 80.0,
+        content.w,
+        190.0,
+        17.0,
+        4.0,
+        dark::TEXT,
+    );
+    draw_text_block(
+        &format!(
+            "Strongest identity: {}\nLargest settlement: {}\nWorst year: {}\nGolden year: {}\nDefining event: {}\nGrouped arcs: {}",
+            summary.strongest_identity,
+            summary.largest_settlement,
+            summary.worst_year,
+            summary.golden_year,
+            summary.defining_event,
+            summary.arcs.join(", ")
+        ),
+        content.x,
+        content.y + 286.0,
+        content.w,
+        150.0,
+        16.0,
+        4.0,
+        dark::TEXT_DIM,
+    );
+}
