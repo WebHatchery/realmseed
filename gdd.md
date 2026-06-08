@@ -71,6 +71,24 @@ The seed version uses a small number of resources, stats, and actions, but they 
 
 The world records what happened. Settlements remember famine aid, neglect, road isolation, rebellion, protection, tax disputes, granted rights, and betrayal. The chronicle turns simulation changes into history.
 
+### Player Plans Create the Story
+
+Emergence should come from the collision between player intent and living systems. The player should enter each run with plans: make a roadbound realm, settle the dangerous frontier, build a merchant valley, pacify independents, fortify the north, or feed the whole region. Events and factions then bend, punish, reward, or redirect those plans.
+
+The core question is not only "what happened this time?" It is "what story did my choices start, and how did the realm change it?"
+
+### Visible Agency and Mastery
+
+Realmseed must avoid becoming only crisis adjudication. The player needs proactive tools, readable consequences, and a sense of increasing competence.
+
+Mastery should come from:
+
+- Reading terrain, roads, loyalty, danger, and faction intent before crises happen.
+- Building institutions that reduce repeated problems.
+- Choosing realm ambitions that shape priorities and endings.
+- Making long-term projects that change regions and settlement behavior.
+- Using the chronicle to understand cause and effect across years.
+
 ### The Seed Must Stand Alone
 
 The prototype must be enjoyable without magic, monsters, gods, dynasties, tactical battles, deep diplomacy, or complex city building. Future hooks may exist only if they have a clear current mechanical function.
@@ -100,6 +118,34 @@ The player does not:
 - Paint borders manually.
 
 The player should think in terms of places, promises, pressure, loyalty, and legacy.
+
+### Agency Contract
+
+The player must have proactive choices in every season, not only responses to whatever event appeared. Each season should offer at least one meaningful action in two of these categories:
+
+- Expansion: scout, found, integrate, claim, or launch an expedition.
+- Infrastructure: build roads, improve roads, open ferries, restore old routes, or secure supply.
+- Settlement shaping: set focus, start projects, grant rights, fortify, appoint local offices.
+- Regional strategy: patrol a region, secure a pass, clear bandits, sponsor migration, or open trade.
+- Diplomacy and pressure: negotiate, trade, threaten, contain, appease, or support loyalists.
+- Memory and legacy: choose an ambition, resolve a defining issue, or accept a costly identity-shaping decision.
+
+The simulation can surprise the player, but it should rarely leave the player with only reactive chores.
+
+### Realm Ambitions
+
+Realm ambitions are optional player-declared goals that create visible agency and replay direction. A run can support one primary ambition and one secondary ambition.
+
+| Ambition | Player Fantasy | Mechanical Bias |
+| --- | --- | --- |
+| Breadbasket Charter | Feed the frontier and become indispensable | Rewards food surplus, granaries, famine prevention, migrant attraction |
+| Ash Road Compact | Bind the valley through roads and supply | Rewards connected settlements, road projects, reduced isolation |
+| Iron March | Hold the border through forts and loyal militia | Rewards defence, raid survival, frontier control |
+| Merchant Valley | Turn roads and towns into a trading realm | Rewards wealth, trade focus, independent integration |
+| Civic Charter | Build a stable realm of loyal settlements | Rewards loyalty, stability, negotiated crises |
+| Frontier Oath | Settle dangerous places others avoid | Rewards dangerous sites settled, wilderness pressure reduced |
+
+Ambitions do not force a victory path. They weight events, add optional objectives, unlock a few related projects, and influence the endgame chronicle. A failed ambition should still create a memorable story.
 
 ## 5. Game Identity
 
@@ -211,6 +257,24 @@ Baseline values:
 | Active rebellion in region | -35 |
 
 Region control affects faction action weights, border tension, migration direction, trade safety, and the color or banner treatment shown on the map.
+
+### Scale Progression
+
+Realmseed should feel larger over time even when the prototype site count stays modest. Scale comes from revealed context, regional stakes, and networks of consequences.
+
+Prototype scale beats:
+
+| Phase | Scale Feeling |
+| --- | --- |
+| Opening | A small charter camp sees only nearby sites and rumors |
+| Early expansion | Roads reveal how sites depend on each other |
+| Regional politics | Independent villages, wilderness pressure, and rival claims make regions matter |
+| Realm formation | The player controls enough settlements that offices, ambitions, and delegation change play |
+| Endgame | The map shows a history of roads, losses, loyal towns, dangerous frontiers, and chosen identity |
+
+Scouting should reveal more than a dot. It can reveal rumors, route value, regional pressure, independent needs, rival interest, or future project opportunities.
+
+Future scale can use an atlas layer: the current region map remains playable, while nearby regions appear as frontier cards, distant powers, trade approaches, or expedition targets. The prototype should not build the full atlas, but the GDD should preserve that growth path.
 
 ## 7. Setting
 
@@ -567,8 +631,57 @@ Late-game overwhelm rules:
 | Build road | 2 |
 | Upgrade road | 2 |
 | Fortify settlement | 2 |
+| Start settlement project | 2 |
+| Start regional project | 2 |
+| Appoint local office | 1 |
+| Launch expedition | 2 |
+| Declare or revise ambition | 1 |
 | Major diplomatic pact | 2 |
 | Suppress rebellion | 2 to 3 |
+
+### Proactive Projects
+
+Projects are deliberate investments that change future behavior. They are the main alternative to simply reacting to active issues.
+
+Settlement projects affect one settlement:
+
+| Project | Effect |
+| --- | --- |
+| Expand Granaries | Raises food buffer and reduces famine escalation |
+| Charter Market | Raises wealth, trade events, and local ambition |
+| Raise Palisade | Raises defence and reduces raid damage |
+| Militia Hall | Raises defence and loyalist bonus in rebellion checks |
+| Reeve Hall | Raises stability and unlocks delegation in that settlement |
+| Quarry Yard | Improves stone output at suitable sites |
+| River Dock | Improves trade and migration at river or coast sites |
+
+Regional projects affect a region, route group, or frontier:
+
+| Project | Effect |
+| --- | --- |
+| Patrol Blackwood Trail | Reduces wilderness pressure and road event weight |
+| Restore Old Crown Road | Improves route value and chronicle significance |
+| Secure Northwatch Pass | Raises region control and border defence |
+| Sponsor Greenvale Migration | Adds population to safe, food-secure settlements |
+| Negotiate Forest Rights | Reduces logging danger and forest-clan unrest |
+| Open Valley Markets | Increases trade between connected settlements |
+
+Projects can create stories. A granary project may save a town in Year 8. A market charter may later make that town wealthy and proud. A patrol project may anger local clans while reducing bandits.
+
+### Institutions and Offices
+
+Institutions are mastery tools. They turn repeated lessons into durable realm capacity.
+
+| Institution or Office | Unlock | Effect |
+| --- | --- | --- |
+| Road Wardens | 4 connected settlements | Reduce road trouble weights and unmanaged strain from disconnected sites |
+| Granary Stewards | First famine warning resolved | Reduce food crisis escalation in connected settlements |
+| Border Captains | First rival border | Improve conflict defender score in border regions |
+| Civic Reeves | First town | Reduce ignored-crisis penalty in stable settlements |
+| Trade Factors | First trade-focused town | Improve wealth flow and independent trust |
+| Frontier Rangers | First region with wilderness pressure > 50 | Reduce wilderness pressure growth |
+
+Institutions should not remove problems. They should make the player feel that earlier choices created a more capable realm.
 
 ### Player Verbs
 
@@ -587,6 +700,11 @@ Use verbs that reinforce political and historical scale:
 - Negotiate autonomy.
 - Establish watch.
 - Fund recovery.
+- Declare ambition.
+- Appoint office.
+- Start project.
+- Launch expedition.
+- Build institution.
 
 Avoid verbs that imply tile micromanagement, such as improve tile, move unit, work tile, buy tile, or build district here.
 
@@ -1068,20 +1186,37 @@ Rebellion outcomes include tax refusal, armed revolt, negotiated autonomy, break
 
 | Stage | Description |
 | --- | --- |
-| Charter Camp | Starting phase, few options, survival focus |
-| Settled Valley | Several villages, basic economy, first faction pressure |
-| Rising Realm | Towns appear, loyalty and trade matter, rivals react strongly |
-| Crowned Power | Realm has scale, but internal instability becomes dangerous |
+| Charter Camp | Starting phase, survival focus, guided first choices |
+| Settled Valley | Several villages, basic economy, first roads, first ambition choice |
+| Rising Realm | Towns appear, projects and offices let the player shape future pressure |
+| Crowned Power | Realm has scale, institutions matter, internal identity becomes dangerous or powerful |
 
 ### Unlock Examples
 
 | Trigger | Unlocks |
 | --- | --- |
 | 2 settlements | Build roads, assign settlement focus |
-| 4 settlements | Issue seasonal decree, open trade with independents |
-| First town | Appoint local reeve, fortify, hold realm council |
+| 3 settlements or Year 3 | Declare primary realm ambition |
+| 4 settlements | Issue seasonal decree, open trade with independents, start regional projects |
+| First town | Appoint local reeve, fortify, hold realm council, establish first institution |
 | First rebellion | Negotiate autonomy, suppress revolt, offer rights |
 | First rival border | Send envoy, fortify border, demand withdrawal |
+| First city | Add final council capacity, revise secondary ambition, unlock realm-scale project |
+
+### Mastery Curve
+
+The player should feel more capable because they understand the realm and have built tools, not because the game stops pushing back.
+
+| Mastery Layer | Player Learns | Visible Payoff |
+| --- | --- | --- |
+| Terrain reading | Which sites are fertile, dangerous, isolated, or strategic | Better founding choices and fewer surprise crises |
+| Road planning | Which routes bind the realm and which expose it | Trade growth, faster aid, lower isolation |
+| Crisis prevention | How warnings become active issues | Fewer severe collapses and stronger memories of rescue |
+| Political shaping | Which settlements need rights, offices, or pressure | Lower rebellion risk, distinct settlement identities |
+| Institutional play | How offices and projects reduce repeated problems | More control over large realm strain |
+| Legacy play | How ambitions and identity scores guide choices | Endings that reflect deliberate strategy |
+
+Mastery should produce different stories, not solve the game. A skilled player should be able to create an Iron March, Merchant Valley, Civic Charter, or Frontier Oath run on purpose, then watch the simulation complicate it.
 
 ## 18. Legacy, Endings, and Victory
 
@@ -1236,6 +1371,8 @@ Prototype arc types:
 | Arc Type | Built From |
 | --- | --- |
 | Rise | Founding, growth, prosperity, upgrade, road connection |
+| Ambition | Declared ambition, related projects, success, compromise, or failure |
+| Institution | Office founded, repeated pressure reduced, later defining payoff |
 | Rescue | Crisis warning, player aid, recovery, loyalty memory |
 | Neglect | Warning, ignored seasons, escalation, grievance |
 | Betrayal | Low loyalty, rival influence, tax refusal, rebellion or defection |
@@ -1249,6 +1386,7 @@ Chronicle variation rules:
 - Each ending band has a tone profile: Fallen Charter, Scarred Survival, Fragile Realm, Enduring Realm, and Founding Legend use different opening and closing template pools.
 - A barely surviving realm should mention losses, concessions, unresolved danger, and survival cost.
 - A thriving realm should mention durable institutions, strong roads, loyal settlements, and defining achievements.
+- A mastery-driven chronicle should mention at least one proactive plan when available, such as a road compact, granary network, fortified pass, trade league, or civic charter.
 - Template selection weights should prefer entries with high importance, repeated memories, settlement identity tags, or direct player decisions.
 - The generator should avoid using the same event family as the main example in both the middle and ending paragraph.
 
@@ -1342,6 +1480,19 @@ End season flow:
 3. The player can click summary rows to jump to the affected map object.
 
 The UI must always answer three questions: what is wrong, why it happened, and which actions can affect it.
+
+### Agency Visibility
+
+The UI should make proactive strategy as visible as crisis response.
+
+- Ambition tracker shows chosen ambition, current progress, risk, and notable supporting actions.
+- Project cards show expected long-term effect, not only immediate cost.
+- Institution panel shows which recurring problems an office is reducing.
+- Map overlays should highlight player-built systems: road network reach, protected frontier, trade routes, and food safety.
+- End Season Summary should separate player-driven progress from world pressure.
+- Chronicle Log should tag entries as player decision, faction move, crisis, project, institution, or settlement memory.
+
+The player should be able to look at the map after 20 years and see deliberate structure: a road spine, fortified pass, granary towns, trade loop, integrated villages, or exposed frontier they knowingly gambled on.
 
 ### Onboarding and Difficulty
 
@@ -1610,6 +1761,8 @@ Acceptance criteria:
 - At least 3 road events can trigger.
 - Player can clearly see why a settlement is isolated.
 - Unmanaged strain applies stability, crisis, autonomy, and rival influence pressure.
+- At least 1 regional project can reduce future road, supply, or wilderness pressure.
+- The UI shows road network reach as player-built structure, not only individual route lines.
 
 ### Milestone 4: Event Chains
 
@@ -1655,6 +1808,10 @@ Acceptance criteria:
 - The endgame summary names worst year, golden year, strongest identity tag, largest settlement, and at least one defining event.
 - Guided opening prompts explain scouting, founding, roads, first crisis, independent request, and first rival action.
 - Chronicle output includes at least 2 grouped arcs, not only isolated log entries.
+- Player can declare a primary ambition and see it affect objectives, event weighting, and ending text.
+- At least 3 proactive projects exist, with at least 1 settlement project and 1 regional project.
+- At least 2 institutions or offices can be unlocked and can reduce repeated pressure.
+- Endgame chronicle includes at least one proactive player-built legacy when available.
 
 ## 24. Out of Scope for Prototype
 
@@ -1683,7 +1840,9 @@ Realmseed is differentiated by the way its systems turn strategic pressure into 
 - Road dependency: roads affect supply, loyalty, trade, crisis response, faction pressure, and identity.
 - Event chains: crises escalate, cool down, resolve, or collapse through active issues.
 - Limited council capacity: the realm grows faster than the player's ability to manage it.
+- Proactive realm shaping: ambitions, projects, offices, and institutions let the player create long-term plans.
 - Identity scoring: different survival styles can produce different realm identities instead of one optimal tidy kingdom.
+- Emergent replayability: map conditions, settlement traits, faction personalities, events, ambitions, and player-built systems combine into different histories.
 
 ## 26. Design Risks and Mitigations
 
@@ -1696,6 +1855,17 @@ Mitigation:
 - Give events specific local causes.
 - Make the chronicle visible early.
 - Let map icons change as places grow, starve, rebel, recover, or prosper.
+- Show player-built structures such as road spines, protected frontiers, granary networks, and institutions.
+
+### Risk: Player Feels Like a Passive Administrator
+
+Mitigation:
+
+- Add realm ambitions that let the player choose a strategic story direction.
+- Add proactive projects and institutions that change future pressure.
+- Ensure each season offers useful non-crisis actions where possible.
+- Make the chronicle record deliberate plans, not only crises.
+- Show progress toward ambition and identity goals in the UI.
 
 ### Risk: Too Much Scope
 
@@ -1773,6 +1943,9 @@ The prototype succeeds if players can tell stories like:
 - My richest town became my biggest problem.
 - I saved a starving village and it stayed loyal for the rest of the campaign.
 - I ignored the roads and the border settlements drifted away.
+- I chose the Ash Road Compact, built a road spine through the valley, and it saved the frontier during winter.
+- I tried to make an Iron March, but the border forts became proud and demanded rights.
+- I built granaries early, and that decision changed the worst famine of the run.
 - The rival clan did not destroy me. My own towns nearly did.
 - The map at the end looked like the result of my choices.
 - I want to replay and found the realm differently.
