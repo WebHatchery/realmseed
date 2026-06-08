@@ -181,7 +181,7 @@ fn draw_known_site(ctx: &UiContext<'_>, view: &MapView, site: &SiteDef) {
     let selected = ctx.session.selected_site_id == site.id;
     let settlement = ctx.session.settlement_at_site(&site.id);
     let radius = marker_radius(site, settlement) * ctx.camera_zoom.clamp(0.9, 1.3);
-    let fill = marker_color(site, settlement);
+    let fill = marker_color(ctx, site, settlement);
 
     draw_circle(
         position.x,
@@ -286,7 +286,11 @@ fn marker_radius(site: &SiteDef, settlement: Option<&SettlementRuntimeState>) ->
     }
 }
 
-fn marker_color(site: &SiteDef, settlement: Option<&SettlementRuntimeState>) -> Color {
+fn marker_color(
+    ctx: &UiContext<'_>,
+    site: &SiteDef,
+    settlement: Option<&SettlementRuntimeState>,
+) -> Color {
     if let Some(settlement) = settlement {
         return match settlement.status {
             SettlementStatus::Lost => Color::new(0.22, 0.18, 0.16, 1.0),
@@ -297,6 +301,9 @@ fn marker_color(site: &SiteDef, settlement: Option<&SettlementRuntimeState>) -> 
                 SettlementTier::City => Color::new(0.88, 0.42, 0.28, 1.0),
             },
         };
+    }
+    if ctx.session.rival_controls_site(&site.id) {
+        return Color::new(0.72, 0.24, 0.18, 1.0);
     }
 
     match site.site_type.as_str() {

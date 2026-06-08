@@ -1,0 +1,18 @@
+{
+  "rival": {
+    "id": "ashthorn_clan",
+    "name": "Ashthorn Clan",
+    "personality": "Opportunist",
+    "description": "A proud frontier clan that tests weak roads, isolated villages, and hesitant councils before risking open confrontation.",
+    "confidence": 48,
+    "fear": 22,
+    "hostility": 44,
+    "border_pressure": 35,
+    "controlled_locations": ["northwatch_gate"],
+    "memory_tags": ["old_road_claims"]
+  },
+  "wilderness_base_pressure": 28,
+  "trail_warden_pressure_reduction": 5,
+  "fortification_pressure_reduction": 3,
+  "road_pressure_reduction": 1
+}

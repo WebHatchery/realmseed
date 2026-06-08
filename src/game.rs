@@ -26,6 +26,7 @@ pub struct Game {
     save_exists: bool,
     save_slots: Vec<String>,
     show_chronicle: bool,
+    show_factions: bool,
 }
 
 impl Game {
@@ -70,6 +71,7 @@ impl Game {
             save_exists: false,
             save_slots: Vec::new(),
             show_chronicle: false,
+            show_factions: false,
         };
         game.refresh_save_state();
         game
@@ -90,6 +92,9 @@ impl Game {
         }
         if is_key_pressed(KeyCode::E) {
             self.events.push(UiAction::ForceEvent);
+        }
+        if is_key_pressed(KeyCode::F) {
+            self.events.push(UiAction::ToggleFactionPanel);
         }
         if is_key_pressed(KeyCode::S) {
             self.events.push(UiAction::Save);
@@ -119,6 +124,7 @@ impl Game {
             camera_target: self.camera.target,
             camera_zoom: self.camera.zoom,
             show_chronicle: self.show_chronicle,
+            show_factions: self.show_factions,
             ui: &virtual_ui,
         };
 
@@ -141,6 +147,7 @@ impl Game {
             UiAction::NewGame => {
                 self.session = GameSession::new(&self.data);
                 self.show_chronicle = false;
+                self.show_factions = false;
                 self.notifications
                     .info("Started a fresh Realmseed campaign");
             }
@@ -234,6 +241,21 @@ impl Game {
                 Ok(message) => self.notifications.info(message),
                 Err(reason) => self.notifications.warning(reason),
             },
+            UiAction::OpenIndependentTrade => {
+                match self.session.open_trade_with_selected_independent() {
+                    Ok(message) => self.notifications.success(message),
+                    Err(reason) => self.notifications.warning(reason),
+                }
+            }
+            UiAction::BeginIndependentIntegration => {
+                match self.session.begin_selected_integration(&self.data) {
+                    Ok(message) => {
+                        self.notifications.success(message);
+                        self.show_chronicle = true;
+                    }
+                    Err(reason) => self.notifications.warning(reason),
+                }
+            }
             UiAction::AdvanceSeason => {
                 let report = self.session.advance_season(&self.data);
                 self.notifications.info(format!(
@@ -280,9 +302,27 @@ impl Game {
                         report.issues_escalated
                     ));
                 }
+                if report.rival_actions > 0 {
+                    self.notifications.info("Rival faction acted");
+                }
+                if report.independent_requests > 0 {
+                    self.notifications.warning(format!(
+                        "{} independent request logged",
+                        report.independent_requests
+                    ));
+                }
+                if report.wilderness_changes > 0 {
+                    self.notifications.warning(format!(
+                        "{} wilderness pressure band changed",
+                        report.wilderness_changes
+                    ));
+                }
             }
             UiAction::ToggleChronicle => {
                 self.show_chronicle = !self.show_chronicle;
+            }
+            UiAction::ToggleFactionPanel => {
+                self.show_factions = !self.show_factions;
             }
         }
     }

@@ -1,10 +1,12 @@
 //! Runtime campaign state, seasonal turns, scouting, and save migration.
 
 pub mod event;
+pub mod faction;
 pub mod road;
 pub mod settlement;
 
 pub use event::*;
+pub use faction::*;
 pub use road::*;
 pub use settlement::*;
 
@@ -128,6 +130,12 @@ pub struct SaveData {
     pub pending_event: Option<PendingEventRuntimeState>,
     #[serde(default)]
     pub event_history: Vec<EventHistoryEntry>,
+    #[serde(default = "default_rival_faction")]
+    pub rival_faction: FactionRuntimeState,
+    #[serde(default)]
+    pub independent_settlements: Vec<IndependentSettlementRuntimeState>,
+    #[serde(default)]
+    pub wilderness_pressure: Vec<WildernessPressureState>,
     #[serde(default)]
     pub unmanaged_strain: i32,
     #[serde(default)]
@@ -151,6 +159,9 @@ pub struct GameSession {
     pub active_issues: Vec<ActiveIssueRuntimeState>,
     pub pending_event: Option<PendingEventRuntimeState>,
     pub event_history: Vec<EventHistoryEntry>,
+    pub rival_faction: FactionRuntimeState,
+    pub independent_settlements: Vec<IndependentSettlementRuntimeState>,
+    pub wilderness_pressure: Vec<WildernessPressureState>,
     pub unmanaged_strain: i32,
     pub unmanaged_strain_seasons: i32,
     pub migrant_pool: i32,
@@ -194,6 +205,9 @@ impl GameSession {
             active_issues: Vec::new(),
             pending_event: None,
             event_history: Vec::new(),
+            rival_faction: Self::create_starting_rival(data),
+            independent_settlements: Self::create_independent_states(data),
+            wilderness_pressure: Self::create_wilderness_pressure(data),
             unmanaged_strain: 0,
             unmanaged_strain_seasons: 0,
             migrant_pool: data.settlement_balance.starting_migrant_pool,
@@ -216,6 +230,9 @@ impl GameSession {
             active_issues: save.active_issues,
             pending_event: save.pending_event,
             event_history: save.event_history,
+            rival_faction: save.rival_faction,
+            independent_settlements: save.independent_settlements,
+            wilderness_pressure: save.wilderness_pressure,
             unmanaged_strain: save.unmanaged_strain,
             unmanaged_strain_seasons: save.unmanaged_strain_seasons,
             migrant_pool: save.migrant_pool,
@@ -239,6 +256,9 @@ impl GameSession {
             active_issues: self.active_issues.clone(),
             pending_event: self.pending_event.clone(),
             event_history: self.event_history.clone(),
+            rival_faction: self.rival_faction.clone(),
+            independent_settlements: self.independent_settlements.clone(),
+            wilderness_pressure: self.wilderness_pressure.clone(),
             unmanaged_strain: self.unmanaged_strain,
             unmanaged_strain_seasons: self.unmanaged_strain_seasons,
             migrant_pool: self.migrant_pool,
@@ -319,6 +339,10 @@ impl GameSession {
         let event_report = self.advance_event_chains(data);
         report.events_triggered = event_report.events_triggered;
         report.issues_escalated = event_report.issues_escalated;
+        let faction_report = self.advance_faction_systems(data);
+        report.rival_actions = faction_report.rival_actions;
+        report.independent_requests = faction_report.independent_requests;
+        report.wilderness_changes = faction_report.wilderness_changes;
         if self.clock.advance() {
             self.add_chronicle_entry(data, "new_year", None);
         }
@@ -387,6 +411,36 @@ impl GameSession {
             self.routes = Self::create_starting_routes(data);
             self.refresh_route_knowledge();
         }
+        if self.rival_faction.id.is_empty() {
+            self.rival_faction = Self::create_starting_rival(data);
+        }
+        if self.independent_settlements.is_empty() {
+            self.independent_settlements = Self::create_independent_states(data);
+        }
+        if self.wilderness_pressure.is_empty() {
+            self.wilderness_pressure = Self::create_wilderness_pressure(data);
+        }
+    }
+}
+
+fn default_rival_faction() -> FactionRuntimeState {
+    FactionRuntimeState {
+        id: String::new(),
+        name: String::new(),
+        personality: String::new(),
+        description: String::new(),
+        confidence: 0,
+        fear: 0,
+        hostility: 0,
+        border_pressure: 0,
+        recent_losses: 0,
+        current_goal: crate::data::FactionGoal::Expand,
+        goal_age: 0,
+        action_cooldowns: Vec::new(),
+        controlled_locations: Vec::new(),
+        known_targets: Vec::new(),
+        memory_tags: Vec::new(),
+        action_log: Vec::new(),
     }
 }
 

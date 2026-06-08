@@ -160,5 +160,47 @@
     "title": "{site} Accepts a Compact",
     "body": "The council settled civic demands at {site} in {season} of Year {year}.",
     "importance": "major"
+  },
+  {
+    "id": "rival_first_move",
+    "title": "The Ashthorn Clan Moves",
+    "body": "The rival clan made its first visible move near {site} in {season} of Year {year}.",
+    "importance": "major"
+  },
+  {
+    "id": "rival_major_raid",
+    "title": "Ashthorn Raiders Strike {site}",
+    "body": "A major raid hit {site} in {season} of Year {year}, exposing weaknesses in defence, loyalty, or road supply.",
+    "importance": "major"
+  },
+  {
+    "id": "independent_request",
+    "title": "{site} Requests Aid",
+    "body": "Independent voices at {site} asked the charter for help in {season} of Year {year}, wary of rival pressure.",
+    "importance": "notable"
+  },
+  {
+    "id": "independent_integration_started",
+    "title": "{site} Begins Integration",
+    "body": "{site} began formal integration talks with the charter in {season} of Year {year}.",
+    "importance": "major"
+  },
+  {
+    "id": "independent_integrated",
+    "title": "{site} Joins the Charter",
+    "body": "{site} joined the realm in {season} of Year {year}, turning independence into a charter bond.",
+    "importance": "major"
+  },
+  {
+    "id": "wilderness_escalation",
+    "title": "Wilderness Pressure Rises",
+    "body": "The wilderness around {site} became dangerous in {season} of Year {year}, threatening roads and frontier confidence.",
+    "importance": "notable"
+  },
+  {
+    "id": "wilderness_recovery",
+    "title": "The Frontier Calms",
+    "body": "Pressure around {site} receded in {season} of Year {year}, helped by roads, patrols, or fortified settlements.",
+    "importance": "notable"
   }
 ]

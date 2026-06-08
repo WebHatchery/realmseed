@@ -1,7 +1,7 @@
 //! Selected-site panel, campaign controls, and chronicle overlay.
 
 use super::{routes, virtual_button, UiAction, UiContext};
-use crate::data::ActiveIssueState;
+use crate::data::{ActiveIssueState, SiteCategory};
 use crate::state::SiteKnowledge;
 use crate::state::{SettlementRuntimeState, SettlementStatus};
 use macroquad::prelude::*;
@@ -155,9 +155,68 @@ fn draw_settlement_section(
             y + 18.0,
             settlement,
         )
+    } else if site.category == SiteCategory::Independent {
+        draw_independent_actions(ctx, mouse, input_enabled, actions, content, y + 18.0)
     } else {
         draw_found_camp_action(ctx, mouse, input_enabled, actions, content, y + 18.0)
     }
+}
+
+fn draw_independent_actions(
+    ctx: &UiContext<'_>,
+    mouse: Vec2,
+    input_enabled: bool,
+    actions: &mut Vec<UiAction>,
+    content: Rect,
+    y: f32,
+) -> f32 {
+    let Some(independent) = ctx.session.selected_independent() else {
+        return y;
+    };
+    draw_text_ex(
+        &format!(
+            "Trust {}  Autonomy {}  Rival {}  {}",
+            independent.trust,
+            independent.autonomy,
+            independent.rival_pressure,
+            independent.integration_state.label()
+        ),
+        content.x,
+        y,
+        TextStyle::new(14.0, dark::TEXT).params(),
+    );
+    let trade_status = ctx.session.independent_trade_status();
+    let integration_status = ctx.session.integration_status();
+    let half = (content.w - 8.0) / 2.0;
+    if virtual_button(
+        Rect::new(content.x, y + 20.0, half, 30.0),
+        "Open Trade",
+        input_enabled && trade_status.enabled,
+        ButtonTone::Primary,
+        mouse,
+    ) {
+        actions.push(UiAction::OpenIndependentTrade);
+    }
+    if virtual_button(
+        Rect::new(content.x + half + 8.0, y + 20.0, half, 30.0),
+        "Integrate",
+        input_enabled && integration_status.enabled,
+        ButtonTone::Positive,
+        mouse,
+    ) {
+        actions.push(UiAction::BeginIndependentIntegration);
+    }
+    draw_text_block(
+        &format!("Need: {}", independent.local_need),
+        content.x,
+        y + 56.0,
+        content.w,
+        26.0,
+        13.0,
+        2.0,
+        dark::TEXT_DIM,
+    );
+    y + 88.0
 }
 
 fn draw_existing_settlement(

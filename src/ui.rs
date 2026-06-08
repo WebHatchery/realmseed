@@ -1,6 +1,7 @@
 //! Immediate-mode UI for the Realmseed map, site panel, and chronicle.
 
 mod event;
+mod faction;
 mod map;
 mod panel;
 mod routes;
@@ -30,6 +31,9 @@ pub enum UiAction {
     ResolveEventChoice(String),
     DeferEvent,
     ForceEvent,
+    OpenIndependentTrade,
+    BeginIndependentIntegration,
+    ToggleFactionPanel,
     AdvanceSeason,
     ToggleChronicle,
 }
@@ -43,6 +47,7 @@ pub struct UiContext<'a> {
     pub camera_target: Vec2,
     pub camera_zoom: f32,
     pub show_chronicle: bool,
+    pub show_factions: bool,
     pub ui: &'a VirtualUi,
 }
 
@@ -59,6 +64,9 @@ pub fn draw_game_ui(ctx: UiContext<'_>) -> Vec<UiAction> {
 
     if ctx.show_chronicle {
         panel::draw_chronicle_overlay(&ctx, mouse, &mut actions);
+    }
+    if ctx.show_factions {
+        faction::draw_faction_overlay(&ctx, mouse, &mut actions);
     }
     if event_open {
         event::draw_event_modal(&ctx, mouse, &mut actions);
