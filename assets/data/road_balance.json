@@ -1,0 +1,75 @@
+{
+  "source_site_id": "charter_hall",
+  "regional_project_id": "trail_wardens",
+  "road_event_issue_ids": [
+    "bridge_washout",
+    "caravan_attacked",
+    "winter_blockage"
+  ],
+  "actions": [
+    {
+      "kind": "build_path",
+      "from": "none",
+      "to": "path",
+      "action_cost": 1,
+      "cost": {
+        "food": 0,
+        "timber": 40,
+        "stone": 0,
+        "wealth": 20
+      }
+    },
+    {
+      "kind": "upgrade_road",
+      "from": "path",
+      "to": "road",
+      "action_cost": 1,
+      "cost": {
+        "food": 0,
+        "timber": 80,
+        "stone": 40,
+        "wealth": 60
+      }
+    },
+    {
+      "kind": "upgrade_stone_road",
+      "from": "road",
+      "to": "stone_road",
+      "action_cost": 1,
+      "cost": {
+        "food": 0,
+        "timber": 60,
+        "stone": 120,
+        "wealth": 120
+      }
+    },
+    {
+      "kind": "repair_route",
+      "from": "none",
+      "to": "none",
+      "action_cost": 1,
+      "cost": {
+        "food": 0,
+        "timber": 25,
+        "stone": 10,
+        "wealth": 20
+      }
+    }
+  ],
+  "regional_projects": [
+    {
+      "id": "trail_wardens",
+      "name": "Trail Wardens",
+      "description": "Patrols and waystations reduce road trouble, unmanaged strain, and local danger in the selected region.",
+      "action_cost": 1,
+      "cost": {
+        "food": 0,
+        "timber": 60,
+        "stone": 20,
+        "wealth": 70
+      },
+      "unmanaged_strain_reduction": 1,
+      "danger_reduction": 4
+    }
+  ]
+}

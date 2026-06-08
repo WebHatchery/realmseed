@@ -1,11 +1,11 @@
 //! Settlement runtime state, player actions, and seasonal economy updates.
 
-use super::{GameSession, Season};
+use super::{GameSession, RouteCondition, Season};
 use crate::data::{
-    GameData, ResourceStock, SettlementFocusDef, SettlementStartDef, SettlementTier, SiteCategory,
+    GameData, ResourceStock, RouteLevel, SettlementFocusDef, SettlementStartDef, SettlementTier,
+    SiteCategory,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::{HashSet, VecDeque};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -47,6 +47,10 @@ pub struct SettlementRuntimeState {
     pub traits: Vec<String>,
     pub memory_tags: Vec<String>,
     pub active_issue_ids: Vec<String>,
+    #[serde(default)]
+    pub autonomy_pressure: i32,
+    #[serde(default)]
+    pub rival_pressure: i32,
     pub founded_year: u32,
     pub founded_season: Season,
     #[serde(default)]
@@ -82,6 +86,8 @@ impl SettlementRuntimeState {
             traits: Vec::new(),
             memory_tags: Vec::new(),
             active_issue_ids: Vec::new(),
+            autonomy_pressure: 0,
+            rival_pressure: 0,
             founded_year: clock_year,
             founded_season: clock_season,
             status: SettlementStatus::Active,
@@ -124,6 +130,9 @@ impl SettlementActionStatus {
 pub struct SeasonAdvanceReport {
     pub food_shortages: usize,
     pub settlements_lost: usize,
+    pub isolated_settlements: usize,
+    pub road_warnings: usize,
+    pub unmanaged_strain: i32,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -473,38 +482,15 @@ impl GameSession {
     }
 
     fn has_capital_network_access(&self, data: &GameData, site_id: &str) -> bool {
-        let capital_site_id = data.settlement_balance.founding.source_site_id.as_str();
-        if site_id == capital_site_id {
-            return true;
-        }
-
-        let mut visited: HashSet<&str> = HashSet::new();
-        let mut frontier = VecDeque::from([site_id]);
-        while let Some(current_site_id) = frontier.pop_front() {
-            if !visited.insert(current_site_id) {
-                continue;
-            }
-            for road in data.roads_for_site(current_site_id) {
-                if road.level == 0 {
-                    continue;
-                }
-                let Some(next_site_id) = road.other_end(current_site_id) else {
-                    continue;
-                };
-                if next_site_id == capital_site_id {
-                    return true;
-                }
-                frontier.push_back(next_site_id);
-            }
-        }
-
-        false
+        self.is_site_in_capital_network(data, site_id)
     }
 
     fn has_stone_road_or_port_access(&self, data: &GameData, site_id: &str) -> bool {
-        let has_stone_road = data
-            .roads_for_site(site_id)
-            .any(|road| road.level >= 2 || road.route_type.contains("stone"));
+        let has_stone_road = self.routes.iter().any(|route| {
+            route.connects(site_id)
+                && route.level == RouteLevel::StoneRoad
+                && route.condition != RouteCondition::Blocked
+        });
         let has_port_trait = data
             .site(site_id)
             .map(|site| {

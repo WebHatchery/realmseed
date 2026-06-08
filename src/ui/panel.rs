@@ -1,6 +1,6 @@
 //! Selected-site panel, campaign controls, and chronicle overlay.
 
-use super::{virtual_button, UiAction, UiContext};
+use super::{routes, virtual_button, UiAction, UiContext};
 use crate::state::SiteKnowledge;
 use crate::state::{SettlementRuntimeState, SettlementStatus};
 use macroquad::prelude::*;
@@ -29,6 +29,7 @@ pub(super) fn draw_side_panel(
     let mut y = content.y + 38.0;
     y = draw_selected_site(ctx, content, y);
     y = draw_settlement_section(ctx, mouse, input_enabled, actions, content, y + 8.0);
+    y = routes::draw_route_section(ctx, mouse, input_enabled, actions, content, y + 8.0);
     y = draw_campaign_actions(ctx, mouse, input_enabled, actions, content, y + 10.0);
     if y + 110.0 < content.y + content.h {
         draw_save_actions(ctx, mouse, input_enabled, actions, content, y + 10.0);
@@ -86,6 +87,10 @@ fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> f32 {
         Color::new(0.22, 0.20, 0.16, 1.0),
         dark::TEXT,
     );
+
+    if ctx.session.settlement_at_site(&site.id).is_some() {
+        return y + 76.0;
+    }
 
     let known_text = if knowledge == SiteKnowledge::Known {
         format!(

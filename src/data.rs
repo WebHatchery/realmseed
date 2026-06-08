@@ -1,7 +1,9 @@
 //! Embedded Realmseed campaign data and validation helpers.
 
+pub mod road;
 pub mod settlement;
 
+pub use road::*;
 pub use settlement::*;
 
 use macroquad_toolkit::assets::TextureConfig;
@@ -17,6 +19,7 @@ const SITES_JSON: &str = include_str!("../assets/data/sites.json");
 const ROADS_JSON: &str = include_str!("../assets/data/roads.json");
 const CHRONICLE_TEMPLATES_JSON: &str = include_str!("../assets/data/chronicle_templates.json");
 const SETTLEMENT_BALANCE_JSON: &str = include_str!("../assets/data/settlement_balance.json");
+const ROAD_BALANCE_JSON: &str = include_str!("../assets/data/road_balance.json");
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameConfig {
@@ -147,6 +150,7 @@ pub struct GameData {
     pub roads: Vec<RoadDef>,
     pub chronicle_templates: Vec<ChronicleTemplateDef>,
     pub settlement_balance: SettlementBalance,
+    pub road_balance: RoadBalance,
     pub texture_manifest: Vec<TextureConfig>,
 }
 
@@ -160,6 +164,7 @@ impl GameData {
             roads: load_embedded_json(ROADS_JSON)?,
             chronicle_templates: load_embedded_json(CHRONICLE_TEMPLATES_JSON)?,
             settlement_balance: load_embedded_json(SETTLEMENT_BALANCE_JSON)?,
+            road_balance: load_embedded_json(ROAD_BALANCE_JSON)?,
             texture_manifest: load_embedded_json(TEXTURE_MANIFEST_JSON)?,
         };
         data.validate()?;
@@ -278,6 +283,7 @@ impl GameData {
         }
 
         self.settlement_balance.validate()?;
+        self.road_balance.validate()?;
 
         Ok(())
     }
@@ -297,6 +303,7 @@ mod tests {
         assert_eq!(data.sites.len(), 30);
         assert_eq!(data.roads.len(), 50);
         assert_eq!(data.settlement_balance.focuses.len(), 6);
+        assert_eq!(data.road_balance.road_event_issue_ids.len(), 3);
         assert_eq!(
             data.sites
                 .iter()

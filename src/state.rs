@@ -1,7 +1,9 @@
 //! Runtime campaign state, seasonal turns, scouting, and save migration.
 
+pub mod road;
 pub mod settlement;
 
+pub use road::*;
 pub use settlement::*;
 
 use crate::data::{ChronicleTemplateDef, GameData, SiteDef};
@@ -115,6 +117,14 @@ pub struct SaveData {
     #[serde(default)]
     pub settlements: Vec<SettlementRuntimeState>,
     #[serde(default)]
+    pub routes: Vec<RouteRuntimeState>,
+    #[serde(default)]
+    pub regional_projects: Vec<RegionalProjectRuntimeState>,
+    #[serde(default)]
+    pub unmanaged_strain: i32,
+    #[serde(default)]
+    pub unmanaged_strain_seasons: i32,
+    #[serde(default)]
     pub migrant_pool: i32,
     #[serde(default)]
     pub council_actions_remaining: i32,
@@ -128,6 +138,10 @@ pub struct GameSession {
     pub selected_site_id: String,
     pub site_states: Vec<SiteRuntimeState>,
     pub settlements: Vec<SettlementRuntimeState>,
+    pub routes: Vec<RouteRuntimeState>,
+    pub regional_projects: Vec<RegionalProjectRuntimeState>,
+    pub unmanaged_strain: i32,
+    pub unmanaged_strain_seasons: i32,
     pub migrant_pool: i32,
     pub council_actions_remaining: i32,
     pub chronicle: Vec<ChronicleEntry>,
@@ -164,6 +178,10 @@ impl GameSession {
                 })
                 .collect(),
             settlements: Self::create_starting_settlements(data),
+            routes: Self::create_starting_routes(data),
+            regional_projects: Vec::new(),
+            unmanaged_strain: 0,
+            unmanaged_strain_seasons: 0,
             migrant_pool: data.settlement_balance.starting_migrant_pool,
             council_actions_remaining: data.settlement_balance.council_actions_per_season,
             chronicle: Vec::new(),
@@ -179,6 +197,10 @@ impl GameSession {
             selected_site_id: save.selected_site_id,
             site_states: save.site_states,
             settlements: save.settlements,
+            routes: save.routes,
+            regional_projects: save.regional_projects,
+            unmanaged_strain: save.unmanaged_strain,
+            unmanaged_strain_seasons: save.unmanaged_strain_seasons,
             migrant_pool: save.migrant_pool,
             council_actions_remaining: save.council_actions_remaining,
             chronicle: save.chronicle,
@@ -195,6 +217,10 @@ impl GameSession {
             selected_site_id: self.selected_site_id.clone(),
             site_states: self.site_states.clone(),
             settlements: self.settlements.clone(),
+            routes: self.routes.clone(),
+            regional_projects: self.regional_projects.clone(),
+            unmanaged_strain: self.unmanaged_strain,
+            unmanaged_strain_seasons: self.unmanaged_strain_seasons,
             migrant_pool: self.migrant_pool,
             council_actions_remaining: self.council_actions_remaining,
             chronicle: self.chronicle.clone(),
@@ -259,12 +285,17 @@ impl GameSession {
         {
             state.knowledge = SiteKnowledge::Known;
         }
+        self.refresh_route_knowledge();
         self.add_chronicle_entry(data, "site_scouted", Some(&site_id));
         true
     }
 
     pub fn advance_season(&mut self, data: &GameData) -> SeasonAdvanceReport {
-        let report = self.advance_settlement_economy(data);
+        let mut report = self.advance_settlement_economy(data);
+        let road_report = self.advance_road_and_supply(data);
+        report.isolated_settlements = road_report.isolated_settlements;
+        report.road_warnings = road_report.road_warnings;
+        report.unmanaged_strain = road_report.unmanaged_strain;
         if self.clock.advance() {
             self.add_chronicle_entry(data, "new_year", None);
         }
@@ -328,6 +359,10 @@ impl GameSession {
             self.settlements = Self::create_starting_settlements(data);
             self.migrant_pool = data.settlement_balance.starting_migrant_pool;
             self.council_actions_remaining = data.settlement_balance.council_actions_per_season;
+        }
+        if self.routes.is_empty() {
+            self.routes = Self::create_starting_routes(data);
+            self.refresh_route_knowledge();
         }
     }
 }

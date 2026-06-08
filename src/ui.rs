@@ -2,6 +2,7 @@
 
 mod map;
 mod panel;
+mod routes;
 
 use crate::data::GameData;
 use crate::state::GameSession;
@@ -23,6 +24,8 @@ pub enum UiAction {
     FoundCamp,
     UpgradeSelectedSettlement,
     SetSettlementFocus(String),
+    BuildOrUpgradeRoute(String),
+    CompleteRegionalProject(String),
     AdvanceSeason,
     ToggleChronicle,
 }

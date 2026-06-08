@@ -190,6 +190,27 @@ impl Game {
                     Err(reason) => self.notifications.warning(reason),
                 }
             }
+            UiAction::BuildOrUpgradeRoute(route_id) => {
+                match self.session.build_or_upgrade_route(&self.data, &route_id) {
+                    Ok(message) => {
+                        self.notifications.success(message);
+                        self.show_chronicle = true;
+                    }
+                    Err(reason) => self.notifications.warning(reason),
+                }
+            }
+            UiAction::CompleteRegionalProject(region_id) => {
+                match self
+                    .session
+                    .complete_regional_project(&self.data, &region_id)
+                {
+                    Ok(message) => {
+                        self.notifications.success(message);
+                        self.show_chronicle = true;
+                    }
+                    Err(reason) => self.notifications.warning(reason),
+                }
+            }
             UiAction::AdvanceSeason => {
                 let report = self.session.advance_season(&self.data);
                 self.notifications.info(format!(
@@ -210,6 +231,21 @@ impl Game {
                         report.settlements_lost
                     ));
                     self.show_chronicle = true;
+                }
+                if report.road_warnings > 0 {
+                    self.notifications
+                        .warning(format!("{} road warning reported", report.road_warnings));
+                    self.show_chronicle = true;
+                }
+                if report.isolated_settlements > 0 {
+                    self.notifications.warning(format!(
+                        "{} settlement isolated from the capital network",
+                        report.isolated_settlements
+                    ));
+                }
+                if report.unmanaged_strain > 0 {
+                    self.notifications
+                        .info(format!("Unmanaged strain: {}", report.unmanaged_strain));
                 }
             }
             UiAction::ToggleChronicle => {

@@ -40,5 +40,53 @@
     "title": "{site} Is Abandoned",
     "body": "Neglect and hunger broke {site} in {season} of Year {year}. The chronicle marked the place as a warning to the realm.",
     "importance": "major"
+  },
+  {
+    "id": "road_built",
+    "title": "A First Path Is Funded",
+    "body": "In {season} of Year {year}, the council funded a new path near {site}, turning a map line into a working promise.",
+    "importance": "notable"
+  },
+  {
+    "id": "road_upgraded",
+    "title": "A Road Is Strengthened",
+    "body": "Workers improved the route near {site} in {season} of Year {year}, giving the capital network a sturdier reach.",
+    "importance": "notable"
+  },
+  {
+    "id": "road_bridge_washout",
+    "title": "A Bridge Washes Out",
+    "body": "Spring water damaged the route near {site} in Year {year}, slowing supply until repairs could be organized.",
+    "importance": "minor"
+  },
+  {
+    "id": "road_caravan_attacked",
+    "title": "A Caravan Is Attacked",
+    "body": "Trouble found the road near {site} in {season} of Year {year}; traders began asking whether the council could protect its own routes.",
+    "importance": "minor"
+  },
+  {
+    "id": "road_winter_blockage",
+    "title": "Winter Blocks a Path",
+    "body": "Snow and neglect blocked the path near {site} in Winter of Year {year}, cutting into the realm's supply confidence.",
+    "importance": "minor"
+  },
+  {
+    "id": "settlement_isolated",
+    "title": "{site} Feels Isolated",
+    "body": "{site} suffered from weak road supply in {season} of Year {year}. Loyalty and stability began to drift away from the capital.",
+    "importance": "notable"
+  },
+  {
+    "id": "regional_project_completed",
+    "title": "Trail Wardens Take Post",
+    "body": "The council completed a regional patrol project around {site} in {season} of Year {year}, reducing future road trouble and frontier danger.",
+    "importance": "major"
+  },
+  {
+    "id": "administrative_backlog",
+    "title": "The Council Falls Behind",
+    "body": "By {season} of Year {year}, petitions and road duties outpaced the council's reach. Unmanaged strain became part of the realm's story.",
+    "importance": "notable"
   }
 ]

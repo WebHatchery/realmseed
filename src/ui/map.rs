@@ -1,8 +1,8 @@
 //! Strategic terrain map rendering and site picking.
 
 use super::{color_from_array, map_panel_rect, UiAction, UiContext};
-use crate::data::{SettlementTier, SiteCategory, SiteDef};
-use crate::state::{SettlementRuntimeState, SettlementStatus};
+use crate::data::{RouteLevel, SettlementTier, SiteCategory, SiteDef};
+use crate::state::{RouteCondition, RouteRuntimeState, SettlementRuntimeState, SettlementStatus};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::RectExt;
@@ -94,29 +94,76 @@ fn draw_region_labels(ctx: &UiContext<'_>, view: &MapView) {
 }
 
 fn draw_roads(ctx: &UiContext<'_>, view: &MapView) {
-    for road in &ctx.data.roads {
-        if !(ctx.session.is_known(&road.from) && ctx.session.is_known(&road.to)) {
+    for route in &ctx.session.routes {
+        if !route.known {
             continue;
         }
-        let (Some(from), Some(to)) = (ctx.data.site(&road.from), ctx.data.site(&road.to)) else {
+        let (Some(from), Some(to)) = (ctx.data.site(&route.site_a), ctx.data.site(&route.site_b))
+        else {
             continue;
         };
         let start = view.site_position(from);
         let end = view.site_position(to);
-        let color = if road.level > 0 {
-            Color::new(0.73, 0.61, 0.38, 0.82)
-        } else {
-            Color::new(0.62, 0.54, 0.42, 0.55)
-        };
         draw_line(
             start.x,
             start.y,
             end.x,
             end.y,
-            2.0 + road.level as f32,
-            color,
+            route_thickness(route),
+            route_color(ctx, route),
         );
+        if route.condition != RouteCondition::Clear {
+            draw_route_condition_marker(start, end, route.condition);
+        }
     }
+}
+
+fn route_color(ctx: &UiContext<'_>, route: &RouteRuntimeState) -> Color {
+    if route.condition == RouteCondition::Blocked {
+        return Color::new(0.66, 0.18, 0.12, 0.90);
+    }
+    if route.condition == RouteCondition::Damaged {
+        return Color::new(0.86, 0.48, 0.18, 0.90);
+    }
+    if route.level == RouteLevel::None {
+        return Color::new(0.50, 0.46, 0.36, 0.26);
+    }
+
+    let in_network = ctx
+        .session
+        .is_site_in_capital_network(ctx.data, &route.site_a)
+        && ctx
+            .session
+            .is_site_in_capital_network(ctx.data, &route.site_b);
+    match (route.level, in_network) {
+        (RouteLevel::Path, true) => Color::new(0.74, 0.66, 0.42, 0.86),
+        (RouteLevel::Path, false) => Color::new(0.54, 0.49, 0.36, 0.72),
+        (RouteLevel::Road, true) => Color::new(0.86, 0.70, 0.38, 0.95),
+        (RouteLevel::Road, false) => Color::new(0.62, 0.54, 0.38, 0.82),
+        (RouteLevel::StoneRoad, true) => Color::new(0.88, 0.84, 0.70, 1.0),
+        (RouteLevel::StoneRoad, false) => Color::new(0.68, 0.64, 0.56, 0.90),
+        (RouteLevel::None, _) => Color::new(0.50, 0.46, 0.36, 0.26),
+    }
+}
+
+fn route_thickness(route: &RouteRuntimeState) -> f32 {
+    match route.level {
+        RouteLevel::None => 1.0,
+        RouteLevel::Path => 2.0,
+        RouteLevel::Road => 3.2,
+        RouteLevel::StoneRoad => 4.5,
+    }
+}
+
+fn draw_route_condition_marker(start: Vec2, end: Vec2, condition: RouteCondition) {
+    let mid = (start + end) * 0.5;
+    let color = match condition {
+        RouteCondition::Clear => return,
+        RouteCondition::Damaged => Color::new(0.95, 0.60, 0.22, 1.0),
+        RouteCondition::Blocked => Color::new(0.90, 0.20, 0.14, 1.0),
+    };
+    draw_circle(mid.x, mid.y, 5.0, color);
+    draw_circle_lines(mid.x, mid.y, 7.0, 1.5, dark::BACKGROUND);
 }
 
 fn draw_sites(ctx: &UiContext<'_>, view: &MapView) {
