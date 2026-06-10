@@ -47,6 +47,15 @@
       "wealth": 15
     }
   },
+  "scouting": {
+    "action_cost": 1,
+    "cost": {
+      "food": 15,
+      "timber": 0,
+      "stone": 0,
+      "wealth": 10
+    }
+  },
   "famine": {
     "issue_id": "famine",
     "stability_loss": 7,

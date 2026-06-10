@@ -176,7 +176,10 @@ impl GameSession {
         {
             return SettlementActionStatus::disabled("Project already completed here.");
         }
-        let Some(source) = self.project_source_settlement(project) else {
+        if project.action_cost > self.council_actions_remaining {
+            return SettlementActionStatus::disabled("Not enough actions remaining.");
+        }
+        let Some(source) = self.project_source_settlement(data, project) else {
             return SettlementActionStatus::disabled("Select a valid settlement or region.");
         };
         if let Some(reason) = source.stored.deficit_text(project.cost) {
@@ -184,8 +187,9 @@ impl GameSession {
         }
 
         SettlementActionStatus::enabled(format!(
-            "Costs {}. {}",
+            "Costs {} and {} action. {}",
             project.cost.cost_text(),
+            project.action_cost,
             project.description
         ))
     }
@@ -216,6 +220,7 @@ impl GameSession {
             .find(|settlement| settlement.location_id == source_site_id)
             .ok_or_else(|| "Project source settlement is unavailable.".to_owned())?;
         source.stored.subtract(project.cost);
+        self.council_actions_remaining -= project.action_cost;
         self.apply_project_effect(data, &project, &target_id);
         self.completed_projects.push(CompletedProjectState {
             id: project.id.clone(),
@@ -332,49 +337,44 @@ impl GameSession {
 
     fn project_source_settlement(
         &self,
+        data: &GameData,
         project: &ProjectDef,
     ) -> Option<&super::SettlementRuntimeState> {
         if project.scope == "settlement" {
             self.selected_settlement()
         } else {
-            self.settlement_at_site("charter_hall")
+            self.settlement_at_site(&data.road_balance.source_site_id)
         }
     }
 
     fn apply_project_effect(&mut self, _data: &GameData, project: &ProjectDef, target_id: &str) {
-        match project.id.as_str() {
-            "expand_granaries" => {
-                if let Some(settlement) = self
-                    .settlements
-                    .iter_mut()
-                    .find(|settlement| settlement.location_id == target_id)
-                {
-                    settlement.stored.food += 90;
-                    add_unique_tag(&mut settlement.memory_tags, "granaries_expanded");
-                }
+        if let Some(settlement) = self
+            .settlements
+            .iter_mut()
+            .find(|settlement| settlement.location_id == target_id)
+        {
+            settlement.stored.add(project.effects.resource_delta);
+            settlement.prosperity =
+                (settlement.prosperity + project.effects.prosperity_delta).clamp(0, 100);
+            settlement.stability =
+                (settlement.stability + project.effects.stability_delta).clamp(0, 100);
+            settlement.loyalty = (settlement.loyalty + project.effects.loyalty_delta).clamp(0, 100);
+            settlement.danger = (settlement.danger + project.effects.danger_delta).clamp(0, 100);
+            for tag in &project.effects.memory_tags {
+                add_unique_tag(&mut settlement.memory_tags, tag);
             }
-            "charter_market" => {
-                if let Some(settlement) = self
-                    .settlements
-                    .iter_mut()
-                    .find(|settlement| settlement.location_id == target_id)
-                {
-                    settlement.prosperity = (settlement.prosperity + 8).clamp(0, 100);
-                    settlement.stored.wealth += 45;
-                    add_unique_tag(&mut settlement.memory_tags, "charter_market");
-                }
+        }
+
+        if project.effects.wilderness_pressure_delta != 0 {
+            if let Some(pressure) = self
+                .wilderness_pressure
+                .iter_mut()
+                .find(|pressure| pressure.region_id == target_id)
+            {
+                pressure.pressure =
+                    (pressure.pressure + project.effects.wilderness_pressure_delta).clamp(0, 100);
+                pressure.last_delta += project.effects.wilderness_pressure_delta;
             }
-            "frontier_watch" => {
-                if let Some(pressure) = self
-                    .wilderness_pressure
-                    .iter_mut()
-                    .find(|pressure| pressure.region_id == target_id)
-                {
-                    pressure.pressure = (pressure.pressure - 12).clamp(0, 100);
-                    pressure.last_delta -= 12;
-                }
-            }
-            _ => {}
         }
     }
 

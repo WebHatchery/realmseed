@@ -9,14 +9,15 @@ pub(super) fn draw_endgame_summary(ctx: &UiContext<'_>) {
     let Some(summary) = &ctx.session.endgame_summary else {
         return;
     };
+    let screen = super::screen_rect(ctx);
     draw_rectangle(
-        0.0,
-        0.0,
-        super::LOGICAL_WIDTH,
-        super::LOGICAL_HEIGHT,
+        screen.x,
+        screen.y,
+        screen.w,
+        screen.h,
         Color::new(0.02, 0.025, 0.02, 0.70),
     );
-    let rect = Rect::new(206.0, 92.0, 868.0, 520.0);
+    let rect = super::centered_modal_rect(ctx, 868.0, 520.0);
     draw_surface_with_title(
         rect,
         Some("20-Year Chronicle Summary"),

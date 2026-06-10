@@ -8,8 +8,11 @@ fn test_data() -> GameData {
 fn found_two_settlements(data: &GameData) -> GameSession {
     let mut session = GameSession::new(data);
     assert!(session.select_site(data, "lowmeadow"));
+    session.scout_selected_site(data).unwrap();
     session.found_selected_camp(data).unwrap();
+    session.advance_season(data);
     assert!(session.select_site(data, "emberbrook"));
+    session.scout_selected_site(data).unwrap();
     session.found_selected_camp(data).unwrap();
     session.advance_season(data);
     session
@@ -26,7 +29,7 @@ fn starting_routes_track_authored_links() {
         .unwrap();
 
     assert_eq!(route.level, RouteLevel::None);
-    assert!(route.known);
+    assert!(!route.known);
 }
 
 #[test]
@@ -64,4 +67,23 @@ fn disconnected_settlement_takes_isolation_pressure() {
         .iter()
         .any(|issue| issue == "isolated"));
     assert!(settlement.autonomy_pressure > 0);
+}
+
+#[test]
+fn disconnected_settlement_pressure_is_bounded() {
+    let data = test_data();
+    let mut session = found_two_settlements(&data);
+    let settlement = session
+        .settlements
+        .iter_mut()
+        .find(|settlement| settlement.location_id == "emberbrook")
+        .unwrap();
+    settlement.autonomy_pressure = 99;
+    settlement.rival_pressure = 99;
+
+    session.advance_road_and_supply(&data);
+
+    let settlement = session.settlement_at_site("emberbrook").unwrap();
+    assert_eq!(settlement.autonomy_pressure, 100);
+    assert_eq!(settlement.rival_pressure, 100);
 }

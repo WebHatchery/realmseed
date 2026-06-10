@@ -36,6 +36,43 @@ pub struct ProjectDef {
     pub scope: String,
     pub description: String,
     pub cost: ResourceStock,
+    #[serde(default)]
+    pub action_cost: i32,
+    #[serde(default)]
+    pub effects: ProjectEffectDef,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ProjectEffectDef {
+    #[serde(default)]
+    pub resource_delta: ResourceStock,
+    #[serde(default)]
+    pub prosperity_delta: i32,
+    #[serde(default)]
+    pub stability_delta: i32,
+    #[serde(default)]
+    pub loyalty_delta: i32,
+    #[serde(default)]
+    pub danger_delta: i32,
+    #[serde(default)]
+    pub wilderness_pressure_delta: i32,
+    #[serde(default)]
+    pub memory_tags: Vec<String>,
+}
+
+impl ProjectEffectDef {
+    pub fn has_any_effect(&self) -> bool {
+        self.resource_delta.food != 0
+            || self.resource_delta.timber != 0
+            || self.resource_delta.stone != 0
+            || self.resource_delta.wealth != 0
+            || self.prosperity_delta != 0
+            || self.stability_delta != 0
+            || self.loyalty_delta != 0
+            || self.danger_delta != 0
+            || self.wilderness_pressure_delta != 0
+            || !self.memory_tags.is_empty()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -86,6 +123,20 @@ impl CampaignBalance {
                 .any(|project| project.scope == "regional")
         {
             return Err("campaign needs settlement and regional projects".to_owned());
+        }
+        for project in &self.projects {
+            if project.action_cost < 0 {
+                return Err(format!(
+                    "project `{}` has a negative action cost",
+                    project.id
+                ));
+            }
+            if !project.effects.has_any_effect() {
+                return Err(format!(
+                    "project `{}` has no configured effects",
+                    project.id
+                ));
+            }
         }
         if self.institutions.len() < 2 {
             return Err("campaign needs at least 2 institutions".to_owned());

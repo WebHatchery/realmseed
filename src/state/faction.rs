@@ -433,7 +433,7 @@ impl GameSession {
         }
     }
 
-    fn execute_rival_action(
+    pub(super) fn execute_rival_action(
         &mut self,
         data: &GameData,
         goal: FactionGoal,
@@ -457,7 +457,7 @@ impl GameSession {
                     .iter_mut()
                     .find(|settlement| settlement.location_id == target_site_id)
                 {
-                    settlement.rival_pressure += 8;
+                    settlement.rival_pressure = (settlement.rival_pressure + 8).clamp(0, 100);
                     settlement.loyalty = (settlement.loyalty - 4).clamp(0, 100);
                     add_unique_issue(&mut settlement.active_issue_ids, "rival_influence");
                 }
@@ -469,7 +469,7 @@ impl GameSession {
                     .iter_mut()
                     .find(|state| state.site_id == target_site_id)
                 {
-                    independent.rival_pressure += 6;
+                    independent.rival_pressure = (independent.rival_pressure + 6).clamp(0, 100);
                     independent.trust = (independent.trust - 3).clamp(0, 100);
                 }
                 "sent merchants to an independent settlement".to_owned()
@@ -525,7 +525,7 @@ impl GameSession {
             settlement.stored.wealth = (settlement.stored.wealth - 20).max(0);
             settlement.stability = (settlement.stability - 8).clamp(0, 100);
             settlement.loyalty = (settlement.loyalty - 5).clamp(0, 100);
-            settlement.rival_pressure += 10;
+            settlement.rival_pressure = (settlement.rival_pressure + 10).clamp(0, 100);
             self.rival_faction.hostility = (self.rival_faction.hostility + 4).clamp(0, 100);
             self.add_chronicle_entry(data, "rival_major_raid", Some(target_site_id));
             if let Some(route_index) = road_target {
@@ -722,55 +722,5 @@ fn target_weakness(session: &GameSession, data: &GameData, site_id: &str) -> i32
 fn add_unique_issue(issue_ids: &mut Vec<String>, issue_id: &str) {
     if !issue_ids.iter().any(|existing| existing == issue_id) {
         issue_ids.push(issue_id.to_owned());
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::state::GameSession;
-
-    fn test_data() -> GameData {
-        GameData::load().unwrap()
-    }
-
-    #[test]
-    fn new_campaign_has_rival_independents_and_wilderness() {
-        let data = test_data();
-        let session = GameSession::new(&data);
-
-        assert_eq!(session.rival_faction.id, "ashthorn_clan");
-        assert_eq!(session.independent_settlements.len(), 4);
-        assert_eq!(session.wilderness_pressure.len(), data.regions.len());
-    }
-
-    #[test]
-    fn rival_executes_visible_action() {
-        let data = test_data();
-        let mut session = GameSession::new(&data);
-
-        let report = session.advance_faction_systems(&data);
-        assert_eq!(report.rival_actions, 1);
-        assert_eq!(session.rival_faction.action_log.len(), 1);
-    }
-
-    #[test]
-    fn independent_trade_and_integration_progress() {
-        let data = test_data();
-        let mut session = GameSession::new(&data);
-
-        assert!(session.select_site(&data, "briarford"));
-        session.open_trade_with_selected_independent().unwrap();
-        {
-            let independent = session
-                .independent_settlements
-                .iter_mut()
-                .find(|state| state.site_id == "briarford")
-                .unwrap();
-            independent.trust = 50;
-        }
-        session.begin_selected_integration(&data).unwrap();
-        let independent = session.selected_independent().unwrap();
-        assert!(independent.integration_progress > 0);
     }
 }

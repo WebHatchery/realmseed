@@ -3083,11 +3083,11 @@
     "id": "independent_request_opening_a",
     "family_id": "independent_request",
     "stage": "opening",
-    "title": "Independent Settlement Request Warning",
-    "narrative": "{site} becomes the focus of independent settlement request as the frontier story turns again.",
-    "cause": "Independent Settlement Request pressure is now high enough to demand council attention.",
-    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
-    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "title": "Independent Settlement Appeal",
+    "narrative": "{site} sends runners to the capital asking for grain credit and sworn protection before rival agents turn the grievance into a break with the realm.",
+    "cause": "Rival pressure and unmet local need have made this independent settlement ready to bargain.",
+    "visible_consequences": "Aid spends capital wealth, raises trust, and reduces rival pressure at the independent site.",
+    "hidden_consequences": "A weak answer leaves autonomy and rival pressure high, making later integration harder.",
     "allow_defer": true,
     "choices": [
       {
@@ -3106,6 +3106,10 @@
           "loyalty_delta": 3,
           "prosperity_delta": 2,
           "danger_delta": -3,
+          "independent_trust_delta": 8,
+          "independent_autonomy_delta": -4,
+          "independent_rival_pressure_delta": -7,
+          "independent_integration_delta": 3,
           "memory_tags": [
             "independent_memory",
             "independent_request_answered"
@@ -3133,6 +3137,10 @@
           "loyalty_delta": 0,
           "prosperity_delta": 0,
           "danger_delta": 1,
+          "independent_trust_delta": 3,
+          "independent_autonomy_delta": 4,
+          "independent_rival_pressure_delta": -2,
+          "independent_integration_delta": 0,
           "memory_tags": [
             "independent_memory",
             "independent_request_compromise"
@@ -3150,11 +3158,11 @@
     "id": "independent_request_opening_b",
     "family_id": "independent_request",
     "stage": "opening",
-    "title": "Independent Settlement Request Rumors",
-    "narrative": "{site} becomes the focus of independent settlement request as the frontier story turns again.",
-    "cause": "Independent Settlement Request pressure is now high enough to demand council attention.",
-    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
-    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "title": "Envoys from an Independent Settlement",
+    "narrative": "Delegates from {site} arrive with trade tallies, missing patrol reports, and a warning that the rival faction is promising quicker help.",
+    "cause": "Trust is low enough that the settlement wants terms before it cooperates.",
+    "visible_consequences": "Envoys can improve trust and integration progress; delay gives the rival more room.",
+    "hidden_consequences": "The response shapes whether locals see the realm as partner, patron, or distant overlord.",
     "allow_defer": true,
     "choices": [
       {
@@ -3173,6 +3181,10 @@
           "loyalty_delta": 3,
           "prosperity_delta": 2,
           "danger_delta": -3,
+          "independent_trust_delta": 8,
+          "independent_autonomy_delta": -4,
+          "independent_rival_pressure_delta": -7,
+          "independent_integration_delta": 3,
           "memory_tags": [
             "independent_memory",
             "independent_request_answered"
@@ -3200,6 +3212,10 @@
           "loyalty_delta": 0,
           "prosperity_delta": 0,
           "danger_delta": 1,
+          "independent_trust_delta": 3,
+          "independent_autonomy_delta": 4,
+          "independent_rival_pressure_delta": -2,
+          "independent_integration_delta": 0,
           "memory_tags": [
             "independent_memory",
             "independent_request_compromise"
@@ -3218,10 +3234,10 @@
     "family_id": "independent_request",
     "stage": "follow_up",
     "title": "Independent Settlement Request Deepens",
-    "narrative": "{site} becomes the focus of independent settlement request as the frontier story turns again.",
-    "cause": "Independent Settlement Request pressure is now high enough to demand council attention.",
-    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
-    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "narrative": "The first answer did not settle {site}. Merchants want secure routes, elders want legal guarantees, and rival messengers are still welcome at the gate.",
+    "cause": "The active independent request has not cooled and needs a second commitment.",
+    "visible_consequences": "Further support can close the trust gap and push the issue toward resolution.",
+    "hidden_consequences": "A narrow response may reduce danger while preserving resentment.",
     "allow_defer": true,
     "choices": [
       {
@@ -3240,6 +3256,10 @@
           "loyalty_delta": 3,
           "prosperity_delta": 2,
           "danger_delta": -3,
+          "independent_trust_delta": 8,
+          "independent_autonomy_delta": -4,
+          "independent_rival_pressure_delta": -7,
+          "independent_integration_delta": 3,
           "memory_tags": [
             "independent_memory",
             "independent_request_answered"
@@ -3267,6 +3287,10 @@
           "loyalty_delta": 0,
           "prosperity_delta": 0,
           "danger_delta": 1,
+          "independent_trust_delta": 3,
+          "independent_autonomy_delta": 4,
+          "independent_rival_pressure_delta": -2,
+          "independent_integration_delta": 0,
           "memory_tags": [
             "independent_memory",
             "independent_request_compromise"
@@ -3285,10 +3309,10 @@
     "family_id": "independent_request",
     "stage": "follow_up",
     "title": "Independent Settlement Request Spreads",
-    "narrative": "{site} becomes the focus of independent settlement request as the frontier story turns again.",
-    "cause": "Independent Settlement Request pressure is now high enough to demand council attention.",
-    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
-    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "narrative": "{site} is splitting between families that want the realm's roads and families that prefer their own law under rival protection.",
+    "cause": "Rival promises and local autonomy are now pulling the settlement in opposite directions.",
+    "visible_consequences": "A public answer builds trust; delay keeps the issue alive and pressure exposed.",
+    "hidden_consequences": "The settlement's next integration offer depends on how much autonomy is left intact.",
     "allow_defer": true,
     "choices": [
       {
@@ -3307,6 +3331,10 @@
           "loyalty_delta": 3,
           "prosperity_delta": 2,
           "danger_delta": -3,
+          "independent_trust_delta": 8,
+          "independent_autonomy_delta": -4,
+          "independent_rival_pressure_delta": -7,
+          "independent_integration_delta": 3,
           "memory_tags": [
             "independent_memory",
             "independent_request_answered"
@@ -3334,6 +3362,10 @@
           "loyalty_delta": 0,
           "prosperity_delta": 0,
           "danger_delta": 1,
+          "independent_trust_delta": 3,
+          "independent_autonomy_delta": 4,
+          "independent_rival_pressure_delta": -2,
+          "independent_integration_delta": 0,
           "memory_tags": [
             "independent_memory",
             "independent_request_compromise"
@@ -3352,10 +3384,10 @@
     "family_id": "independent_request",
     "stage": "resolution",
     "title": "Independent Settlement Request Settled",
-    "narrative": "{site} becomes the focus of independent settlement request as the frontier story turns again.",
-    "cause": "Independent Settlement Request pressure is now high enough to demand council attention.",
-    "visible_consequences": "Choices alter local resources, stability, loyalty, memories, and the active issue state.",
-    "hidden_consequences": "The settlement may remember the response and influence later event weights.",
+    "narrative": "{site} accepts the council's recorded settlement. The terms are copied into market books and patrol rolls so future envoys know what was promised.",
+    "cause": "The independent request has reached a settlement stage.",
+    "visible_consequences": "The issue closes, trust rises, and rival pressure falls.",
+    "hidden_consequences": "Recorded promises will matter if the settlement later asks for trade or integration.",
     "allow_defer": false,
     "choices": [
       {
@@ -3374,6 +3406,10 @@
           "loyalty_delta": 3,
           "prosperity_delta": 2,
           "danger_delta": -3,
+          "independent_trust_delta": 10,
+          "independent_autonomy_delta": -6,
+          "independent_rival_pressure_delta": -9,
+          "independent_integration_delta": 7,
           "memory_tags": [
             "independent_memory",
             "independent_request_answered"

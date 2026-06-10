@@ -15,15 +15,16 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, mouse: Vec2, actions: &mut V
     };
     let site_name = ctx.session.pending_event_site_name(ctx.data);
 
+    let screen = super::screen_rect(ctx);
     draw_rectangle(
-        0.0,
-        0.0,
-        super::LOGICAL_WIDTH,
-        super::LOGICAL_HEIGHT,
+        screen.x,
+        screen.y,
+        screen.w,
+        screen.h,
         Color::new(0.02, 0.025, 0.02, 0.66),
     );
 
-    let rect = Rect::new(218.0, 86.0, 844.0, 548.0);
+    let rect = super::centered_modal_rect(ctx, 844.0, 548.0);
     draw_surface_with_title(
         rect,
         Some("Event"),
@@ -82,7 +83,7 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, mouse: Vec2, actions: &mut V
     y += 58.0;
 
     for choice in &template.choices {
-        let status = ctx.session.event_choice_status(choice);
+        let status = ctx.session.event_choice_status(ctx.data, choice);
         if virtual_button(
             Rect::new(content.x, y, 238.0, 34.0),
             &choice.label,

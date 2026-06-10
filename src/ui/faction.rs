@@ -6,14 +6,15 @@ use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::RectExt;
 
 pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, mouse: Vec2, actions: &mut Vec<UiAction>) {
+    let screen = super::screen_rect(ctx);
     draw_rectangle(
-        0.0,
-        0.0,
-        super::LOGICAL_WIDTH,
-        super::LOGICAL_HEIGHT,
+        screen.x,
+        screen.y,
+        screen.w,
+        screen.h,
         Color::new(0.02, 0.025, 0.02, 0.62),
     );
-    let rect = Rect::new(158.0, 72.0, 964.0, 584.0);
+    let rect = super::centered_modal_rect(ctx, 964.0, 584.0);
     draw_surface_with_title(
         rect,
         Some("Faction Pressure"),
@@ -34,20 +35,33 @@ pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, mouse: Vec2, actions: &m
     }
 
     let content = rect.inset(24.0);
-    draw_rival(ctx, Rect::new(content.x, content.y + 48.0, 430.0, 298.0));
+    let column_gap = 24.0;
+    let column_w = (content.w - column_gap) * 0.5;
+    let right_x = content.x + column_w + column_gap;
+    draw_rival(
+        ctx,
+        Rect::new(content.x, content.y + 48.0, column_w, content.h * 0.54),
+    );
     draw_campaign_controls(
         ctx,
         mouse,
         actions,
-        Rect::new(content.x, content.y + 368.0, 430.0, 166.0),
+        Rect::new(
+            content.x,
+            content.y + content.h * 0.66,
+            column_w,
+            content.h * 0.28,
+        ),
     );
-    draw_independents(
-        ctx,
-        Rect::new(content.x + 456.0, content.y + 48.0, 430.0, 210.0),
-    );
+    draw_independents(ctx, Rect::new(right_x, content.y + 48.0, column_w, 210.0));
     draw_wilderness(
         ctx,
-        Rect::new(content.x + 456.0, content.y + 282.0, 430.0, 252.0),
+        Rect::new(
+            right_x,
+            content.y + content.h * 0.48,
+            column_w,
+            content.h * 0.46,
+        ),
     );
 }
 

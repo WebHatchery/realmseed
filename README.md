@@ -1,36 +1,88 @@
 # Realmseed
 
-Realmseed is a Rust + Macroquad fantasy realm-building prototype. Phase 1
-implements the first playable shell: a small strategic map, seasonal turns,
-site inspection, scouting unknown adjacent sites, and a chronicle that records
-the realm's opening history.
+Realmseed is a fantasy realm-building game about founding a young kingdom in
+Greenvale, a frontier of river valleys, forests, hills, old roads, independent
+towns, rival clans, and dangerous wilderness.
 
-## Current Phase
+You play as the Charter Council. You do not control individual villagers or
+place buildings tile by tile. Your work is larger and messier: scout promising
+sites, found settlements, build lifeline roads, answer crises, negotiate with
+independent towns, contain a rival clan, and leave behind a chronicle that
+remembers what the realm became.
 
-- 60 x 40 terrain map.
-- 6 authored regions.
-- 30 total map sites.
-- 8 starting visible sites.
-- 18 settlement-capable sites.
-- 4 independent settlements.
-- 8 landmark, resource, pass, ford, ruin, or hazard sites.
-- 50 authored route links.
-- Toolkit-backed save/load for the current campaign state.
+## The Campaign
+
+A prototype campaign lasts 20 years, played across 80 seasonal turns. Each
+season gives the council a small number of actions, so every choice competes
+with something else the realm needs.
+
+You can collapse, barely survive, or build a lasting legacy. The ending is
+shaped by what actually happened: settlements founded or lost, roads built,
+famines answered, independent towns integrated, rival pressure contained, and
+the ambition you chose for the realm.
+
+## What You Do
+
+- Scout unknown markers to reveal settlement sites, landmarks, passes, fords,
+  roads, and hazards.
+- Found camps that can grow into villages, towns, and eventually cities.
+- Set settlement focus toward farming, logging, quarrying, trade, defence, or
+  civic stability.
+- Build and upgrade roads so food, trade, authority, and relief can reach the
+  frontier.
+- Watch for food shortages, isolation, unrest, road trouble, bandits, disasters,
+  tax disputes, migration waves, and rival moves.
+- Resolve event chains before warnings become active crises or collapse
+  outcomes.
+- Open trade with independent settlements, begin integration, or lose them to
+  rival pressure.
+- Declare a realm ambition such as a food-secure Breadbasket Charter, a
+  roadbound Ash Road Compact, or a stable Civic Charter.
+- Complete projects and unlock institutions that reduce repeated pressure.
+
+## The World
+
+The map has 6 regions, 30 important sites, and 50 authored route links. It
+starts with 8 visible sites and a larger unknown frontier around them.
+
+Sites matter more than individual terrain tiles. Terrain shapes risk and
+opportunity, but the major decisions happen through settlements, routes,
+regions, independent towns, rival pressure, and event markers.
+
+## Pressure And Memory
+
+Realmseed is built around consequences that connect.
+
+Poor roads can isolate a settlement. Isolation can lower stability and loyalty.
+Low loyalty can invite unrest or rival influence. Rival pressure can turn an
+independent town away from the charter. A settlement that receives aid may
+remember the council differently than one that was left hungry.
+
+The chronicle records these moments as campaign history. It is not just a log:
+it becomes the basis for the final legacy summary.
 
 ## Controls
 
 - Click a solid marker to inspect a known site.
 - Click a question marker, then use `Scout Selected Site` to reveal it.
-- Press `Space` or use `Advance Season` to move through Spring, Summer,
-  Autumn, and Winter.
-- Press `C` or use `Chronicle` to open the chronicle.
+- Use settlement and route buttons in the side panel to found, upgrade, set
+  focus, build roads, trade, or begin integration.
+- Press `Space` or use `Advance Season` to move from season to season.
+- Press `C` or use `Chronicle` to open the campaign chronicle.
+- Press `F` to open faction pressure, ambitions, projects, and institutions.
 - Use right mouse drag and `+ / -` to adjust the map view.
-- Use `S / L` to save or load the toolkit campaign slot.
+- Use `S / L` to save or load the current campaign.
 
-## Validation
+## Current Prototype
 
-Use the project publisher as the validation path:
+The current build focuses on a complete 20-year prototype campaign:
 
-```powershell
-.\publish.ps1
-```
+- 18 settlement-capable sites.
+- 4 independent settlements.
+- 8 landmark, resource, pass, ford, ruin, or hazard sites.
+- 12 event families with opening, follow-up, and resolution events.
+- 1 rival faction that claims sites, raids, influences settlements, pressures
+  independents, fortifies, and contests roads.
+- Wilderness pressure that rises or falls based on roads, patrols,
+  fortification, and isolation.
+- Endgame summaries built from the campaign's actual history.

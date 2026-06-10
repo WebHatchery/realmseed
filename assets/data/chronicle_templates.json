@@ -2,7 +2,7 @@
   {
     "id": "campaign_start",
     "title": "The Charter Is Raised",
-    "body": "In Spring of Year {year}, the council raised its first banners at {site}. Eight known places formed the first map of the realm.",
+    "body": "In Spring of Year {year}, the council raised its first banners at {site}. Beyond the charter roads, the first map was still rumor.",
     "importance": "major",
     "tag": "settlement"
   },

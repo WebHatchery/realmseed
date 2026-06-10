@@ -293,22 +293,17 @@ impl GameSession {
 
     fn independent_request_candidate(
         &self,
-        data: &GameData,
+        _data: &GameData,
         family: &EventFamilyDef,
     ) -> Option<EventCandidate> {
         let independent = self
             .independent_settlements
             .iter()
             .max_by_key(|independent| independent.rival_pressure + independent.autonomy)?;
-        let target_site_id = self
-            .settlements
-            .iter()
-            .find(|settlement| settlement.location_id == data.road_balance.source_site_id)
-            .map(|settlement| settlement.location_id.clone())?;
         Some(EventCandidate {
             family_id: family.id.clone(),
             template_id: String::new(),
-            target_site_id,
+            target_site_id: independent.site_id.clone(),
             severity: 1 + (independent.rival_pressure / 40).clamp(0, 2),
             weight: 25 + independent.rival_pressure + (100 - independent.trust) / 3,
             cause: "An independent settlement needs aid, trade, or protection.".to_owned(),
@@ -396,4 +391,31 @@ fn target_weakness_for_event(session: &GameSession, data: &GameData, site_id: &s
         + (40 - settlement.defence).max(0)
         + settlement.rival_pressure
         + isolation
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::state::GameSession;
+
+    fn test_data() -> GameData {
+        GameData::load().unwrap()
+    }
+
+    #[test]
+    fn independent_request_candidate_targets_independent_site() {
+        let data = test_data();
+        let mut session = GameSession::new(&data);
+        let expected_site_id = session.independent_settlements[0].site_id.clone();
+        session.independent_settlements[0].rival_pressure = 80;
+
+        let family = data.event_family("independent_request").unwrap();
+        let candidate = session.candidate_for_family(&data, family).unwrap();
+
+        assert_eq!(candidate.target_site_id, expected_site_id);
+        assert!(session
+            .independent_settlements
+            .iter()
+            .any(|independent| independent.site_id == candidate.target_site_id));
+    }
 }

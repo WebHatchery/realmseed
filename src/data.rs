@@ -369,9 +369,48 @@ impl GameData {
                 ));
             }
         }
+        for template in &self.event_templates {
+            if FEATURED_EVENT_COPY_FAMILIES.contains(&template.family_id.as_str()) {
+                validate_featured_event_copy(template)?;
+            }
+        }
 
         Ok(())
     }
+}
+
+const FEATURED_EVENT_COPY_FAMILIES: &[&str] = &["independent_request"];
+const PLACEHOLDER_COPY_PHRASES: &[&str] = &[
+    "becomes the focus of",
+    "frontier story turns again",
+    "pressure is now high enough",
+    "choices alter local resources",
+    "may remember the response",
+];
+
+fn validate_featured_event_copy(template: &EventTemplateDef) -> Result<(), String> {
+    for (field_name, text) in [
+        ("title", template.title.as_str()),
+        ("narrative", template.narrative.as_str()),
+        ("cause", template.cause.as_str()),
+        (
+            "visible_consequences",
+            template.visible_consequences.as_str(),
+        ),
+        ("hidden_consequences", template.hidden_consequences.as_str()),
+    ] {
+        let lower = text.to_ascii_lowercase();
+        for phrase in PLACEHOLDER_COPY_PHRASES {
+            if lower.contains(phrase) {
+                return Err(format!(
+                    "event template {} has placeholder {} copy",
+                    template.id, field_name
+                ));
+            }
+        }
+    }
+
+    Ok(())
 }
 
 fn default_chronicle_tag() -> String {

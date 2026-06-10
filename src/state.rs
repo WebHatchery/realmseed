@@ -10,7 +10,13 @@ pub mod settlement;
 #[cfg(test)]
 mod campaign_tests;
 #[cfg(test)]
+mod faction_tests;
+#[cfg(test)]
 mod road_tests;
+#[cfg(test)]
+mod session_tests;
+#[cfg(test)]
+mod settlement_tests;
 
 pub use campaign::*;
 pub use event::*;
@@ -18,7 +24,7 @@ pub use faction::*;
 pub use road::*;
 pub use settlement::*;
 
-use crate::data::{ChronicleTemplateDef, GameData, SiteDef};
+use crate::data::{ChronicleTemplateDef, GameData, SiteCategory, SiteDef};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -215,13 +221,16 @@ impl GameSession {
             data.config.starting_year,
             Season::from_config(&data.config.starting_season),
         );
+        let charter_site_id = data.settlement_balance.founding.source_site_id.as_str();
         let selected_site_id = data
             .sites
             .iter()
-            .find(|site| site.id == "charter_hall")
+            .find(|site| site.id == charter_site_id)
+            .or_else(|| data.sites.iter().find(|site| site.id == "charter_hall"))
             .or_else(|| data.sites.iter().find(|site| site.initially_visible))
             .map(|site| site.id.clone())
             .unwrap_or_default();
+        let starting_site_id = selected_site_id.clone();
 
         let mut session = Self {
             clock,
@@ -231,7 +240,7 @@ impl GameSession {
                 .iter()
                 .map(|site| SiteRuntimeState {
                     site_id: site.id.clone(),
-                    knowledge: if site.initially_visible {
+                    knowledge: if site.id == starting_site_id {
                         SiteKnowledge::Known
                     } else {
                         SiteKnowledge::Unknown
@@ -261,7 +270,8 @@ impl GameSession {
             chronicle: Vec::new(),
             campaign_seed: data.config.campaign_seed,
         };
-        session.add_chronicle_entry(data, "campaign_start", Some("charter_hall"));
+        session.refresh_route_knowledge();
+        session.add_chronicle_entry(data, "campaign_start", Some(&starting_site_id));
         session
     }
 
@@ -368,16 +378,74 @@ impl GameSession {
         }
     }
 
-    pub fn can_scout_selected_site(&self, data: &GameData) -> bool {
-        self.is_adjacent_unknown(data, &self.selected_site_id)
+    pub fn scout_status(&self, data: &GameData) -> SettlementActionStatus {
+        let Some(site) = self.selected_site(data) else {
+            return SettlementActionStatus::disabled("Select a scout target.");
+        };
+
+        if self.is_known(&site.id) {
+            return SettlementActionStatus::disabled("This site is already known.");
+        }
+        if !self.is_adjacent_unknown(data, &site.id) {
+            return SettlementActionStatus::disabled(
+                "Scout outward from a neighboring known site first.",
+            );
+        }
+
+        let scouting = &data.settlement_balance.scouting;
+        if self.council_actions_remaining < scouting.action_cost {
+            return SettlementActionStatus::disabled(format!(
+                "Needs {} council action.",
+                scouting.action_cost
+            ));
+        }
+        let source_site_id = &data.settlement_balance.founding.source_site_id;
+        let Some(source) = self
+            .settlements
+            .iter()
+            .find(|settlement| settlement.location_id == *source_site_id && settlement.is_active())
+        else {
+            return SettlementActionStatus::disabled("The charter capital is unavailable.");
+        };
+        if let Some(reason) = source.stored.deficit_text(scouting.cost) {
+            return SettlementActionStatus::disabled(reason);
+        }
+
+        let source_name = data
+            .site(source_site_id)
+            .map(|site| site.name.as_str())
+            .unwrap_or("the charter capital");
+        SettlementActionStatus::enabled(format!(
+            "Costs {} action and {} from {}.",
+            scouting.action_cost,
+            scouting.cost.cost_text(),
+            source_name
+        ))
     }
 
-    pub fn scout_selected_site(&mut self, data: &GameData) -> bool {
-        if !self.can_scout_selected_site(data) {
-            return false;
+    pub fn scout_selected_site(&mut self, data: &GameData) -> Result<String, String> {
+        let status = self.scout_status(data);
+        if !status.enabled {
+            return Err(status.reason);
         }
 
         let site_id = self.selected_site_id.clone();
+        let site_name = data
+            .site(&site_id)
+            .map(|site| site.name.clone())
+            .unwrap_or_else(|| "site".to_owned());
+        let source_site_id = &data.settlement_balance.founding.source_site_id;
+        let source_index = self
+            .settlements
+            .iter()
+            .position(|settlement| {
+                settlement.location_id == *source_site_id && settlement.is_active()
+            })
+            .ok_or_else(|| "The charter capital is unavailable.".to_owned())?;
+        self.settlements[source_index]
+            .stored
+            .subtract(data.settlement_balance.scouting.cost);
+        self.council_actions_remaining -= data.settlement_balance.scouting.action_cost;
         if let Some(state) = self
             .site_states
             .iter_mut()
@@ -387,7 +455,82 @@ impl GameSession {
         }
         self.refresh_route_knowledge();
         self.add_chronicle_entry(data, "site_scouted", Some(&site_id));
-        true
+        let report = data
+            .site(&site_id)
+            .map(|site| self.scout_report_for_site(data, site))
+            .unwrap_or_else(|| "Scout report unavailable.".to_owned());
+        Ok(format!("Scouted {}. {}", site_name, report))
+    }
+
+    fn scout_report_for_site(&self, data: &GameData, site: &SiteDef) -> String {
+        let terrain = data.terrain_at(site.position.x, site.position.y);
+        let terrain_name = terrain
+            .map(|terrain| terrain.name.as_str())
+            .unwrap_or("unknown ground");
+        let region_name = data
+            .region(&site.region_id)
+            .map(|region| region.name.as_str())
+            .unwrap_or("the frontier");
+        let route_count = data.roads_for_site(&site.id).count();
+        let route_text = if route_count == 1 {
+            "1 route".to_owned()
+        } else {
+            format!("{} routes", route_count)
+        };
+        let traits = if site.traits.is_empty() {
+            "no notable traits".to_owned()
+        } else {
+            site.traits
+                .iter()
+                .take(2)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(", ")
+        };
+
+        match site.category {
+            SiteCategory::Settlement => {
+                let prospect = terrain
+                    .map(|terrain| {
+                        strongest_terrain_prospect(
+                            terrain.fertility,
+                            terrain.timber,
+                            terrain.stone,
+                            terrain.danger,
+                        )
+                    })
+                    .unwrap_or("uncertain prospects");
+                format!(
+                    "Scout report: {} in {}, {} nearby, traits: {}; {}.",
+                    terrain_name, region_name, route_text, traits, prospect
+                )
+            }
+            SiteCategory::Independent => {
+                if let Some(independent) = self
+                    .independent_settlements
+                    .iter()
+                    .find(|independent| independent.site_id == site.id)
+                {
+                    format!(
+                        "Scout report: independent settlement in {}, trust {}, autonomy {}, rival pressure {}, current need: {}.",
+                        region_name,
+                        independent.trust,
+                        independent.autonomy,
+                        independent.rival_pressure,
+                        independent.local_need
+                    )
+                } else {
+                    format!(
+                        "Scout report: independent settlement in {}, {} nearby, traits: {}.",
+                        region_name, route_text, traits
+                    )
+                }
+            }
+            SiteCategory::Landmark => format!(
+                "Scout report: landmark on {}, {} nearby, traits: {}; {}.",
+                terrain_name, route_text, traits, site.description
+            ),
+        }
     }
 
     pub fn advance_season(&mut self, data: &GameData) -> SeasonAdvanceReport {
@@ -521,6 +664,24 @@ fn default_rival_faction() -> FactionRuntimeState {
     }
 }
 
+fn strongest_terrain_prospect(
+    fertility: i32,
+    timber: i32,
+    stone: i32,
+    danger: i32,
+) -> &'static str {
+    let best_yield = fertility.max(timber).max(stone);
+    if danger >= best_yield + 2 {
+        "hazards will need early attention"
+    } else if fertility >= timber && fertility >= stone {
+        "food prospects look strongest"
+    } else if timber >= stone {
+        "timber prospects look strongest"
+    } else {
+        "stone prospects look strongest"
+    }
+}
+
 fn fill_template(
     text: &str,
     year: u32,
@@ -547,54 +708,4 @@ pub fn migrate_save_value(
     }
 
     Ok(GameSession::new(data).to_save(&data.config.version))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn test_data() -> GameData {
-        GameData::load().unwrap()
-    }
-
-    #[test]
-    fn new_campaign_starts_with_eight_known_sites_and_chronicle() {
-        let data = test_data();
-        let session = GameSession::new(&data);
-
-        assert_eq!(session.known_site_count(), 8);
-        assert_eq!(session.selected_site_id, "charter_hall");
-        assert_eq!(session.clock.season, Season::Spring);
-        assert_eq!(session.clock.year, 1);
-        assert_eq!(session.chronicle.len(), 1);
-    }
-
-    #[test]
-    fn scouting_reveals_adjacent_unknown_sites() {
-        let data = test_data();
-        let mut session = GameSession::new(&data);
-
-        assert!(session.select_site(&data, "old_king_road"));
-        assert!(session.can_scout_selected_site(&data));
-        assert!(session.scout_selected_site(&data));
-        assert!(session.is_known("old_king_road"));
-        assert_eq!(session.known_site_count(), 9);
-        assert_eq!(session.chronicle.len(), 2);
-    }
-
-    #[test]
-    fn seasons_cycle_and_year_advances_after_winter() {
-        let data = test_data();
-        let mut session = GameSession::new(&data);
-
-        session.advance_season(&data);
-        assert_eq!(session.clock.season, Season::Summer);
-        session.advance_season(&data);
-        assert_eq!(session.clock.season, Season::Autumn);
-        session.advance_season(&data);
-        assert_eq!(session.clock.season, Season::Winter);
-        session.advance_season(&data);
-        assert_eq!(session.clock.season, Season::Spring);
-        assert_eq!(session.clock.year, 2);
-    }
 }

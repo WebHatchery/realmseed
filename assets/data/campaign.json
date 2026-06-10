@@ -49,21 +49,37 @@
       "name": "Expand Granaries",
       "scope": "settlement",
       "description": "Adds food buffer and famine resilience to the selected settlement.",
-      "cost": { "food": 0, "timber": 35, "stone": 20, "wealth": 35 }
+      "cost": { "food": 0, "timber": 35, "stone": 20, "wealth": 35 },
+      "action_cost": 1,
+      "effects": {
+        "resource_delta": { "food": 90, "timber": 0, "stone": 0, "wealth": 0 },
+        "memory_tags": ["granaries_expanded"]
+      }
     },
     {
       "id": "charter_market",
       "name": "Charter Market",
       "scope": "settlement",
       "description": "Raises prosperity and wealth in the selected settlement.",
-      "cost": { "food": 0, "timber": 25, "stone": 10, "wealth": 45 }
+      "cost": { "food": 0, "timber": 25, "stone": 10, "wealth": 45 },
+      "action_cost": 1,
+      "effects": {
+        "resource_delta": { "food": 0, "timber": 0, "stone": 0, "wealth": 45 },
+        "prosperity_delta": 8,
+        "memory_tags": ["charter_market"]
+      }
     },
     {
       "id": "frontier_watch",
       "name": "Frontier Watch",
       "scope": "regional",
       "description": "Reduces wilderness pressure in the selected region.",
-      "cost": { "food": 0, "timber": 45, "stone": 15, "wealth": 45 }
+      "cost": { "food": 0, "timber": 45, "stone": 15, "wealth": 45 },
+      "action_cost": 1,
+      "effects": {
+        "wilderness_pressure_delta": -12,
+        "memory_tags": ["frontier_watch"]
+      }
     }
   ],
   "institutions": [

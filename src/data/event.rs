@@ -114,6 +114,14 @@ pub struct EventChoiceEffects {
     #[serde(default)]
     pub danger_delta: i32,
     #[serde(default)]
+    pub independent_trust_delta: i32,
+    #[serde(default)]
+    pub independent_autonomy_delta: i32,
+    #[serde(default)]
+    pub independent_rival_pressure_delta: i32,
+    #[serde(default)]
+    pub independent_integration_delta: i32,
+    #[serde(default)]
     pub memory_tags: Vec<String>,
     pub issue_state: Option<ActiveIssueState>,
     #[serde(default)]

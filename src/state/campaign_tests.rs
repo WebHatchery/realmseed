@@ -23,7 +23,12 @@ fn scout_next_unknown(session: &mut GameSession, data: &GameData) {
         .map(|site| site.id.clone())
         .expect("an adjacent unknown site should be available");
     assert!(session.select_site(data, &site_id));
-    assert!(session.scout_selected_site(data));
+    if !session.scout_status(data).enabled
+        && session.scout_status(data).reason.contains("council action")
+    {
+        session.advance_season(data);
+    }
+    session.scout_selected_site(data).unwrap();
 }
 
 #[test]

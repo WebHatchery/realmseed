@@ -1,1 +1,7 @@
-[]
+[
+  {
+    "key": "title_image",
+    "path": "assets/images/title_image.png",
+    "filter": "linear"
+  }
+]

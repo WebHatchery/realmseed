@@ -65,25 +65,28 @@ impl GameSession {
             .unwrap_or_else(|| "the frontier".to_owned())
     }
 
-    pub fn event_choice_status(&self, choice: &EventChoiceDef) -> SettlementActionStatus {
+    pub fn event_choice_status(
+        &self,
+        data: &GameData,
+        choice: &EventChoiceDef,
+    ) -> SettlementActionStatus {
         let Some(pending) = &self.pending_event else {
             return SettlementActionStatus::disabled("No event is pending.");
         };
-        let Some(settlement) = self.settlement_at_site(&pending.target_site_id) else {
-            return SettlementActionStatus::disabled("This event has no settlement target.");
+        let Some(source) = self.event_resource_source(data, &pending.target_site_id) else {
+            return SettlementActionStatus::disabled("This event has no valid target.");
         };
-        if let Some(reason) = settlement
-            .stored
-            .deficit_text(choice.requirements.resources)
-        {
+        if let Some(reason) = source.stored.deficit_text(choice.requirements.resources) {
             return SettlementActionStatus::disabled(reason);
         }
-        if choice
-            .blocked_by_tags
-            .iter()
-            .any(|tag| settlement.memory_tags.contains(tag))
-        {
-            return SettlementActionStatus::disabled("Blocked by settlement memory.");
+        if let Some(settlement) = self.settlement_at_site(&pending.target_site_id) {
+            if choice
+                .blocked_by_tags
+                .iter()
+                .any(|tag| settlement.memory_tags.contains(tag))
+            {
+                return SettlementActionStatus::disabled("Blocked by settlement memory.");
+            }
         }
 
         SettlementActionStatus::enabled(choice.visible_consequence.clone())
@@ -106,7 +109,7 @@ impl GameSession {
             .iter()
             .find(|choice| choice.id == choice_id)
             .ok_or_else(|| "Unknown event choice.".to_owned())?;
-        let status = self.event_choice_status(choice);
+        let status = self.event_choice_status(data, choice);
         if !status.enabled {
             return Err(status.reason);
         }
@@ -389,18 +392,52 @@ impl GameSession {
         });
     }
 
+    fn event_resource_source(
+        &self,
+        data: &GameData,
+        target_site_id: &str,
+    ) -> Option<&super::SettlementRuntimeState> {
+        self.settlement_at_site(target_site_id).or_else(|| {
+            self.independent_settlements
+                .iter()
+                .any(|independent| independent.site_id == target_site_id)
+                .then(|| self.settlement_at_site(&data.road_balance.source_site_id))
+                .flatten()
+        })
+    }
+
     fn apply_event_effects(
         &mut self,
         data: &GameData,
         pending: &PendingEventRuntimeState,
         choice: &EventChoiceDef,
     ) -> Result<(), String> {
-        let settlement = self
+        if let Some(settlement) = self
             .settlements
             .iter_mut()
             .find(|settlement| settlement.location_id == pending.target_site_id)
-            .ok_or_else(|| "Event target settlement is missing.".to_owned())?;
-        apply_choice_effects_to_settlement(settlement, &choice.effects);
+        {
+            apply_choice_effects_to_settlement(settlement, &choice.effects);
+        } else if self
+            .independent_settlements
+            .iter()
+            .any(|independent| independent.site_id == pending.target_site_id)
+        {
+            let source = self
+                .settlements
+                .iter_mut()
+                .find(|settlement| settlement.location_id == data.road_balance.source_site_id)
+                .ok_or_else(|| "Independent event source settlement is missing.".to_owned())?;
+            apply_resource_delta(&mut source.stored, choice.effects.resource_delta);
+            let independent = self
+                .independent_settlements
+                .iter_mut()
+                .find(|independent| independent.site_id == pending.target_site_id)
+                .ok_or_else(|| "Event target independent settlement is missing.".to_owned())?;
+            apply_choice_effects_to_independent(independent, &choice.effects);
+        } else {
+            return Err("Event target is missing.".to_owned());
+        }
 
         if let Some(issue) = self
             .active_issues
@@ -552,6 +589,31 @@ fn apply_choice_effects_to_settlement(
     }
 }
 
+fn apply_choice_effects_to_independent(
+    independent: &mut super::IndependentSettlementRuntimeState,
+    effects: &EventChoiceEffects,
+) {
+    let fallback_trust = effects.loyalty_delta + effects.stability_delta / 2;
+    let fallback_integration = effects.prosperity_delta.max(0) / 2;
+    let fallback_autonomy = if effects.response_score > 0 { -2 } else { 0 };
+    independent.trust =
+        (independent.trust + effects.independent_trust_delta + fallback_trust).clamp(0, 100);
+    independent.autonomy =
+        (independent.autonomy + effects.independent_autonomy_delta + fallback_autonomy)
+            .clamp(0, 100);
+    independent.rival_pressure = (independent.rival_pressure
+        + effects.independent_rival_pressure_delta
+        + effects.danger_delta)
+        .clamp(0, 100);
+    independent.integration_progress = (independent.integration_progress
+        + effects.independent_integration_delta
+        + fallback_integration)
+        .clamp(0, 100);
+    if effects.response_score >= 18 {
+        independent.local_need = "answered by the realm council".to_owned();
+    }
+}
+
 fn apply_resource_delta(resources: &mut ResourceStock, delta: ResourceStock) {
     resources.food = (resources.food + delta.food).max(0);
     resources.timber = (resources.timber + delta.timber).max(0);
@@ -600,6 +662,64 @@ mod tests {
             .settlements
             .iter()
             .any(|settlement| !settlement.memory_tags.is_empty()));
+    }
+
+    #[test]
+    fn independent_request_choice_updates_independent_target() {
+        let data = test_data();
+        let mut session = GameSession::new(&data);
+        let target_site_id = session.independent_settlements[0].site_id.clone();
+        let issue_id = issue_id("independent_request", &target_site_id);
+        let trust_before = session.independent_settlements[0].trust;
+        let pressure_before = session.independent_settlements[0].rival_pressure;
+        let source_wealth_before = session
+            .settlement_at_site(&data.road_balance.source_site_id)
+            .unwrap()
+            .stored
+            .wealth;
+        session.pending_event = Some(PendingEventRuntimeState {
+            family_id: "independent_request".to_owned(),
+            template_id: "independent_request_opening_a".to_owned(),
+            target_site_id: target_site_id.clone(),
+            issue_id: issue_id.clone(),
+            severity: 2,
+            cause: "Independent regression test.".to_owned(),
+            stage: EventStage::Opening,
+        });
+        session.active_issues.push(ActiveIssueRuntimeState {
+            id: issue_id,
+            family_id: "independent_request".to_owned(),
+            target_site_id: target_site_id.clone(),
+            state: ActiveIssueState::Warning,
+            severity: 2,
+            age_seasons: 0,
+            ignored_seasons: 0,
+            last_player_response: None,
+            escalation_threshold: 35,
+            improvement_threshold: 18,
+            cooldown_remaining: 0,
+            response_score: 0,
+            memory_tags: Vec::new(),
+        });
+
+        session
+            .resolve_pending_event_choice(&data, "answer_independent_request")
+            .unwrap();
+
+        let independent = session
+            .independent_settlements
+            .iter()
+            .find(|independent| independent.site_id == target_site_id)
+            .unwrap();
+        let source_wealth_after = session
+            .settlement_at_site(&data.road_balance.source_site_id)
+            .unwrap()
+            .stored
+            .wealth;
+        assert!(independent.trust > trust_before);
+        assert!(independent.rival_pressure < pressure_before);
+        assert!(source_wealth_after < source_wealth_before);
+        assert!(session.pending_event.is_none());
     }
 
     #[test]

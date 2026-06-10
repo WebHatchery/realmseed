@@ -695,8 +695,9 @@ fn apply_isolation_penalty(settlement: &mut SettlementRuntimeState, unmanaged_st
     settlement.loyalty = (settlement.loyalty - 2).clamp(0, 100);
     settlement.prosperity = (settlement.prosperity - 1).clamp(0, 100);
     settlement.danger = (settlement.danger + 2).clamp(0, 100);
-    settlement.autonomy_pressure = (settlement.autonomy_pressure + 1 + unmanaged_strain).max(0);
-    settlement.rival_pressure = (settlement.rival_pressure + 2 * unmanaged_strain).max(0);
+    settlement.autonomy_pressure =
+        (settlement.autonomy_pressure + 1 + unmanaged_strain).clamp(0, 100);
+    settlement.rival_pressure = (settlement.rival_pressure + 2 * unmanaged_strain).clamp(0, 100);
 }
 
 fn apply_connection_bonus(

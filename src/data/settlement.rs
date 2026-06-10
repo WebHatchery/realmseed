@@ -126,6 +126,12 @@ pub struct FoundingBalanceDef {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScoutBalanceDef {
+    pub action_cost: i32,
+    pub cost: ResourceStock,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FamineBalanceDef {
     pub issue_id: String,
     pub stability_loss: i32,
@@ -178,6 +184,7 @@ pub struct SettlementBalance {
     pub starting_capital: SettlementStartDef,
     pub founded_camp: SettlementStartDef,
     pub founding: FoundingBalanceDef,
+    pub scouting: ScoutBalanceDef,
     pub famine: FamineBalanceDef,
     pub tiers: Vec<TierBalanceDef>,
     pub focuses: Vec<SettlementFocusDef>,
@@ -220,6 +227,22 @@ impl SettlementBalance {
         if self.focus(&self.founded_camp.focus_id).is_none() {
             return Err("founded camp focus is not defined".to_owned());
         }
+        if has_negative_resource(self.scouting.cost) {
+            return Err("scouting cost cannot contain negative resources".to_owned());
+        }
+        if self.scouting.action_cost < 0 {
+            return Err("scouting action cost cannot be negative".to_owned());
+        }
+        if let Some(reason) = self
+            .starting_capital
+            .resources
+            .deficit_text(self.scouting.cost)
+        {
+            return Err(format!(
+                "starting capital cannot pay scouting cost: {}",
+                reason
+            ));
+        }
         if self.upgrade_from(SettlementTier::Camp).is_none()
             || self.upgrade_from(SettlementTier::Village).is_none()
             || self.upgrade_from(SettlementTier::Town).is_none()
@@ -229,4 +252,8 @@ impl SettlementBalance {
 
         Ok(())
     }
+}
+
+fn has_negative_resource(resources: ResourceStock) -> bool {
+    resources.food < 0 || resources.timber < 0 || resources.stone < 0 || resources.wealth < 0
 }

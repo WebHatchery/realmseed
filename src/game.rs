@@ -2,13 +2,13 @@
 
 use crate::data::GameData;
 use crate::state::{migrate_save_value, GameSession, SaveData};
-use crate::ui::{self, UiAction, UiContext};
+use crate::ui::{self, MapOverlay, MenuContext, UiAction, UiContext};
 use macroquad::prelude::*;
 use macroquad_toolkit::assets::AssetManager;
 use macroquad_toolkit::camera::{Camera2D, Camera2DConfig, CameraBounds};
 use macroquad_toolkit::events::EventBus;
 use macroquad_toolkit::notifications::{
-    NotificationAnchor, NotificationManager, NotificationRenderConfig,
+    draw_notification, NotificationManager, NotificationRenderConfig,
 };
 use macroquad_toolkit::persistence::{
     delete_slot, get_save_slots, load_from_slot_with_migration, save_to_slot_with_version,
@@ -27,6 +27,16 @@ pub struct Game {
     save_slots: Vec<String>,
     show_chronicle: bool,
     show_factions: bool,
+    map_overlay: MapOverlay,
+    screen: GameScreen,
+    fullscreen: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum GameScreen {
+    Title,
+    Playing,
+    Settings,
 }
 
 impl Game {
@@ -39,13 +49,9 @@ impl Game {
         let placeholder = Image::gen_image_color(16, 16, Color::new(0.75, 0.2, 0.8, 1.0));
         assets.set_placeholder_texture_direct(Texture2D::from_image(&placeholder));
         let _ = assets.load_asset_pack("assets.zip").await;
-        let loaded_assets = assets.load_texture_configs(&data.texture_manifest).await;
+        let _loaded_assets = assets.load_texture_configs(&data.texture_manifest).await;
 
-        let mut notifications = NotificationManager::new();
-        notifications.info(format!(
-            "Realmseed campaign data loaded; {} manifest textures available",
-            loaded_assets
-        ));
+        let notifications = NotificationManager::with_settings(1, 3.0);
 
         let session = GameSession::new(&data);
         let camera = Camera2D::with_config(
@@ -72,6 +78,9 @@ impl Game {
             save_slots: Vec::new(),
             show_chronicle: false,
             show_factions: false,
+            map_overlay: MapOverlay::Realm,
+            screen: GameScreen::Title,
+            fullscreen: false,
         };
         game.refresh_save_state();
         game
@@ -81,26 +90,49 @@ impl Game {
         self.notifications.update(dt);
 
         let input = InputState::capture();
-        if input.escape_pressed && self.show_chronicle {
-            self.events.push(UiAction::ToggleChronicle);
-        }
-        if input.space_pressed {
-            self.events.push(UiAction::AdvanceSeason);
-        }
-        if is_key_pressed(KeyCode::C) {
-            self.events.push(UiAction::ToggleChronicle);
-        }
-        if is_key_pressed(KeyCode::F) {
-            self.events.push(UiAction::ToggleFactionPanel);
-        }
-        if is_key_pressed(KeyCode::S) {
-            self.events.push(UiAction::Save);
-        }
-        if is_key_pressed(KeyCode::L) {
-            self.events.push(UiAction::Load);
-        }
 
-        self.camera.update(dt, false);
+        match self.screen {
+            GameScreen::Title => {
+                if is_key_pressed(KeyCode::N) {
+                    self.events.push(UiAction::NewGame);
+                }
+                if is_key_pressed(KeyCode::L) && self.save_exists {
+                    self.events.push(UiAction::ContinueGame);
+                }
+            }
+            GameScreen::Settings => {
+                if input.escape_pressed {
+                    self.events.push(UiAction::CloseSettings);
+                }
+            }
+            GameScreen::Playing => {
+                if input.escape_pressed && self.show_chronicle {
+                    self.events.push(UiAction::ToggleChronicle);
+                }
+                if input.space_pressed {
+                    self.events.push(UiAction::AdvanceSeason);
+                }
+                if is_key_pressed(KeyCode::C) {
+                    self.events.push(UiAction::ToggleChronicle);
+                }
+                if is_key_pressed(KeyCode::F) {
+                    self.events.push(UiAction::ToggleFactionPanel);
+                }
+                if is_key_pressed(KeyCode::N) {
+                    self.events.push(UiAction::NewGame);
+                }
+                if is_key_pressed(KeyCode::S) {
+                    self.events.push(UiAction::Save);
+                }
+                if is_key_pressed(KeyCode::L) {
+                    self.events.push(UiAction::Load);
+                }
+                if is_key_down(KeyCode::LeftShift) && is_key_pressed(KeyCode::Delete) {
+                    self.events.push(UiAction::DeleteSave);
+                }
+                self.camera.update(dt, false);
+            }
+        }
 
         let actions: Vec<UiAction> = self.events.drain().collect();
         for action in actions {
@@ -110,33 +142,64 @@ impl Game {
 
     pub fn draw(&mut self) {
         clear_background(dark::BACKGROUND);
+        let virtual_ui = begin_virtual_ui_frame(screen_width().max(1.0), screen_height().max(1.0));
+        let actions = match self.screen {
+            GameScreen::Title => ui::draw_title_menu(MenuContext {
+                title_texture: self.assets.get_texture("title_image"),
+                save_exists: self.save_exists,
+                fullscreen: self.fullscreen,
+                ui: &virtual_ui,
+            }),
+            GameScreen::Settings => ui::draw_settings_page(MenuContext {
+                title_texture: self.assets.get_texture("title_image"),
+                save_exists: self.save_exists,
+                fullscreen: self.fullscreen,
+                ui: &virtual_ui,
+            }),
+            GameScreen::Playing => {
+                let ctx = UiContext {
+                    data: &self.data,
+                    session: &self.session,
+                    camera_target: self.camera.target,
+                    camera_zoom: self.camera.zoom,
+                    map_overlay: self.map_overlay,
+                    show_chronicle: self.show_chronicle,
+                    show_factions: self.show_factions,
+                    ui: &virtual_ui,
+                };
 
-        let virtual_ui = begin_virtual_ui_frame(ui::LOGICAL_WIDTH, ui::LOGICAL_HEIGHT);
-        let ctx = UiContext {
-            data: &self.data,
-            session: &self.session,
-            save_exists: self.save_exists,
-            save_slots: &self.save_slots,
-            loaded_assets: self.assets.len(),
-            camera_target: self.camera.target,
-            camera_zoom: self.camera.zoom,
-            show_chronicle: self.show_chronicle,
-            show_factions: self.show_factions,
-            ui: &virtual_ui,
+                ui::draw_game_ui(ctx)
+            }
         };
-
-        let actions = ui::draw_game_ui(ctx);
         end_virtual_ui_frame();
 
         for action in actions {
             self.events.push(action);
         }
 
-        self.notifications
-            .draw_with_config(&NotificationRenderConfig {
-                anchor: NotificationAnchor::BottomRight,
-                ..Default::default()
-            });
+        self.draw_bottom_message();
+    }
+
+    fn draw_bottom_message(&self) {
+        let Some(notification) = self.notifications.get_notifications().last() else {
+            return;
+        };
+        let width = (screen_width() - 32.0).clamp(300.0, 620.0);
+        let config = NotificationRenderConfig {
+            width,
+            row_height: 40.0,
+            padding: 10.0,
+            font_size: 15.0,
+            background: Color::new(0.02, 0.03, 0.028, 0.92),
+            border_alpha: 0.82,
+            ..Default::default()
+        };
+        draw_notification(
+            notification,
+            (screen_width() - width) * 0.5,
+            screen_height() - 58.0,
+            &config,
+        );
     }
 
     fn apply_action(&mut self, action: UiAction) {
@@ -145,11 +208,34 @@ impl Game {
                 self.session = GameSession::new(&self.data);
                 self.show_chronicle = false;
                 self.show_factions = false;
+                self.screen = GameScreen::Playing;
                 self.notifications
                     .info("Started a fresh Realmseed campaign");
             }
+            UiAction::ContinueGame => {
+                if self.load_game() {
+                    self.screen = GameScreen::Playing;
+                    self.show_chronicle = false;
+                    self.show_factions = false;
+                }
+            }
+            UiAction::OpenSettings => {
+                self.screen = GameScreen::Settings;
+            }
+            UiAction::CloseSettings => {
+                self.screen = GameScreen::Title;
+            }
+            UiAction::ToggleFullscreen => {
+                self.fullscreen = !self.fullscreen;
+                set_fullscreen(self.fullscreen);
+            }
+            UiAction::ExitGame => {
+                macroquad::miniquad::window::request_quit();
+            }
             UiAction::Save => self.save_game(),
-            UiAction::Load => self.load_game(),
+            UiAction::Load => {
+                self.load_game();
+            }
             UiAction::DeleteSave => self.delete_save(),
             UiAction::SelectSite(site_id) => {
                 if self.session.select_site(&self.data, &site_id) {
@@ -158,24 +244,15 @@ impl Game {
                     }
                 }
             }
-            UiAction::ScoutSelectedSite => {
-                let site_name = self
-                    .session
-                    .selected_site(&self.data)
-                    .map(|site| site.name.clone())
-                    .unwrap_or_else(|| "site".to_owned());
-                if self.session.scout_selected_site(&self.data) {
-                    self.notifications.success(format!("Scouted {}", site_name));
-                    self.show_chronicle = true;
-                } else {
-                    self.notifications
-                        .warning("Select an adjacent unknown site to scout");
+            UiAction::ScoutSelectedSite => match self.session.scout_selected_site(&self.data) {
+                Ok(message) => {
+                    self.notifications.success(message);
                 }
-            }
+                Err(reason) => self.notifications.warning(reason),
+            },
             UiAction::FoundCamp => match self.session.found_selected_camp(&self.data) {
                 Ok(message) => {
                     self.notifications.success(message);
-                    self.show_chronicle = true;
                 }
                 Err(reason) => self.notifications.warning(reason),
             },
@@ -183,7 +260,6 @@ impl Game {
                 match self.session.upgrade_selected_settlement(&self.data) {
                     Ok(message) => {
                         self.notifications.success(message);
-                        self.show_chronicle = true;
                     }
                     Err(reason) => self.notifications.warning(reason),
                 }
@@ -201,7 +277,6 @@ impl Game {
                 match self.session.build_or_upgrade_route(&self.data, &route_id) {
                     Ok(message) => {
                         self.notifications.success(message);
-                        self.show_chronicle = true;
                     }
                     Err(reason) => self.notifications.warning(reason),
                 }
@@ -213,7 +288,6 @@ impl Game {
                 {
                     Ok(message) => {
                         self.notifications.success(message);
-                        self.show_chronicle = true;
                     }
                     Err(reason) => self.notifications.warning(reason),
                 }
@@ -225,7 +299,6 @@ impl Game {
                 {
                     Ok(message) => {
                         self.notifications.success(message);
-                        self.show_chronicle = true;
                     }
                     Err(reason) => self.notifications.warning(reason),
                 }
@@ -244,7 +317,6 @@ impl Game {
                 match self.session.begin_selected_integration(&self.data) {
                     Ok(message) => {
                         self.notifications.success(message);
-                        self.show_chronicle = true;
                     }
                     Err(reason) => self.notifications.warning(reason),
                 }
@@ -253,7 +325,6 @@ impl Game {
                 match self.session.select_ambition(&self.data, &ambition_id) {
                     Ok(message) => {
                         self.notifications.success(message);
-                        self.show_chronicle = true;
                     }
                     Err(reason) => self.notifications.warning(reason),
                 }
@@ -262,7 +333,6 @@ impl Game {
                 match self.session.complete_project(&self.data, &project_id) {
                     Ok(message) => {
                         self.notifications.success(message);
-                        self.show_chronicle = true;
                     }
                     Err(reason) => self.notifications.warning(reason),
                 }
@@ -274,7 +344,6 @@ impl Game {
                 {
                     Ok(message) => {
                         self.notifications.success(message);
-                        self.show_chronicle = true;
                     }
                     Err(reason) => self.notifications.warning(reason),
                 }
@@ -291,19 +360,16 @@ impl Game {
                         "{} settlement food shortage reported",
                         report.food_shortages
                     ));
-                    self.show_chronicle = true;
                 }
                 if report.settlements_lost > 0 {
                     self.notifications.danger(format!(
                         "{} settlement lost to neglect",
                         report.settlements_lost
                     ));
-                    self.show_chronicle = true;
                 }
                 if report.road_warnings > 0 {
                     self.notifications
                         .warning(format!("{} road warning reported", report.road_warnings));
-                    self.show_chronicle = true;
                 }
                 if report.isolated_settlements > 0 {
                     self.notifications.warning(format!(
@@ -351,6 +417,9 @@ impl Game {
             UiAction::ToggleFactionPanel => {
                 self.show_factions = !self.show_factions;
             }
+            UiAction::SetMapOverlay(overlay) => {
+                self.map_overlay = overlay;
+            }
         }
     }
 
@@ -370,7 +439,7 @@ impl Game {
         }
     }
 
-    fn load_game(&mut self) {
+    fn load_game(&mut self) -> bool {
         let loaded: Result<SaveData, String> = load_from_slot_with_migration(
             &self.data.config.game_name,
             &self.data.config.save_slot,
@@ -383,8 +452,12 @@ impl Game {
                 self.session = GameSession::from_save(save, &self.data);
                 self.notifications.success("Loaded campaign");
                 self.refresh_save_state();
+                true
             }
-            Err(err) => self.notifications.warning(format!("Load failed: {}", err)),
+            Err(err) => {
+                self.notifications.warning(format!("Load failed: {}", err));
+                false
+            }
         }
     }
 
