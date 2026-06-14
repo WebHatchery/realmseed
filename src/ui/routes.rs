@@ -4,6 +4,7 @@ use super::{style, virtual_icon_button, UiAction, UiContext};
 use crate::state::{RouteCondition, RouteRuntimeState};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
+use macroquad_toolkit::ui::draw_ui_text_ex;
 use macroquad_toolkit::ui::RectExt;
 
 pub(super) fn draw_route_section(
@@ -150,7 +151,7 @@ fn draw_route_row(
         style::TEXT,
     );
 
-    draw_text_ex(
+    draw_ui_text_ex(
         route.level.label(),
         content.x + 148.0,
         y + 16.0,
@@ -162,7 +163,7 @@ fn draw_route_row(
         3.5,
         route_condition_color(route.condition),
     );
-    draw_text_ex(
+    draw_ui_text_ex(
         route_status_label(route.condition),
         content.right() - 52.0,
         y + 16.0,

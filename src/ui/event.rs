@@ -1,9 +1,10 @@
 //! Event modal rendering and choice intents.
 
-use super::{virtual_button, UiAction, UiContext};
+use super::{style, virtual_button, UiAction, UiContext};
 use crate::state::fill_event_text;
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
+use macroquad_toolkit::ui::draw_ui_text_ex;
 use macroquad_toolkit::ui::RectExt;
 
 pub(super) fn draw_event_modal(ctx: &UiContext<'_>, mouse: Vec2, actions: &mut Vec<UiAction>) {
@@ -21,50 +22,47 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, mouse: Vec2, actions: &mut V
         screen.y,
         screen.w,
         screen.h,
-        Color::new(0.02, 0.025, 0.02, 0.66),
+        Color::new(0.004, 0.010, 0.012, 0.72),
     );
 
-    let rect = super::centered_modal_rect(ctx, 844.0, 548.0);
-    draw_surface_with_title(
-        rect,
-        Some("Event"),
-        &SurfaceStyle::new(Color::new(0.075, 0.070, 0.055, 0.99))
-            .with_border(1.0, Color::new(0.64, 0.55, 0.34, 0.85))
-            .with_header(48.0, Color::new(0.10, 0.095, 0.075, 1.0))
-            .with_header_divider(1.0, Color::new(0.64, 0.55, 0.34, 0.45)),
-        TextStyle::new(20.0, dark::TEXT_BRIGHT),
-    );
+    let rect = super::centered_modal_rect(ctx, 884.0, 548.0);
+    style::draw_panel(rect);
+    let content = rect.inset(26.0);
 
-    let content = rect.inset(24.0);
-    let mut y = content.y + 52.0;
-    draw_text_ex(
+    style::draw_framed_icon(
+        event_icon(pending.severity),
+        vec2(content.x + 28.0, content.y + 26.0),
+        48.0,
+        Color::new(0.13, 0.08, 0.05, 0.96),
+    );
+    style::draw_panel_title("COUNCIL EVENT", content.x + 68.0, content.y + 17.0);
+    draw_ui_text_ex(
         &fill_event_text(&template.title, &site_name),
-        content.x,
-        y,
-        TextStyle::new(25.0, dark::TEXT_BRIGHT).params(),
+        content.x + 68.0,
+        content.y + 48.0,
+        TextStyle::new(25.0, style::TEXT_BRIGHT).params(),
     );
-    draw_badge(
-        Rect::new(content.right() - 116.0, y - 24.0, 116.0, 28.0),
-        &format!("Severity {}", pending.severity),
-        Color::new(0.28, 0.18, 0.12, 1.0),
-        dark::TEXT,
+    draw_severity_badge(
+        Rect::new(content.right() - 126.0, content.y + 18.0, 126.0, 32.0),
+        pending.severity,
     );
-    y += 24.0;
+    style::draw_divider(content.x, content.y + 76.0, content.w);
 
+    let mut y = content.y + 110.0;
     draw_text_block(
         &fill_event_text(&template.narrative, &site_name),
         content.x,
         y,
         content.w,
-        74.0,
-        17.0,
+        58.0,
+        16.0,
         4.0,
-        dark::TEXT,
+        style::TEXT,
     );
-    y += 84.0;
+    y += 74.0;
 
     draw_event_detail("Cause", &pending.cause, content.x, y, content.w);
-    y += 48.0;
+    y += 42.0;
     draw_event_detail(
         "Visible",
         &template.visible_consequences,
@@ -72,7 +70,7 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, mouse: Vec2, actions: &mut V
         y,
         content.w,
     );
-    y += 48.0;
+    y += 42.0;
     draw_event_detail(
         "Uncertain",
         &template.hidden_consequences,
@@ -80,12 +78,15 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, mouse: Vec2, actions: &mut V
         y,
         content.w,
     );
-    y += 58.0;
+    y += 50.0;
+
+    style::draw_divider(content.x, y - 18.0, content.w);
 
     for choice in &template.choices {
         let status = ctx.session.event_choice_status(ctx.data, choice);
+        let button_w = (content.w * 0.32).clamp(220.0, 270.0);
         if virtual_button(
-            Rect::new(content.x, y, 238.0, 34.0),
+            Rect::new(content.x, y, button_w, 34.0),
             &choice.label,
             status.enabled,
             ButtonTone::Primary,
@@ -95,16 +96,16 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, mouse: Vec2, actions: &mut V
         }
         draw_text_block(
             &choice.visible_consequence,
-            content.x + 252.0,
+            content.x + button_w + 18.0,
             y + 2.0,
-            content.w - 252.0,
+            content.w - button_w - 18.0,
             34.0,
             14.0,
             2.0,
             if status.enabled {
-                dark::TEXT_DIM
+                style::TEXT_DIM
             } else {
-                dark::WARNING
+                style::RED
             },
         );
         y += 44.0;
@@ -129,20 +130,41 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, mouse: Vec2, actions: &mut V
 }
 
 fn draw_event_detail(label: &str, text: &str, x: f32, y: f32, width: f32) {
-    draw_text_ex(
-        label,
-        x,
-        y,
-        TextStyle::new(14.0, dark::TEXT_BRIGHT).params(),
-    );
+    style::draw_vertical_divider(x + 64.0, y - 18.0, 32.0);
+    draw_ui_text_ex(label, x, y, TextStyle::new(13.0, style::GOLD).params());
     draw_text_block(
         text,
-        x + 76.0,
+        x + 82.0,
         y - 15.0,
-        width - 76.0,
-        42.0,
+        width - 82.0,
+        34.0,
         14.0,
         2.0,
-        dark::TEXT_DIM,
+        style::TEXT_DIM,
+    );
+}
+
+fn event_icon(severity: i32) -> style::IconKind {
+    if severity >= 2 {
+        style::IconKind::Danger
+    } else {
+        style::IconKind::Compass
+    }
+}
+
+fn draw_severity_badge(rect: Rect, severity: i32) {
+    let tone = if severity >= 3 {
+        ButtonTone::Danger
+    } else {
+        ButtonTone::Warning
+    };
+    style::draw_button_frame(rect, tone, true, false, false);
+    draw_text_centered_in_box_ex(
+        &format!("Severity {}", severity),
+        rect.x + 8.0,
+        rect.y,
+        rect.w - 16.0,
+        rect.h,
+        TextStyle::new(13.0, style::TEXT_BRIGHT),
     );
 }

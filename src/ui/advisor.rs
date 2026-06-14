@@ -5,6 +5,7 @@ use crate::data::SiteCategory;
 use crate::state::SettlementStatus;
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
+use macroquad_toolkit::ui::draw_ui_text_ex;
 use macroquad_toolkit::ui::RectExt;
 
 #[derive(Debug, Clone)]
@@ -169,7 +170,7 @@ pub(super) fn draw_council_footer(
         52.0,
         style::GOLD,
     );
-    draw_text_ex(
+    draw_ui_text_ex(
         "COUNCIL GUIDANCE",
         left.x + 70.0,
         left.y + 26.0,
@@ -196,7 +197,7 @@ pub(super) fn draw_council_footer(
     );
 
     style::draw_vertical_divider(center.x - 9.0, center.y + 4.0, center.h - 8.0);
-    draw_text_ex(
+    draw_ui_text_ex(
         "SEASON LOG",
         center.x,
         center.y + 26.0,
@@ -227,7 +228,7 @@ pub(super) fn draw_council_footer(
             style::TEXT_BRIGHT,
         );
     }
-    draw_text_ex(
+    draw_ui_text_ex(
         &format!(
             "{} Actions Remaining",
             ctx.session.council_actions_remaining
@@ -265,7 +266,7 @@ fn draw_realm_crest(x: f32, y: f32) {
 
 fn draw_fact_row(x: f32, y: f32, icon: style::IconKind, text: &str) {
     style::draw_icon(icon, vec2(x + 8.0, y - 4.0), 18.0, style::GOLD);
-    draw_text_ex(
+    draw_ui_text_ex(
         text,
         x + 24.0,
         y,
@@ -528,8 +529,8 @@ fn realm_health(ctx: &UiContext<'_>) -> RealmHealth {
 }
 
 fn draw_stat_bar(x: f32, y: f32, width: f32, label: &str, value: i32, color: Color) {
-    draw_text_ex(label, x, y, TextStyle::new(13.0, style::TEXT).params());
-    draw_text_ex(
+    draw_ui_text_ex(label, x, y, TextStyle::new(13.0, style::TEXT).params());
+    draw_ui_text_ex(
         &format!("{}/100", value.clamp(0, 100)),
         x + width - 56.0,
         y,

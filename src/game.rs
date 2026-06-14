@@ -2,7 +2,9 @@
 
 use crate::data::GameData;
 use crate::state::{migrate_save_value, GameSession, SaveData};
-use crate::ui::{self, MapOverlay, MenuContext, UiAction, UiContext};
+use crate::ui::{
+    self, ExitWarningTarget, MapOverlay, MenuContext, PauseMenuContext, UiAction, UiContext,
+};
 use macroquad::prelude::*;
 use macroquad_toolkit::assets::AssetManager;
 use macroquad_toolkit::camera::{Camera2D, Camera2DConfig, CameraBounds};
@@ -30,14 +32,25 @@ pub struct Game {
     map_overlay: MapOverlay,
     screen: GameScreen,
     fullscreen: bool,
+    pending_exit_warning: Option<ExitWarningTarget>,
+    last_save_at: Option<f64>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum GameScreen {
     Title,
     Playing,
-    Settings,
+    PauseMenu,
+    Settings(SettingsReturn),
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SettingsReturn {
+    Title,
+    PauseMenu,
+}
+
+const SAVE_WARNING_WINDOW_SECS: f64 = 60.0;
 
 impl Game {
     pub async fn new() -> Self {
@@ -81,6 +94,8 @@ impl Game {
             map_overlay: MapOverlay::Realm,
             screen: GameScreen::Title,
             fullscreen: false,
+            pending_exit_warning: None,
+            last_save_at: None,
         };
         game.refresh_save_state();
         game
@@ -100,37 +115,47 @@ impl Game {
                     self.events.push(UiAction::ContinueGame);
                 }
             }
-            GameScreen::Settings => {
+            GameScreen::Settings(_) => {
                 if input.escape_pressed {
                     self.events.push(UiAction::CloseSettings);
                 }
             }
             GameScreen::Playing => {
-                if input.escape_pressed && self.show_chronicle {
-                    self.events.push(UiAction::ToggleChronicle);
+                if input.escape_pressed {
+                    self.events.push(UiAction::OpenPauseMenu);
+                } else {
+                    if input.space_pressed {
+                        self.events.push(UiAction::AdvanceSeason);
+                    }
+                    if is_key_pressed(KeyCode::C) {
+                        self.events.push(UiAction::ToggleChronicle);
+                    }
+                    if is_key_pressed(KeyCode::F) {
+                        self.events.push(UiAction::ToggleFactionPanel);
+                    }
+                    if is_key_pressed(KeyCode::N) {
+                        self.events.push(UiAction::NewGame);
+                    }
+                    if is_key_pressed(KeyCode::S) {
+                        self.events.push(UiAction::Save);
+                    }
+                    if is_key_pressed(KeyCode::L) {
+                        self.events.push(UiAction::Load);
+                    }
+                    if is_key_down(KeyCode::LeftShift) && is_key_pressed(KeyCode::Delete) {
+                        self.events.push(UiAction::DeleteSave);
+                    }
+                    self.camera.update(dt, false);
                 }
-                if input.space_pressed {
-                    self.events.push(UiAction::AdvanceSeason);
+            }
+            GameScreen::PauseMenu => {
+                if input.escape_pressed {
+                    if self.pending_exit_warning.is_some() {
+                        self.events.push(UiAction::CancelPendingExit);
+                    } else {
+                        self.events.push(UiAction::ClosePauseMenu);
+                    }
                 }
-                if is_key_pressed(KeyCode::C) {
-                    self.events.push(UiAction::ToggleChronicle);
-                }
-                if is_key_pressed(KeyCode::F) {
-                    self.events.push(UiAction::ToggleFactionPanel);
-                }
-                if is_key_pressed(KeyCode::N) {
-                    self.events.push(UiAction::NewGame);
-                }
-                if is_key_pressed(KeyCode::S) {
-                    self.events.push(UiAction::Save);
-                }
-                if is_key_pressed(KeyCode::L) {
-                    self.events.push(UiAction::Load);
-                }
-                if is_key_down(KeyCode::LeftShift) && is_key_pressed(KeyCode::Delete) {
-                    self.events.push(UiAction::DeleteSave);
-                }
-                self.camera.update(dt, false);
             }
         }
 
@@ -150,13 +175,14 @@ impl Game {
                 fullscreen: self.fullscreen,
                 ui: &virtual_ui,
             }),
-            GameScreen::Settings => ui::draw_settings_page(MenuContext {
+            GameScreen::Settings(_) => ui::draw_settings_page(MenuContext {
                 title_texture: self.assets.get_texture("title_image"),
                 save_exists: self.save_exists,
                 fullscreen: self.fullscreen,
                 ui: &virtual_ui,
             }),
-            GameScreen::Playing => {
+            GameScreen::Playing | GameScreen::PauseMenu => {
+                let paused = matches!(self.screen, GameScreen::PauseMenu);
                 let ctx = UiContext {
                     data: &self.data,
                     session: &self.session,
@@ -165,10 +191,19 @@ impl Game {
                     map_overlay: self.map_overlay,
                     show_chronicle: self.show_chronicle,
                     show_factions: self.show_factions,
+                    input_blocked: paused,
                     ui: &virtual_ui,
                 };
 
-                ui::draw_game_ui(ctx)
+                let mut actions = ui::draw_game_ui(ctx);
+                if paused {
+                    actions.extend(ui::draw_pause_menu(PauseMenuContext {
+                        save_exists: self.save_exists,
+                        pending_exit_warning: self.pending_exit_warning,
+                        ui: &virtual_ui,
+                    }));
+                }
+                actions
             }
         };
         end_virtual_ui_frame();
@@ -209,6 +244,8 @@ impl Game {
                 self.show_chronicle = false;
                 self.show_factions = false;
                 self.screen = GameScreen::Playing;
+                self.pending_exit_warning = None;
+                self.last_save_at = None;
                 self.notifications
                     .info("Started a fresh Realmseed campaign");
             }
@@ -217,24 +254,71 @@ impl Game {
                     self.screen = GameScreen::Playing;
                     self.show_chronicle = false;
                     self.show_factions = false;
+                    self.pending_exit_warning = None;
                 }
             }
             UiAction::OpenSettings => {
-                self.screen = GameScreen::Settings;
+                let return_to = if matches!(self.screen, GameScreen::PauseMenu) {
+                    SettingsReturn::PauseMenu
+                } else {
+                    SettingsReturn::Title
+                };
+                self.pending_exit_warning = None;
+                self.screen = GameScreen::Settings(return_to);
             }
             UiAction::CloseSettings => {
-                self.screen = GameScreen::Title;
+                self.screen = match self.screen {
+                    GameScreen::Settings(SettingsReturn::PauseMenu) => GameScreen::PauseMenu,
+                    _ => GameScreen::Title,
+                };
+            }
+            UiAction::OpenPauseMenu => {
+                if matches!(self.screen, GameScreen::Playing) {
+                    self.pending_exit_warning = None;
+                    self.screen = GameScreen::PauseMenu;
+                }
+            }
+            UiAction::ClosePauseMenu => {
+                if matches!(self.screen, GameScreen::PauseMenu) {
+                    self.pending_exit_warning = None;
+                    self.screen = GameScreen::Playing;
+                }
             }
             UiAction::ToggleFullscreen => {
                 self.fullscreen = !self.fullscreen;
                 set_fullscreen(self.fullscreen);
             }
             UiAction::ExitGame => {
-                macroquad::miniquad::window::request_quit();
+                if matches!(self.screen, GameScreen::PauseMenu) {
+                    self.request_guarded_exit(ExitWarningTarget::ExitGame);
+                } else {
+                    macroquad::miniquad::window::request_quit();
+                }
             }
-            UiAction::Save => self.save_game(),
+            UiAction::ReturnToTitle => {
+                self.request_guarded_exit(ExitWarningTarget::Title);
+            }
+            UiAction::ConfirmPendingExit => {
+                self.complete_pending_exit();
+            }
+            UiAction::CancelPendingExit => {
+                self.pending_exit_warning = None;
+            }
+            UiAction::SaveAndConfirmPendingExit => {
+                if self.save_game() {
+                    self.complete_pending_exit();
+                }
+            }
+            UiAction::Save => {
+                self.save_game();
+            }
             UiAction::Load => {
-                self.load_game();
+                if self.load_game() && matches!(self.screen, GameScreen::PauseMenu) {
+                    self.pending_exit_warning = None;
+                    self.show_chronicle = false;
+                    self.show_factions = false;
+                    self.screen = GameScreen::Playing;
+                }
             }
             UiAction::DeleteSave => self.delete_save(),
             UiAction::SelectSite(site_id) => {
@@ -423,7 +507,7 @@ impl Game {
         }
     }
 
-    fn save_game(&mut self) {
+    fn save_game(&mut self) -> bool {
         let save = self.session.to_save(&self.data.config.version);
         match save_to_slot_with_version(
             &self.data.config.game_name,
@@ -433,9 +517,14 @@ impl Game {
         ) {
             Ok(()) => {
                 self.notifications.success("Saved campaign");
+                self.last_save_at = Some(get_time());
                 self.refresh_save_state();
+                true
             }
-            Err(err) => self.notifications.danger(format!("Save failed: {}", err)),
+            Err(err) => {
+                self.notifications.danger(format!("Save failed: {}", err));
+                false
+            }
         }
     }
 
@@ -451,6 +540,7 @@ impl Game {
             Ok(save) => {
                 self.session = GameSession::from_save(save, &self.data);
                 self.notifications.success("Loaded campaign");
+                self.last_save_at = Some(get_time());
                 self.refresh_save_state();
                 true
             }
@@ -465,6 +555,7 @@ impl Game {
         match delete_slot(&self.data.config.game_name, &self.data.config.save_slot) {
             Ok(()) => {
                 self.notifications.info("Deleted campaign save");
+                self.last_save_at = None;
                 self.refresh_save_state();
             }
             Err(err) => self.notifications.danger(format!("Delete failed: {}", err)),
@@ -474,5 +565,40 @@ impl Game {
     fn refresh_save_state(&mut self) {
         self.save_exists = slot_exists(&self.data.config.game_name, &self.data.config.save_slot);
         self.save_slots = get_save_slots(&self.data.config.game_name);
+    }
+
+    fn request_guarded_exit(&mut self, target: ExitWarningTarget) {
+        if self.has_recent_save() {
+            self.complete_exit_target(target);
+        } else {
+            self.pending_exit_warning = Some(target);
+            self.screen = GameScreen::PauseMenu;
+        }
+    }
+
+    fn has_recent_save(&self) -> bool {
+        self.last_save_at
+            .map(|saved_at| get_time() - saved_at <= SAVE_WARNING_WINDOW_SECS)
+            .unwrap_or(false)
+    }
+
+    fn complete_pending_exit(&mut self) {
+        if let Some(target) = self.pending_exit_warning.take() {
+            self.complete_exit_target(target);
+        }
+    }
+
+    fn complete_exit_target(&mut self, target: ExitWarningTarget) {
+        self.pending_exit_warning = None;
+        match target {
+            ExitWarningTarget::Title => {
+                self.show_chronicle = false;
+                self.show_factions = false;
+                self.screen = GameScreen::Title;
+            }
+            ExitWarningTarget::ExitGame => {
+                macroquad::miniquad::window::request_quit();
+            }
+        }
     }
 }

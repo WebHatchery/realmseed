@@ -3,6 +3,7 @@
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::ButtonTone;
 use macroquad_toolkit::prelude::*;
+use macroquad_toolkit::ui::draw_ui_text_ex;
 use macroquad_toolkit::ui::RectExt;
 use std::cell::RefCell;
 
@@ -93,7 +94,7 @@ pub(super) fn draw_band(rect: Rect) {
 }
 
 pub(super) fn draw_panel_title(text: &str, x: f32, y: f32) {
-    draw_text_ex(text, x, y, TextStyle::new(15.0, GOLD).params());
+    draw_ui_text_ex(text, x, y, TextStyle::new(15.0, GOLD).params());
 }
 
 pub(super) fn draw_hover_tooltip(id: &str, hover_rect: Rect, text: &str, mouse: Vec2) {

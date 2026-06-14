@@ -6,6 +6,7 @@ use crate::state::SettlementRuntimeState;
 use crate::state::SiteKnowledge;
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
+use macroquad_toolkit::ui::draw_ui_text_ex;
 use macroquad_toolkit::ui::RectExt;
 
 pub(super) fn draw_side_panel(
@@ -27,7 +28,7 @@ pub(super) fn draw_side_panel(
 
 fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> f32 {
     let Some(site) = ctx.session.selected_site(ctx.data) else {
-        draw_text_ex(
+        draw_ui_text_ex(
             "No site selected",
             content.x,
             y + 24.0,
@@ -106,7 +107,7 @@ fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> f32 {
             )
         })
         .unwrap_or_else(|| site.category.label().to_owned());
-    draw_text_ex(
+    draw_ui_text_ex(
         &site_subtitle,
         content.x + 58.0,
         y + 43.0,
@@ -170,9 +171,11 @@ fn draw_settlement_section(
     } else if site.category == SiteCategory::Independent {
         super::section_label("SITE DECISIONS", content.x, y);
         draw_independent_actions(ctx, mouse, input_enabled, actions, content, y + 14.0)
-    } else {
+    } else if site.category == SiteCategory::Settlement {
         super::section_label("SITE DECISIONS", content.x, y);
         draw_found_camp_action(ctx, mouse, input_enabled, actions, content, y + 14.0)
+    } else {
+        y
     }
 }
 
@@ -224,7 +227,7 @@ fn draw_independent_actions(
     let Some(independent) = ctx.session.selected_independent() else {
         return y;
     };
-    draw_text_ex(
+    draw_ui_text_ex(
         &format!(
             "Trust {}  Autonomy {}  Rival {}  {}",
             independent.trust,
@@ -571,13 +574,13 @@ fn draw_store_grid(settlement: &SettlementRuntimeState, rect: Rect) {
     for (index, (label, amount, icon, color)) in values.iter().enumerate() {
         let x = rect.x + index as f32 * cell_w;
         style::draw_icon(*icon, vec2(x + 12.0, rect.y + 17.0), 22.0, *color);
-        draw_text_ex(
+        draw_ui_text_ex(
             label,
             x + 26.0,
             rect.y + 11.0,
             TextStyle::new(11.0, style::TEXT_DIM).params(),
         );
-        draw_text_ex(
+        draw_ui_text_ex(
             &amount.to_string(),
             x + 26.0,
             rect.y + 28.0,
@@ -605,7 +608,7 @@ fn draw_focus_card(ctx: &UiContext<'_>, settlement: &SettlementRuntimeState, rec
         30.0,
         style::GOLD,
     );
-    draw_text_ex(
+    draw_ui_text_ex(
         focus_name,
         rect.x + 54.0,
         rect.y + 17.0,
@@ -675,7 +678,7 @@ pub(super) fn draw_chronicle_overlay(
             entry.year,
             entry.title
         );
-        draw_text_ex(
+        draw_ui_text_ex(
             &title,
             content.x,
             y,

@@ -6,6 +6,7 @@ use crate::data::{SettlementTier, SiteCategory, SiteDef};
 use crate::state::{SettlementRuntimeState, SettlementStatus};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
+use macroquad_toolkit::ui::draw_ui_text_ex;
 use macroquad_toolkit::ui::RectExt;
 
 pub(super) fn draw_sites(ctx: &UiContext<'_>, view: &MapView) {
@@ -120,7 +121,7 @@ fn draw_unknown_site(ctx: &UiContext<'_>, view: &MapView, site: &SiteDef) {
 
     if selected {
         draw_circle_lines(position.x, position.y, radius + 8.0, 2.0, style::CYAN);
-        draw_text_ex(
+        draw_ui_text_ex(
             "Scout",
             position.x + radius + 5.0,
             position.y - radius - 2.0,
@@ -299,13 +300,13 @@ fn draw_site_label(site: &SiteDef, position: Vec2, radius: f32, selected: bool) 
     } else {
         Color::new(0.89, 0.84, 0.69, 0.88)
     };
-    draw_text_ex(
+    draw_ui_text_ex(
         &site.name,
         x + 1.0,
         y + 1.0,
         TextStyle::new(13.0, Color::new(0.02, 0.018, 0.012, 0.80)).params(),
     );
-    draw_text_ex(&site.name, x, y, TextStyle::new(13.0, color).params());
+    draw_ui_text_ex(&site.name, x, y, TextStyle::new(13.0, color).params());
 }
 
 fn marker_radius(site: &SiteDef, settlement: Option<&SettlementRuntimeState>) -> f32 {

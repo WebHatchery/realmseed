@@ -1,5 +1,6 @@
 //! Immediate-mode UI for the Realmseed map, site panel, and chronicle.
 
+use macroquad_toolkit::ui::draw_ui_text_ex;
 mod advisor;
 mod endgame;
 mod event;
@@ -33,8 +34,14 @@ pub enum UiAction {
     ContinueGame,
     OpenSettings,
     CloseSettings,
+    OpenPauseMenu,
+    ClosePauseMenu,
     ToggleFullscreen,
     ExitGame,
+    ReturnToTitle,
+    ConfirmPendingExit,
+    CancelPendingExit,
+    SaveAndConfirmPendingExit,
     Save,
     Load,
     DeleteSave,
@@ -83,6 +90,7 @@ pub struct UiContext<'a> {
     pub map_overlay: MapOverlay,
     pub show_chronicle: bool,
     pub show_factions: bool,
+    pub input_blocked: bool,
     pub ui: &'a VirtualUi,
 }
 
@@ -93,6 +101,18 @@ pub struct MenuContext<'a> {
     pub ui: &'a VirtualUi,
 }
 
+pub struct PauseMenuContext<'a> {
+    pub save_exists: bool,
+    pub pending_exit_warning: Option<ExitWarningTarget>,
+    pub ui: &'a VirtualUi,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExitWarningTarget {
+    Title,
+    ExitGame,
+}
+
 pub fn draw_title_menu(ctx: MenuContext<'_>) -> Vec<UiAction> {
     menu::draw_title_menu(ctx)
 }
@@ -101,11 +121,15 @@ pub fn draw_settings_page(ctx: MenuContext<'_>) -> Vec<UiAction> {
     menu::draw_settings_page(ctx)
 }
 
+pub fn draw_pause_menu(ctx: PauseMenuContext<'_>) -> Vec<UiAction> {
+    menu::draw_pause_menu(ctx)
+}
+
 pub fn draw_game_ui(ctx: UiContext<'_>) -> Vec<UiAction> {
     let mut actions = Vec::new();
     let mouse = ctx.ui.mouse_position();
     let event_open = ctx.session.pending_event.is_some();
-    let input_enabled = !ctx.show_chronicle && !event_open;
+    let input_enabled = !ctx.input_blocked && !ctx.show_chronicle && !event_open;
 
     draw_header(&ctx);
     map::draw_map_panel(&ctx, mouse, input_enabled, &mut actions);
@@ -114,13 +138,28 @@ pub fn draw_game_ui(ctx: UiContext<'_>) -> Vec<UiAction> {
     advisor::draw_council_footer(&ctx, mouse, input_enabled, &mut actions);
 
     if ctx.show_chronicle {
-        panel::draw_chronicle_overlay(&ctx, mouse, &mut actions);
+        if ctx.input_blocked {
+            let mut ignored_actions = Vec::new();
+            panel::draw_chronicle_overlay(&ctx, mouse, &mut ignored_actions);
+        } else {
+            panel::draw_chronicle_overlay(&ctx, mouse, &mut actions);
+        }
     }
     if ctx.show_factions {
-        faction::draw_faction_overlay(&ctx, mouse, &mut actions);
+        if ctx.input_blocked {
+            let mut ignored_actions = Vec::new();
+            faction::draw_faction_overlay(&ctx, mouse, &mut ignored_actions);
+        } else {
+            faction::draw_faction_overlay(&ctx, mouse, &mut actions);
+        }
     }
     if event_open {
-        event::draw_event_modal(&ctx, mouse, &mut actions);
+        if ctx.input_blocked {
+            let mut ignored_actions = Vec::new();
+            event::draw_event_modal(&ctx, mouse, &mut ignored_actions);
+        } else {
+            event::draw_event_modal(&ctx, mouse, &mut actions);
+        }
     }
     if ctx.session.endgame_summary.is_some() {
         endgame::draw_endgame_summary(&ctx);
@@ -148,13 +187,13 @@ fn draw_header(ctx: &UiContext<'_>) {
         } else {
             96.0
         };
-    draw_text_ex(
+    draw_ui_text_ex(
         &format!("Year {}, {}", clock.year, clock.season.label()),
         clock_x,
         rect.y + 27.0,
         TextStyle::new(20.0, style::TEXT_BRIGHT).params(),
     );
-    draw_text_ex(
+    draw_ui_text_ex(
         "Clear Skies",
         clock_x,
         rect.y + 48.0,
@@ -265,7 +304,7 @@ fn draw_resource_readout(
     style::draw_vertical_divider(rect.x - 5.0, rect.y + 1.0, rect.h - 2.0);
     let icon_center = vec2(rect.x + 16.0, rect.y + 21.0);
     style::draw_icon(icon, icon_center, 27.0, color);
-    draw_text_ex(
+    draw_ui_text_ex(
         &format!("{} {}", label, value),
         rect.x + 34.0,
         rect.y + 18.0,
@@ -279,7 +318,7 @@ fn draw_resource_readout(
     } else {
         format!("{}/turn", rate)
     };
-    draw_text_ex(
+    draw_ui_text_ex(
         &rate_text,
         rect.x + 34.0,
         rect.y + 39.0,

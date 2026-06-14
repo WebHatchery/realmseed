@@ -3,6 +3,7 @@
 use super::UiContext;
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
+use macroquad_toolkit::ui::draw_ui_text_ex;
 use macroquad_toolkit::ui::RectExt;
 
 pub(super) fn draw_endgame_summary(ctx: &UiContext<'_>) {
@@ -28,7 +29,7 @@ pub(super) fn draw_endgame_summary(ctx: &UiContext<'_>) {
         TextStyle::new(20.0, dark::TEXT_BRIGHT),
     );
     let content = rect.inset(26.0);
-    draw_text_ex(
+    draw_ui_text_ex(
         &format!("{} - {} points", summary.ending_band, summary.legacy_score),
         content.x,
         content.y + 54.0,
