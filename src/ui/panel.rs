@@ -9,6 +9,51 @@ use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
 use macroquad_toolkit::ui::RectExt;
 
+#[derive(Debug, Clone, Copy)]
+struct FocusButtonLayout {
+    columns: usize,
+    column_gap: f32,
+    row_gap: f32,
+    button_height: f32,
+}
+
+impl FocusButtonLayout {
+    const fn compact() -> Self {
+        Self {
+            columns: 3,
+            column_gap: 6.0,
+            row_gap: 4.0,
+            button_height: 25.0,
+        }
+    }
+
+    const fn roomy() -> Self {
+        Self {
+            columns: 2,
+            column_gap: 8.0,
+            row_gap: 6.0,
+            button_height: 28.0,
+        }
+    }
+
+    fn rows(self, item_count: usize) -> usize {
+        item_count.div_ceil(self.columns)
+    }
+
+    fn row_step(self) -> f32 {
+        self.button_height + self.row_gap
+    }
+
+    fn grid_bottom(self, y: f32, item_count: usize) -> f32 {
+        let rows = self.rows(item_count);
+        if rows == 0 {
+            y
+        } else {
+            y + (rows - 1) as f32 * self.row_step() + self.button_height
+        }
+    }
+}
+
 pub(super) fn draw_side_panel(
     ctx: &UiContext<'_>,
     mouse: Vec2,
@@ -317,8 +362,9 @@ fn draw_existing_settlement(
 
     let actions_label_y = y + 178.0;
     let focus_grid_y = actions_label_y + 13.0;
+    let focus_layout = focus_button_layout(ctx, content, y, settlement);
     super::section_label("ACTIONS", content.x, actions_label_y);
-    draw_focus_buttons(
+    let focus_grid_bottom = draw_focus_buttons(
         ctx,
         mouse,
         input_enabled,
@@ -326,9 +372,8 @@ fn draw_existing_settlement(
         content,
         focus_grid_y,
         settlement,
+        focus_layout,
     );
-    let focus_rows = ctx.data.settlement_balance.focuses.len().div_ceil(3) as f32;
-    let focus_grid_bottom = focus_grid_y + (focus_rows - 1.0).max(0.0) * 29.0 + 25.0;
     let upgrade_rect = Rect::new(content.x, focus_grid_bottom + 9.0, content.w, 28.0);
     let upgrade_status = ctx.session.upgrade_status(ctx.data);
     if virtual_icon_button(
@@ -354,6 +399,52 @@ fn draw_existing_settlement(
     }
 
     next_y
+}
+
+fn focus_button_layout(
+    ctx: &UiContext<'_>,
+    content: Rect,
+    y: f32,
+    settlement: &SettlementRuntimeState,
+) -> FocusButtonLayout {
+    let roomy = FocusButtonLayout::roomy();
+    if focus_layout_fits(ctx, content, y, settlement, roomy) {
+        roomy
+    } else {
+        FocusButtonLayout::compact()
+    }
+}
+
+fn focus_layout_fits(
+    ctx: &UiContext<'_>,
+    content: Rect,
+    y: f32,
+    settlement: &SettlementRuntimeState,
+    layout: FocusButtonLayout,
+) -> bool {
+    let actions_label_y = y + 178.0;
+    let focus_grid_y = actions_label_y + 13.0;
+    let focus_grid_bottom =
+        layout.grid_bottom(focus_grid_y, ctx.data.settlement_balance.focuses.len());
+    let upgrade_bottom = focus_grid_bottom + 9.0 + 28.0;
+    let route_y = (upgrade_bottom + 10.0).max(y + 282.0) + 4.0;
+    let route_count = ctx
+        .session
+        .routes_for_site(&settlement.location_id)
+        .filter(|route| route.known)
+        .take(2)
+        .count();
+    let route_bottom = route_y + route_section_height(route_count);
+
+    route_bottom <= content.bottom() + 16.0
+}
+
+fn route_section_height(route_count: usize) -> f32 {
+    if route_count == 0 {
+        48.0
+    } else {
+        46.0 + route_count as f32 * 24.0 + 2.0
+    }
 }
 
 fn active_issue_count(ctx: &UiContext<'_>, settlement: &SettlementRuntimeState) -> usize {
@@ -447,12 +538,19 @@ fn draw_focus_buttons(
     content: Rect,
     y: f32,
     settlement: &SettlementRuntimeState,
-) {
-    let col_w = (content.w - 12.0) / 3.0;
+    layout: FocusButtonLayout,
+) -> f32 {
+    let col_w =
+        (content.w - layout.column_gap * (layout.columns - 1) as f32) / layout.columns as f32;
     for (index, focus) in ctx.data.settlement_balance.focuses.iter().enumerate() {
-        let col = (index % 3) as f32;
-        let row = (index / 3) as f32;
-        let rect = Rect::new(content.x + col * (col_w + 6.0), y + row * 29.0, col_w, 25.0);
+        let col = (index % layout.columns) as f32;
+        let row = (index / layout.columns) as f32;
+        let rect = Rect::new(
+            content.x + col * (col_w + layout.column_gap),
+            y + row * layout.row_step(),
+            col_w,
+            layout.button_height,
+        );
         let status = ctx.session.focus_change_status(ctx.data, &focus.id);
         let is_current = settlement.focus_id == focus.id;
         let tone = if is_current {
@@ -471,6 +569,7 @@ fn draw_focus_buttons(
             actions.push(UiAction::SetSettlementFocus(focus.id.clone()));
         }
     }
+    layout.grid_bottom(y, ctx.data.settlement_balance.focuses.len())
 }
 
 fn draw_found_camp_action(

@@ -86,3 +86,10 @@ The current build focuses on a complete 20-year prototype campaign:
 - Wilderness pressure that rises or falls based on roads, patrols,
   fortification, and isolation.
 - Endgame summaries built from the campaign's actual history.
+# Practical Future Improvements
+
+- Add full-campaign season-step replay tests covering event chains, rival pressure, settlement growth, road effects, and endings.
+- Split map query logic from UI commands so scouting, founding, road building, trade, and integration can be tested as pure operations.
+- Validate authored site, route, event, and faction data before campaign start to catch broken map references early.
+- Add chronicle snapshot tests so final legacy summaries reflect actual campaign history consistently.
+
