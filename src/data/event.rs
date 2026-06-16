@@ -5,16 +5,12 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum EventStage {
+    #[default]
     Opening,
     FollowUp,
     Resolution,
-}
-
-impl Default for EventStage {
-    fn default() -> Self {
-        Self::Opening
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

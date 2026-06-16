@@ -9,16 +9,12 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum RouteCondition {
+    #[default]
     Clear,
     Damaged,
     Blocked,
-}
-
-impl Default for RouteCondition {
-    fn default() -> Self {
-        Self::Clear
-    }
 }
 
 impl RouteCondition {
@@ -643,7 +639,7 @@ fn route_warning_for(
     {
         return Some("bridge_washout");
     }
-    if turn % 4 == 0
+    if turn.is_multiple_of(4)
         && (high_danger_sites.contains(route.site_a.as_str())
             || high_danger_sites.contains(route.site_b.as_str()))
     {

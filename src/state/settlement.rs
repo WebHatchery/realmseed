@@ -9,15 +9,11 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum SettlementStatus {
+    #[default]
     Active,
     Lost,
-}
-
-impl Default for SettlementStatus {
-    fn default() -> Self {
-        Self::Active
-    }
 }
 
 impl SettlementStatus {
@@ -596,13 +592,12 @@ fn production_for(settlement: &SettlementRuntimeState, data: &GameData) -> Resou
                 "farming" => output.food += ((terrain.fertility - 50) / 5).clamp(-8, 12),
                 "logging" => output.timber += ((terrain.timber - 50) / 5).clamp(-8, 12),
                 "quarrying" => output.stone += ((terrain.stone - 50) / 5).clamp(-8, 12),
-                "trade" => {
+                "trade"
                     if data
                         .roads_for_site(&settlement.location_id)
-                        .any(|road| road.level > 0)
-                    {
-                        output.wealth += 8;
-                    }
+                        .any(|road| road.level > 0) =>
+                {
+                    output.wealth += 8;
                 }
                 _ => {}
             }

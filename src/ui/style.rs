@@ -33,7 +33,7 @@ struct HoverTooltipState {
 }
 
 thread_local! {
-    static HOVER_TOOLTIP: RefCell<Option<HoverTooltipState>> = RefCell::new(None);
+    static HOVER_TOOLTIP: RefCell<Option<HoverTooltipState>> = const { RefCell::new(None) };
 }
 
 #[derive(Debug, Clone, Copy)]

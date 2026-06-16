@@ -1,5 +1,7 @@
 //! Realmseed entry point wired to macroquad-toolkit.
 
+#![allow(clippy::too_many_arguments)]
+
 use macroquad::prelude::*;
 
 mod data;

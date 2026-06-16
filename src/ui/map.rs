@@ -176,7 +176,7 @@ fn draw_terrain_detail(terrain_id: &str, rect: Rect, x: usize, y: usize) {
         rect.y + rect.h * 0.55,
     );
     match terrain_id {
-        "forest" if (x + y) % 3 == 0 => {
+        "forest" if (x + y).is_multiple_of(3) => {
             draw_circle(
                 center.x,
                 center.y,
@@ -190,7 +190,7 @@ fn draw_terrain_detail(terrain_id: &str, rect: Rect, x: usize, y: usize) {
                 Color::new(0.04, 0.17, 0.08, 0.24),
             );
         }
-        "hills" if (x + y) % 4 == 0 => {
+        "hills" if (x + y).is_multiple_of(4) => {
             draw_line(
                 rect.x + 2.0,
                 rect.y + rect.h - 3.0,
@@ -208,7 +208,7 @@ fn draw_terrain_detail(terrain_id: &str, rect: Rect, x: usize, y: usize) {
                 Color::new(0.22, 0.20, 0.13, 0.24),
             );
         }
-        "mountain" if (x + y) % 2 == 0 => {
+        "mountain" if (x + y).is_multiple_of(2) => {
             draw_triangle(
                 vec2(rect.x + rect.w * 0.5, rect.y + 2.0),
                 vec2(rect.x + 2.0, rect.y + rect.h - 2.0),
@@ -226,7 +226,7 @@ fn draw_terrain_detail(terrain_id: &str, rect: Rect, x: usize, y: usize) {
                 Color::new(0.58, 0.88, 0.95, 0.32),
             );
         }
-        "coast" if y % 3 == 0 => {
+        "coast" if y.is_multiple_of(3) => {
             draw_line(
                 rect.x + 1.0,
                 rect.y + rect.h * 0.65,
