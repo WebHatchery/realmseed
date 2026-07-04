@@ -101,6 +101,25 @@ impl Game {
         game
     }
 
+    /// Seed a specific scene for the screenshot harness.
+    pub fn begin_capture_scene(&mut self, scene: &str) {
+        match scene {
+            "title" | "menu" => {
+                self.screen = GameScreen::Title;
+            }
+            "pause" => {
+                self.session = GameSession::new(&self.data);
+                self.screen = GameScreen::PauseMenu;
+            }
+            _ => {
+                // Default: gameplay. Start a fresh campaign so this works on a
+                // fresh save with no prior state.
+                self.session = GameSession::new(&self.data);
+                self.screen = GameScreen::Playing;
+            }
+        }
+    }
+
     pub fn update(&mut self, dt: f32) {
         self.notifications.update(dt);
 
