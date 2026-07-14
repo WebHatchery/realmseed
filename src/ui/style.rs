@@ -177,8 +177,8 @@ fn draw_tooltip_alpha(text: &str, anchor: Vec2, alpha: f32) {
     }
     let tooltip_style = TooltipStyle {
         background: Color::new(0.020, 0.030, 0.032, 0.94 * alpha),
-        border: Color::new(GOLD.r, GOLD.g, GOLD.b, 0.78 * alpha),
-        text: Color::new(TEXT.r, TEXT.g, TEXT.b, alpha),
+        border: with_alpha(GOLD, 0.78 * alpha),
+        text: with_alpha(TEXT, alpha),
         padding: 7.0,
         max_width: 300.0,
         font_size: 13.0,
@@ -201,9 +201,9 @@ pub(super) fn draw_button_frame(
         GOLD_DIM
     };
     let bright = if matches!(tone, ButtonTone::Primary) {
-        Color::new(CYAN.r, CYAN.g, CYAN.b, if hovered { 0.92 } else { 0.58 })
+        with_alpha(CYAN, if hovered { 0.92 } else { 0.58 })
     } else {
-        Color::new(GOLD.r, GOLD.g, GOLD.b, if hovered { 0.82 } else { 0.42 })
+        with_alpha(GOLD, if hovered { 0.82 } else { 0.42 })
     };
     let cut = 5.0_f32.min(rect.h * 0.22);
     let body = Rect::new(rect.x + 4.0, rect.y, rect.w - 8.0, rect.h);
@@ -292,7 +292,7 @@ fn button_fill(tone: ButtonTone, enabled: bool, hovered: bool, pressed: bool) ->
 
 fn draw_button_corner_marks(rect: Rect, color: Color) {
     let mark = 5.0_f32.min(rect.h * 0.18);
-    let alpha = Color::new(color.r, color.g, color.b, color.a * 0.82);
+    let alpha = multiply_alpha(color, 0.82);
     draw_line(
         rect.x + 6.0,
         rect.y + 5.0,
