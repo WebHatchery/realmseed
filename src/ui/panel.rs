@@ -11,10 +11,12 @@ use super::{routes, style, UiAction, UiContext};
 use crate::data::SiteCategory;
 use crate::state::SiteKnowledge;
 use macroquad::prelude::*;
+use macroquad_toolkit::ui::HoverTooltip;
 use macroquad_toolkit::ui::RectExt;
 
 pub(super) fn draw_side_panel(
     ctx: &UiContext<'_>,
+    tooltip: &mut HoverTooltip,
     mouse: Vec2,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
@@ -26,12 +28,29 @@ pub(super) fn draw_side_panel(
     style::draw_panel_title("SELECTED SITE", content.x, content.y + 16.0);
     let mut y = content.y + 50.0;
     y = site::draw_selected_site(ctx, content, y);
-    y = draw_settlement_section(ctx, mouse, input_enabled, actions, content, y + 2.0);
-    routes::draw_route_section(ctx, mouse, input_enabled, actions, content, y + 4.0);
+    y = draw_settlement_section(
+        ctx,
+        tooltip,
+        mouse,
+        input_enabled,
+        actions,
+        content,
+        y + 2.0,
+    );
+    routes::draw_route_section(
+        ctx,
+        tooltip,
+        mouse,
+        input_enabled,
+        actions,
+        content,
+        y + 4.0,
+    );
 }
 
 fn draw_settlement_section(
     ctx: &UiContext<'_>,
+    tooltip: &mut HoverTooltip,
     mouse: Vec2,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
@@ -49,6 +68,7 @@ fn draw_settlement_section(
     if let Some(settlement) = ctx.session.settlement_at_site(&site.id) {
         settlement::draw_existing_settlement(
             ctx,
+            tooltip,
             mouse,
             input_enabled,
             actions,

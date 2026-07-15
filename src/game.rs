@@ -17,6 +17,7 @@ use macroquad_toolkit::persistence::{
     slot_exists,
 };
 use macroquad_toolkit::prelude::{begin_virtual_ui_frame, dark, end_virtual_ui_frame, InputState};
+use macroquad_toolkit::ui::HoverTooltip;
 
 pub struct Game {
     data: GameData,
@@ -24,6 +25,7 @@ pub struct Game {
     assets: AssetManager,
     notifications: NotificationManager,
     camera: Camera2D,
+    hover_tooltip: HoverTooltip,
     events: EventBus<UiAction>,
     save_exists: bool,
     save_slots: Vec<String>,
@@ -86,6 +88,7 @@ impl Game {
             assets,
             notifications,
             camera,
+            hover_tooltip: HoverTooltip::new(),
             events: EventBus::new(),
             save_exists: false,
             save_slots: Vec::new(),
@@ -214,7 +217,7 @@ impl Game {
                     ui: &virtual_ui,
                 };
 
-                let mut actions = ui::draw_game_ui(ctx);
+                let mut actions = ui::draw_game_ui(ctx, &mut self.hover_tooltip);
                 if paused {
                     actions.extend(ui::draw_pause_menu(PauseMenuContext {
                         save_exists: self.save_exists,

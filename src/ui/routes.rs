@@ -5,10 +5,12 @@ use crate::state::{RouteCondition, RouteRuntimeState};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
+use macroquad_toolkit::ui::HoverTooltip;
 use macroquad_toolkit::ui::RectExt;
 
 pub(super) fn draw_route_section(
     ctx: &UiContext<'_>,
+    tooltip: &mut HoverTooltip,
     mouse: Vec2,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
@@ -44,6 +46,7 @@ pub(super) fn draw_route_section(
     {
         draw_route_row(
             ctx,
+            tooltip,
             mouse,
             input_enabled,
             actions,
@@ -70,7 +73,8 @@ pub(super) fn draw_route_section(
     ) {
         actions.push(UiAction::CompleteRegionalProject(site.region_id.clone()));
     }
-    style::draw_hover_tooltip(
+    style::hover_tooltip(
+        tooltip,
         "regional_project_wardens",
         project_rect,
         &regional_project_tooltip(ctx, &project_status.reason, project_status.enabled),
@@ -106,6 +110,7 @@ fn regional_project_tooltip(ctx: &UiContext<'_>, status_reason: &str, enabled: b
 
 fn draw_route_row(
     ctx: &UiContext<'_>,
+    tooltip: &mut HoverTooltip,
     mouse: Vec2,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
@@ -179,7 +184,8 @@ fn draw_route_row(
         actions.push(UiAction::BuildOrUpgradeRoute(route.id.clone()));
     }
     let tooltip_id = format!("route_{}", route.id);
-    style::draw_hover_tooltip(
+    style::hover_tooltip(
+        tooltip,
         &tooltip_id,
         row_rect,
         &format!(

@@ -8,10 +8,12 @@ use crate::data::{RouteLevel, SiteDef};
 use crate::state::{RouteCondition, RouteRuntimeState};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
+use macroquad_toolkit::ui::HoverTooltip;
 use macroquad_toolkit::ui::RectExt;
 
 pub(super) fn draw_map_panel(
     ctx: &UiContext<'_>,
+    tooltip: &mut HoverTooltip,
     mouse: Vec2,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
@@ -44,7 +46,7 @@ pub(super) fn draw_map_panel(
         }
         MapOverlay::Danger => "Danger view: red washes show wilderness and settlement pressure.",
     };
-    style::draw_hover_tooltip("map_overlay_hint", map_rect, mode_hint, mouse);
+    style::hover_tooltip(tooltip, "map_overlay_hint", map_rect, mode_hint, mouse);
 }
 
 fn draw_overlay_tabs(

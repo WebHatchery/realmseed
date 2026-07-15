@@ -6,6 +6,7 @@ use crate::state::SettlementRuntimeState;
 use crate::ui::{style, virtual_icon_button, UiAction, UiContext};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
+use macroquad_toolkit::ui::HoverTooltip;
 
 #[derive(Debug, Clone, Copy)]
 struct FocusButtonLayout {
@@ -54,6 +55,7 @@ impl FocusButtonLayout {
 
 pub(super) fn draw_existing_settlement(
     ctx: &UiContext<'_>,
+    tooltip: &mut HoverTooltip,
     mouse: Vec2,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
@@ -118,7 +120,8 @@ pub(super) fn draw_existing_settlement(
     ) {
         actions.push(UiAction::UpgradeSelectedSettlement);
     }
-    style::draw_hover_tooltip(
+    style::hover_tooltip(
+        tooltip,
         "selected_upgrade",
         upgrade_rect,
         &upgrade_preview(ctx, settlement, &upgrade_status.reason),

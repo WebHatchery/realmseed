@@ -16,7 +16,7 @@ use crate::data::{GameData, ResourceStock};
 use crate::state::GameSession;
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
-use macroquad_toolkit::ui::{RectExt, VirtualUi};
+use macroquad_toolkit::ui::{HoverTooltip, RectExt, VirtualUi};
 
 pub const LOGICAL_WIDTH: f32 = 1280.0;
 pub const LOGICAL_HEIGHT: f32 = 720.0;
@@ -125,17 +125,18 @@ pub fn draw_pause_menu(ctx: PauseMenuContext<'_>) -> Vec<UiAction> {
     menu::draw_pause_menu(ctx)
 }
 
-pub fn draw_game_ui(ctx: UiContext<'_>) -> Vec<UiAction> {
+pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAction> {
     let mut actions = Vec::new();
     let mouse = ctx.ui.mouse_position();
     let event_open = ctx.session.pending_event.is_some();
     let input_enabled = !ctx.input_blocked && !ctx.show_chronicle && !event_open;
 
     draw_header(&ctx);
-    map::draw_map_panel(&ctx, mouse, input_enabled, &mut actions);
+    map::draw_map_panel(&ctx, tooltip, mouse, input_enabled, &mut actions);
     advisor::draw_realm_overview(&ctx, mouse, input_enabled, &mut actions);
-    panel::draw_side_panel(&ctx, mouse, input_enabled, &mut actions);
+    panel::draw_side_panel(&ctx, tooltip, mouse, input_enabled, &mut actions);
     advisor::draw_council_footer(&ctx, mouse, input_enabled, &mut actions);
+    style::draw_tooltip_overlay(tooltip);
 
     if ctx.show_chronicle {
         if ctx.input_blocked {

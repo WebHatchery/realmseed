@@ -4,8 +4,8 @@ use macroquad::prelude::*;
 use macroquad_toolkit::prelude::ButtonTone;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
+use macroquad_toolkit::ui::HoverTooltip;
 use macroquad_toolkit::ui::RectExt;
-use std::cell::RefCell;
 
 pub(super) const INK: Color = Color::new(0.015, 0.026, 0.030, 1.0);
 pub(super) const PANEL: Color = Color::new(0.026, 0.045, 0.047, 0.94);
@@ -18,23 +18,6 @@ pub(super) const RED: Color = Color::new(0.90, 0.24, 0.20, 1.0);
 pub(super) const TEXT: Color = Color::new(0.90, 0.86, 0.74, 1.0);
 pub(super) const TEXT_BRIGHT: Color = Color::new(0.98, 0.94, 0.84, 1.0);
 pub(super) const TEXT_DIM: Color = Color::new(0.62, 0.64, 0.58, 1.0);
-
-const TOOLTIP_DELAY: f64 = 0.45;
-const TOOLTIP_FADE_IN: f64 = 0.12;
-const TOOLTIP_FADE_OUT: f64 = 0.22;
-
-#[derive(Debug, Clone)]
-struct HoverTooltipState {
-    id: String,
-    text: String,
-    anchor: Vec2,
-    entered_at: f64,
-    last_hover_at: f64,
-}
-
-thread_local! {
-    static HOVER_TOOLTIP: RefCell<Option<HoverTooltipState>> = const { RefCell::new(None) };
-}
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum IconKind {
@@ -97,71 +80,29 @@ pub(super) fn draw_panel_title(text: &str, x: f32, y: f32) {
     draw_ui_text_ex(text, x, y, TextStyle::new(15.0, GOLD).params());
 }
 
-pub(super) fn draw_hover_tooltip(id: &str, hover_rect: Rect, text: &str, mouse: Vec2) {
-    let now = get_time();
-    let hovering = hover_rect.contains_point(mouse);
-    let mut draw: Option<(String, Vec2, f32)> = None;
-
-    HOVER_TOOLTIP.with(|cell| {
-        let mut state = cell.borrow_mut();
-        if hovering {
-            let anchor = tooltip_anchor(hover_rect);
-            match state.as_mut() {
-                Some(current) if current.id == id => {
-                    current.text = text.to_owned();
-                    current.anchor = anchor;
-                    current.last_hover_at = now;
-                }
-                _ => {
-                    *state = Some(HoverTooltipState {
-                        id: id.to_owned(),
-                        text: text.to_owned(),
-                        anchor,
-                        entered_at: now,
-                        last_hover_at: now,
-                    });
-                }
-            }
-        }
-
-        let Some(current) = state.as_mut() else {
-            return;
-        };
-        if current.id != id {
-            return;
-        }
-
-        let visible_age = now - current.entered_at - TOOLTIP_DELAY;
-        if visible_age < 0.0 {
-            return;
-        }
-
-        let leave_age = if hovering {
-            0.0
-        } else {
-            now - current.last_hover_at
-        };
-        if leave_age > TOOLTIP_FADE_OUT {
-            *state = None;
-            return;
-        }
-
-        let fade_in = (visible_age / TOOLTIP_FADE_IN).clamp(0.0, 1.0);
-        let fade_out = if hovering {
-            1.0
-        } else {
-            (1.0 - leave_age / TOOLTIP_FADE_OUT).clamp(0.0, 1.0)
-        };
-        draw = Some((
-            current.text.clone(),
-            current.anchor,
-            (fade_in * fade_out) as f32,
-        ));
-    });
-
-    if let Some((tooltip_text, anchor, alpha)) = draw {
-        draw_tooltip_alpha(&tooltip_text, anchor, alpha);
+pub(super) fn hover_tooltip(
+    tooltip: &mut HoverTooltip,
+    id: &str,
+    hover_rect: Rect,
+    text: &str,
+    mouse: Vec2,
+) {
+    if hover_rect.contains_point(mouse) {
+        tooltip.hover(id, text, tooltip_anchor(hover_rect), get_time());
     }
+}
+
+pub(super) fn draw_tooltip_overlay(tooltip: &mut HoverTooltip) {
+    let tooltip_style = TooltipStyle {
+        background: Color::new(0.020, 0.030, 0.032, 0.94),
+        border: with_alpha(GOLD, 0.78),
+        text: TEXT,
+        padding: 7.0,
+        max_width: 300.0,
+        font_size: 13.0,
+        line_gap: 2.0,
+    };
+    tooltip.draw(&tooltip_style, None, get_time());
 }
 
 fn tooltip_anchor(rect: Rect) -> Vec2 {
@@ -169,22 +110,6 @@ fn tooltip_anchor(rect: Rect) -> Vec2 {
     let x = (rect.x + rect.w * 0.5 - max_width * 0.5 - 14.0)
         .clamp(6.0, (screen_width() - max_width - 20.0).max(6.0));
     vec2(x, rect.bottom() + 6.0)
-}
-
-fn draw_tooltip_alpha(text: &str, anchor: Vec2, alpha: f32) {
-    if alpha <= 0.02 {
-        return;
-    }
-    let tooltip_style = TooltipStyle {
-        background: Color::new(0.020, 0.030, 0.032, 0.94 * alpha),
-        border: with_alpha(GOLD, 0.78 * alpha),
-        text: with_alpha(TEXT, alpha),
-        padding: 7.0,
-        max_width: 300.0,
-        font_size: 13.0,
-        line_gap: 2.0,
-    };
-    draw_tooltip_styled(text, anchor, &tooltip_style, None);
 }
 
 pub(super) fn draw_button_frame(
@@ -243,11 +168,7 @@ pub(super) fn draw_button_frame(
     );
 
     draw_chamfer_lines(rect, border, if hovered { 1.4 } else { 1.0 });
-    draw_chamfer_lines(
-        rect.inset(3.0),
-        Color::new(bright.r, bright.g, bright.b, 0.18),
-        1.0,
-    );
+    draw_chamfer_lines(rect.inset(3.0), with_alpha(bright, 0.18), 1.0);
     draw_line(
         rect.x + cut + 4.0,
         rect.y + 2.0,
@@ -462,7 +383,7 @@ fn draw_people(center: Vec2, size: f32, color: Color) {
             center.y - size * 0.04,
             size * 0.20,
             size * 0.30,
-            Color::new(color.r, color.g, color.b, 0.72),
+            with_alpha(color, 0.72),
         );
     }
 }
@@ -480,7 +401,7 @@ fn draw_compass(center: Vec2, size: f32, color: Color) {
         vec2(center.x, center.y + long),
         vec2(center.x - short, center.y),
         vec2(center.x + short, center.y),
-        Color::new(color.r, color.g, color.b, 0.45),
+        with_alpha(color, 0.45),
     );
     draw_line(
         center.x - long,
@@ -495,7 +416,7 @@ fn draw_compass(center: Vec2, size: f32, color: Color) {
         center.y,
         size * 0.32,
         1.0,
-        Color::new(color.r, color.g, color.b, 0.35),
+        with_alpha(color, 0.35),
     );
 }
 
