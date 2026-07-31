@@ -1,22 +1,52 @@
 {
   "title": "Realmseed",
-  "status": { "text": "Playable", "class": "playable" },
+  "status": {
+    "text": "Playable",
+    "class": "playable"
+  },
   "canvas_rendering": "pixelated",
   "about": [
-    "A fantasy realm-building strategy simulation where villages grow into towns, roads become lifelines, factions pressure the frontier, and every decision is recorded as the history of a young kingdom."
+    "Plant a kingdom and watch it grow. Villages become towns, roads become lifelines, and every choice you make is written into your realm’s history."
   ],
   "controls": [
-    { "key": "Arrow Keys / WASD", "desc": "Pan the map" },
-    { "key": "Right Mouse", "desc": "Drag camera" },
-    { "key": "+ / -", "desc": "Zoom camera" },
-    { "key": "Space", "desc": "Advance season" },
-    { "key": "C", "desc": "Open chronicle" },
-    { "key": "S / L", "desc": "Save / load campaign" }
+    {
+      "key": "Arrow Keys / WASD",
+      "desc": "Pan the map"
+    },
+    {
+      "key": "Right Mouse",
+      "desc": "Drag camera"
+    },
+    {
+      "key": "+ / -",
+      "desc": "Zoom camera"
+    },
+    {
+      "key": "Space",
+      "desc": "Advance season"
+    },
+    {
+      "key": "C",
+      "desc": "Open chronicle"
+    },
+    {
+      "key": "S / L",
+      "desc": "Save / load campaign"
+    }
   ],
   "details": [
-    { "label": "Genre", "value": "Strategy simulation" },
-    { "label": "Engine", "value": "Macroquad + Toolkit" },
-    { "label": "Platform", "value": "Browser, Windows" }
+    {
+      "label": "Genre",
+      "value": "Strategy simulation"
+    },
+    {
+      "label": "Engine",
+      "value": "Macroquad + Toolkit"
+    },
+    {
+      "label": "Platform",
+      "value": "Browser, Windows"
+    }
   ],
   "repository": "https://github.com/Kalaith/realmseed"
 }
