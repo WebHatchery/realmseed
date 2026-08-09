@@ -27,13 +27,15 @@ async fn main() {
 
     // Screenshot harness: when REALMSEED_CAPTURE_PATH is set, seed a scene,
     // simulate deterministic frames, write a PNG, and exit.
-    if let Some(config) = capture::CaptureConfig::from_env("REALMSEED") {
-        game.begin_capture_scene(&config.scene);
-        capture::run_capture(&config, |dt| {
-            game.update(dt);
-            game.draw();
-        })
-        .await;
+    if let Some(configs) = capture::CaptureConfig::all_from_env("REALMSEED") {
+        for config in configs {
+            game.begin_capture_scene(&config.scene);
+            capture::run_capture_once(&config, |dt| {
+                game.update(dt);
+                game.draw();
+            })
+            .await;
+        }
         return;
     }
 
