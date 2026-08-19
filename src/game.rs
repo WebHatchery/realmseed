@@ -221,6 +221,8 @@ impl Game {
                         village: self.assets.get_texture("village_cluster"),
                         ruin: self.assets.get_texture("ruin_watchtower"),
                         resource: self.assets.get_texture("crystal_outcrop"),
+                        grove: self.assets.get_texture("ancient_grove"),
+                        bridge: self.assets.get_texture("river_bridge"),
                     },
                     camera_target: self.camera.target,
                     camera_zoom: self.camera.zoom,

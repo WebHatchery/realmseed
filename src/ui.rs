@@ -104,6 +104,8 @@ pub struct MapSpriteTextures<'a> {
     pub village: Option<&'a Texture2D>,
     pub ruin: Option<&'a Texture2D>,
     pub resource: Option<&'a Texture2D>,
+    pub grove: Option<&'a Texture2D>,
+    pub bridge: Option<&'a Texture2D>,
 }
 
 pub struct MenuContext<'a> {

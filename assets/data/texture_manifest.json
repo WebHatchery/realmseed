@@ -23,5 +23,15 @@
     "key": "crystal_outcrop",
     "path": "assets/images/sprites/crystal_outcrop.png",
     "filter": "linear"
+  },
+  {
+    "key": "ancient_grove",
+    "path": "assets/images/sprites/ancient_grove.png",
+    "filter": "linear"
+  },
+  {
+    "key": "river_bridge",
+    "path": "assets/images/sprites/river_bridge.png",
+    "filter": "linear"
   }
 ]
