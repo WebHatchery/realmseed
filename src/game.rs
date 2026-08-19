@@ -71,12 +71,12 @@ impl Game {
         let session = GameSession::new(&data);
         let camera = Camera2D::with_config(
             vec2(0.0, 0.0),
-            1.0,
+            1.25,
             Camera2DConfig {
                 drag_button: Some(MouseButton::Right),
-                min_zoom: 0.85,
-                max_zoom: 1.95,
-                bounds: Some(CameraBounds::new(vec2(-280.0, -190.0), vec2(280.0, 190.0))),
+                min_zoom: 0.80,
+                max_zoom: 2.60,
+                bounds: Some(CameraBounds::new(vec2(-520.0, -360.0), vec2(520.0, 360.0))),
                 pan_speed: 240.0,
                 ..Default::default()
             },
@@ -526,7 +526,14 @@ impl Game {
             UiAction::SetMapOverlay(overlay) => {
                 self.map_overlay = overlay;
             }
+            UiAction::ZoomMapIn => self.zoom_map(1.16),
+            UiAction::ZoomMapOut => self.zoom_map(0.86),
         }
+    }
+
+    fn zoom_map(&mut self, factor: f32) {
+        self.camera.zoom = (self.camera.zoom * factor)
+            .clamp(self.camera.config.min_zoom, self.camera.config.max_zoom);
     }
 
     fn save_game(&mut self) -> bool {

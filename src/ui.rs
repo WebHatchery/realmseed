@@ -7,6 +7,7 @@ mod event;
 mod faction;
 mod map;
 mod map_sites;
+mod map_terrain;
 mod menu;
 mod panel;
 mod routes;
@@ -58,6 +59,8 @@ pub enum UiAction {
     BeginIndependentIntegration,
     ToggleFactionPanel,
     SetMapOverlay(MapOverlay),
+    ZoomMapIn,
+    ZoomMapOut,
     SelectAmbition(String),
     CompleteProject(String),
     ActivateInstitution(String),
@@ -136,6 +139,9 @@ pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAct
     advisor::draw_realm_overview(&ctx, mouse, input_enabled, &mut actions);
     panel::draw_side_panel(&ctx, tooltip, mouse, input_enabled, &mut actions);
     advisor::draw_council_footer(&ctx, mouse, input_enabled, &mut actions);
+    // The close strategic projection intentionally extends beyond its viewport
+    // while panning. Repaint the fixed header last so its chrome stays crisp.
+    draw_header(&ctx);
     style::draw_tooltip_overlay(tooltip);
 
     if ctx.show_chronicle {

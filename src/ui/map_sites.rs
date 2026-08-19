@@ -29,19 +29,25 @@ pub(super) fn picked_site_id(ctx: &UiContext<'_>, view: &MapView, mouse: Vec2) -
             return None;
         }
         let position = view.site_position(site);
-        let radius = marker_radius(site, ctx.session.settlement_at_site(&site.id)).max(8.0) + 7.0;
+        let radius =
+            marker_radius(site, ctx.session.settlement_at_site(&site.id)) * view.scale() + 9.0;
         (position.distance(mouse) <= radius).then(|| site.id.clone())
     })
 }
 
 fn draw_known_site(ctx: &UiContext<'_>, view: &MapView, site: &SiteDef) {
     let position = view.site_position(site);
+    let scale = view.scale();
+    if !view.is_visible(position, 80.0 * scale) {
+        return;
+    }
     let selected = ctx.session.selected_site_id == site.id;
     let settlement = ctx.session.settlement_at_site(&site.id);
-    let radius = marker_radius(site, settlement) * ctx.camera_zoom.clamp(0.9, 1.3);
+    let radius = marker_radius(site, settlement) * scale;
     let fill = marker_color(ctx, site, settlement);
     let kind = marker_kind(ctx, site, settlement);
 
+    draw_landmark_silhouette(site, kind, position, scale, fill);
     draw_circle(
         position.x,
         position.y,
@@ -89,8 +95,12 @@ fn draw_known_site(ctx: &UiContext<'_>, view: &MapView, site: &SiteDef) {
 
 fn draw_unknown_site(ctx: &UiContext<'_>, view: &MapView, site: &SiteDef) {
     let position = view.site_position(site);
+    let scale = view.scale();
+    if !view.is_visible(position, 48.0 * scale) {
+        return;
+    }
     let selected = ctx.session.selected_site_id == site.id;
-    let radius = 7.0 * ctx.camera_zoom.clamp(0.9, 1.25);
+    let radius = 7.0 * scale;
     draw_circle(
         position.x,
         position.y,
@@ -128,6 +138,386 @@ fn draw_unknown_site(ctx: &UiContext<'_>, view: &MapView, site: &SiteDef) {
             TextStyle::new(12.0, style::TEXT_BRIGHT).params(),
         );
     }
+}
+
+fn draw_landmark_silhouette(
+    site: &SiteDef,
+    kind: MarkerKind,
+    position: Vec2,
+    scale: f32,
+    fill: Color,
+) {
+    let ground = position + vec2(0.0, 5.0 * scale);
+    draw_ellipse(
+        ground.x,
+        ground.y + 5.0 * scale,
+        23.0 * scale,
+        7.0 * scale,
+        0.0,
+        Color::new(0.015, 0.018, 0.014, 0.42),
+    );
+
+    match kind {
+        MarkerKind::Capital => draw_capital(ground, scale, fill),
+        MarkerKind::PlayerSettlement => draw_settlement_cluster(ground, scale, fill),
+        MarkerKind::Rival => draw_rival_hold(ground, scale, fill),
+        MarkerKind::Independent => draw_independent_market(ground, scale, fill),
+        MarkerKind::Landmark => draw_landmark(site, ground, scale, fill),
+        MarkerKind::Settlement => draw_settlement_cluster(ground, scale, fill),
+        MarkerKind::Lost => draw_ruined_marker(ground, scale, fill),
+    }
+}
+
+fn draw_capital(ground: Vec2, scale: f32, fill: Color) {
+    let wall = Color::new(fill.r * 0.78, fill.g * 0.72, fill.b * 0.52, 1.0);
+    draw_rectangle(
+        ground.x - 22.0 * scale,
+        ground.y - 15.0 * scale,
+        44.0 * scale,
+        18.0 * scale,
+        wall,
+    );
+    draw_rectangle(
+        ground.x - 8.0 * scale,
+        ground.y - 36.0 * scale,
+        16.0 * scale,
+        39.0 * scale,
+        fill,
+    );
+    for offset in [-18.0, 18.0] {
+        draw_rectangle(
+            ground.x + (offset - 4.0) * scale,
+            ground.y - 28.0 * scale,
+            8.0 * scale,
+            31.0 * scale,
+            wall,
+        );
+        draw_triangle(
+            vec2(ground.x + offset * scale, ground.y - 42.0 * scale),
+            vec2(ground.x + (offset - 7.0) * scale, ground.y - 27.0 * scale),
+            vec2(ground.x + (offset + 7.0) * scale, ground.y - 27.0 * scale),
+            Color::new(0.35, 0.18, 0.10, 1.0),
+        );
+    }
+    draw_triangle(
+        vec2(ground.x, ground.y - 50.0 * scale),
+        vec2(ground.x - 12.0 * scale, ground.y - 34.0 * scale),
+        vec2(ground.x + 12.0 * scale, ground.y - 34.0 * scale),
+        Color::new(0.56, 0.25, 0.12, 1.0),
+    );
+    draw_rectangle(
+        ground.x - 3.0 * scale,
+        ground.y - 14.0 * scale,
+        6.0 * scale,
+        12.0 * scale,
+        Color::new(0.10, 0.12, 0.10, 1.0),
+    );
+    draw_line(
+        ground.x,
+        ground.y - 49.0 * scale,
+        ground.x,
+        ground.y - 63.0 * scale,
+        1.0 * scale,
+        style::GOLD,
+    );
+    draw_triangle(
+        vec2(ground.x, ground.y - 63.0 * scale),
+        vec2(ground.x + 10.0 * scale, ground.y - 59.0 * scale),
+        vec2(ground.x, ground.y - 55.0 * scale),
+        style::GOLD,
+    );
+}
+
+fn draw_settlement_cluster(ground: Vec2, scale: f32, fill: Color) {
+    let roof = Color::new(fill.r * 0.65, fill.g * 0.42, fill.b * 0.22, 1.0);
+    for (offset, height) in [(-15.0, 16.0), (0.0, 23.0), (15.0, 13.0)] {
+        draw_rectangle(
+            ground.x + (offset - 6.0) * scale,
+            ground.y - height * scale,
+            12.0 * scale,
+            height * scale,
+            fill,
+        );
+        draw_triangle(
+            vec2(
+                ground.x + offset * scale,
+                ground.y - (height + 10.0) * scale,
+            ),
+            vec2(
+                ground.x + (offset - 9.0) * scale,
+                ground.y - (height - 1.0) * scale,
+            ),
+            vec2(
+                ground.x + (offset + 9.0) * scale,
+                ground.y - (height - 1.0) * scale,
+            ),
+            roof,
+        );
+        draw_rectangle(
+            ground.x + (offset - 2.0) * scale,
+            ground.y - (height - 8.0) * scale,
+            4.0 * scale,
+            7.0 * scale,
+            Color::new(0.14, 0.11, 0.07, 0.95),
+        );
+    }
+    draw_line(
+        ground.x - 25.0 * scale,
+        ground.y + 1.0 * scale,
+        ground.x + 24.0 * scale,
+        ground.y + 1.0 * scale,
+        2.0 * scale,
+        Color::new(0.78, 0.66, 0.38, 0.52),
+    );
+}
+
+fn draw_rival_hold(ground: Vec2, scale: f32, fill: Color) {
+    let dark = Color::new(fill.r * 0.62, fill.g * 0.48, fill.b * 0.48, 1.0);
+    draw_rectangle(
+        ground.x - 17.0 * scale,
+        ground.y - 27.0 * scale,
+        34.0 * scale,
+        29.0 * scale,
+        dark,
+    );
+    draw_triangle(
+        vec2(ground.x, ground.y - 42.0 * scale),
+        vec2(ground.x - 20.0 * scale, ground.y - 25.0 * scale),
+        vec2(ground.x + 20.0 * scale, ground.y - 25.0 * scale),
+        fill,
+    );
+    draw_line(
+        ground.x,
+        ground.y - 42.0 * scale,
+        ground.x,
+        ground.y - 59.0 * scale,
+        1.0 * scale,
+        Color::new(0.96, 0.44, 0.28, 0.95),
+    );
+    draw_triangle(
+        vec2(ground.x, ground.y - 59.0 * scale),
+        vec2(ground.x + 10.0 * scale, ground.y - 55.0 * scale),
+        vec2(ground.x, ground.y - 51.0 * scale),
+        Color::new(0.78, 0.20, 0.16, 1.0),
+    );
+}
+
+fn draw_independent_market(ground: Vec2, scale: f32, fill: Color) {
+    draw_rectangle(
+        ground.x - 22.0 * scale,
+        ground.y - 16.0 * scale,
+        44.0 * scale,
+        15.0 * scale,
+        fill,
+    );
+    draw_triangle(
+        vec2(ground.x - 25.0 * scale, ground.y - 16.0 * scale),
+        vec2(ground.x, ground.y - 34.0 * scale),
+        vec2(ground.x + 25.0 * scale, ground.y - 16.0 * scale),
+        Color::new(0.18, 0.30, 0.38, 1.0),
+    );
+    draw_rectangle(
+        ground.x - 4.0 * scale,
+        ground.y - 31.0 * scale,
+        8.0 * scale,
+        30.0 * scale,
+        Color::new(0.40, 0.52, 0.58, 0.95),
+    );
+    draw_line(
+        ground.x,
+        ground.y - 40.0 * scale,
+        ground.x,
+        ground.y - 52.0 * scale,
+        1.0 * scale,
+        Color::new(0.66, 0.83, 0.86, 0.92),
+    );
+}
+
+fn draw_landmark(site: &SiteDef, ground: Vec2, scale: f32, fill: Color) {
+    match site.site_type.as_str() {
+        "ruin" => draw_ruin(ground, scale, fill),
+        "resource" => draw_resource_node(ground, scale, fill),
+        "pass" => draw_pass_gate(ground, scale, fill),
+        "ford" => draw_ford(ground, scale, fill),
+        "old_road" => draw_milestone(ground, scale, fill),
+        "hazard" => draw_hazard(ground, scale, fill),
+        _ => draw_milestone(ground, scale, fill),
+    }
+}
+
+fn draw_ruin(ground: Vec2, scale: f32, fill: Color) {
+    draw_rectangle(
+        ground.x - 21.0 * scale,
+        ground.y - 17.0 * scale,
+        42.0 * scale,
+        17.0 * scale,
+        Color::new(0.24, 0.22, 0.18, 1.0),
+    );
+    draw_rectangle(
+        ground.x - 15.0 * scale,
+        ground.y - 35.0 * scale,
+        8.0 * scale,
+        35.0 * scale,
+        fill,
+    );
+    draw_rectangle(
+        ground.x + 7.0 * scale,
+        ground.y - 27.0 * scale,
+        8.0 * scale,
+        27.0 * scale,
+        fill,
+    );
+    draw_triangle(
+        vec2(ground.x - 11.0 * scale, ground.y - 43.0 * scale),
+        vec2(ground.x - 22.0 * scale, ground.y - 31.0 * scale),
+        vec2(ground.x - 2.0 * scale, ground.y - 31.0 * scale),
+        Color::new(0.46, 0.38, 0.24, 1.0),
+    );
+}
+
+fn draw_resource_node(ground: Vec2, scale: f32, fill: Color) {
+    for (x, y, size) in [(-15.0, -9.0, 13.0), (0.0, -19.0, 19.0), (16.0, -8.0, 11.0)] {
+        draw_triangle(
+            vec2(ground.x + x * scale, ground.y + (y - size) * scale),
+            vec2(ground.x + (x - size * 0.70) * scale, ground.y + y * scale),
+            vec2(ground.x + (x + size * 0.70) * scale, ground.y + y * scale),
+            fill,
+        );
+    }
+    draw_line(
+        ground.x - 24.0 * scale,
+        ground.y,
+        ground.x + 24.0 * scale,
+        ground.y,
+        2.0 * scale,
+        Color::new(0.92, 0.74, 0.30, 0.62),
+    );
+}
+
+fn draw_pass_gate(ground: Vec2, scale: f32, fill: Color) {
+    draw_triangle(
+        vec2(ground.x, ground.y - 51.0 * scale),
+        vec2(ground.x - 30.0 * scale, ground.y),
+        vec2(ground.x + 30.0 * scale, ground.y),
+        Color::new(0.24, 0.25, 0.27, 1.0),
+    );
+    draw_rectangle(
+        ground.x - 17.0 * scale,
+        ground.y - 22.0 * scale,
+        34.0 * scale,
+        22.0 * scale,
+        fill,
+    );
+    draw_rectangle(
+        ground.x - 6.0 * scale,
+        ground.y - 18.0 * scale,
+        12.0 * scale,
+        18.0 * scale,
+        Color::new(0.06, 0.09, 0.09, 1.0),
+    );
+    draw_line(
+        ground.x,
+        ground.y - 45.0 * scale,
+        ground.x,
+        ground.y - 60.0 * scale,
+        1.0 * scale,
+        style::GOLD,
+    );
+}
+
+fn draw_ford(ground: Vec2, scale: f32, fill: Color) {
+    draw_line(
+        ground.x - 25.0 * scale,
+        ground.y - 5.0 * scale,
+        ground.x + 25.0 * scale,
+        ground.y + 5.0 * scale,
+        7.0 * scale,
+        Color::new(0.12, 0.42, 0.52, 0.86),
+    );
+    draw_line(
+        ground.x - 22.0 * scale,
+        ground.y - 8.0 * scale,
+        ground.x + 22.0 * scale,
+        ground.y + 2.0 * scale,
+        3.0 * scale,
+        fill,
+    );
+    draw_rectangle(
+        ground.x - 3.0 * scale,
+        ground.y - 31.0 * scale,
+        6.0 * scale,
+        31.0 * scale,
+        fill,
+    );
+    draw_triangle(
+        vec2(ground.x, ground.y - 42.0 * scale),
+        vec2(ground.x - 8.0 * scale, ground.y - 30.0 * scale),
+        vec2(ground.x + 8.0 * scale, ground.y - 30.0 * scale),
+        Color::new(0.86, 0.70, 0.34, 1.0),
+    );
+}
+
+fn draw_milestone(ground: Vec2, scale: f32, fill: Color) {
+    draw_rectangle(
+        ground.x - 6.0 * scale,
+        ground.y - 26.0 * scale,
+        12.0 * scale,
+        26.0 * scale,
+        fill,
+    );
+    draw_triangle(
+        vec2(ground.x, ground.y - 35.0 * scale),
+        vec2(ground.x - 8.0 * scale, ground.y - 25.0 * scale),
+        vec2(ground.x + 8.0 * scale, ground.y - 25.0 * scale),
+        fill,
+    );
+    draw_line(
+        ground.x - 23.0 * scale,
+        ground.y + 1.0 * scale,
+        ground.x + 23.0 * scale,
+        ground.y + 1.0 * scale,
+        2.0 * scale,
+        Color::new(0.78, 0.64, 0.34, 0.62),
+    );
+}
+
+fn draw_hazard(ground: Vec2, scale: f32, fill: Color) {
+    draw_ellipse(
+        ground.x,
+        ground.y - 5.0 * scale,
+        25.0 * scale,
+        13.0 * scale,
+        0.0,
+        Color::new(0.09, 0.18, 0.16, 1.0),
+    );
+    for offset in [-13.0, 0.0, 13.0] {
+        draw_line(
+            ground.x + offset * scale,
+            ground.y - 5.0 * scale,
+            ground.x + (offset + 3.0) * scale,
+            ground.y - 29.0 * scale,
+            1.0 * scale,
+            fill,
+        );
+    }
+}
+
+fn draw_ruined_marker(ground: Vec2, scale: f32, fill: Color) {
+    draw_rectangle(
+        ground.x - 13.0 * scale,
+        ground.y - 15.0 * scale,
+        26.0 * scale,
+        15.0 * scale,
+        fill,
+    );
+    draw_line(
+        ground.x - 11.0 * scale,
+        ground.y - 19.0 * scale,
+        ground.x + 10.0 * scale,
+        ground.y - 36.0 * scale,
+        3.0 * scale,
+        Color::new(0.70, 0.30, 0.24, 0.90),
+    );
 }
 
 #[derive(Debug, Clone, Copy)]
