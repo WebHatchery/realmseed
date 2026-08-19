@@ -43,9 +43,78 @@ pub(super) fn draw_terrain(ctx: &UiContext<'_>, view: &MapView) {
     }
 
     draw_landscape_landforms(ctx, view);
+    draw_environmental_sprite_anchors(ctx, view);
     draw_region_washes(ctx, view);
     draw_river_network(ctx, view);
     draw_coastlines(ctx, view);
+}
+
+fn draw_environmental_sprite_anchors(ctx: &UiContext<'_>, view: &MapView) {
+    if let Some(grove) = ctx.sprites.grove {
+        for (x, y, width, height) in [
+            (5, 8, 78.0, 76.0),
+            (15, 12, 70.0, 68.0),
+            (11, 27, 74.0, 72.0),
+        ] {
+            if !ctx
+                .data
+                .terrain_at(x, y)
+                .is_some_and(|terrain| terrain.id == "forest")
+            {
+                continue;
+            }
+            let position = view.tile_center(x, y);
+            if !view.is_visible(position, width) {
+                continue;
+            }
+            draw_grounded_sprite(
+                grove,
+                position,
+                vec2(width * view.scale(), height * view.scale()),
+                0.72,
+            );
+        }
+    }
+
+    if let Some(gate) = ctx.sprites.gate {
+        let (x, y) = (38, 10);
+        if ctx
+            .data
+            .terrain_at(x, y)
+            .is_some_and(|terrain| terrain.id == "mountain" || terrain.id == "hills")
+        {
+            let position = view.tile_center(x, y);
+            if view.is_visible(position, 90.0) {
+                draw_grounded_sprite(
+                    gate,
+                    position,
+                    vec2(78.0 * view.scale(), 82.0 * view.scale()),
+                    0.58,
+                );
+            }
+        }
+    }
+}
+
+fn draw_grounded_sprite(texture: &Texture2D, position: Vec2, size: Vec2, alpha: f32) {
+    draw_ellipse(
+        position.x,
+        position.y + size.y * 0.30,
+        size.x * 0.34,
+        size.y * 0.10,
+        0.0,
+        Color::new(0.01, 0.018, 0.014, alpha * 0.42),
+    );
+    draw_texture_ex(
+        texture,
+        position.x - size.x * 0.5,
+        position.y - size.y * 0.72,
+        Color::new(1.0, 1.0, 1.0, alpha),
+        DrawTextureParams {
+            dest_size: Some(size),
+            ..Default::default()
+        },
+    );
 }
 
 fn draw_world_ground(ctx: &UiContext<'_>, view: &MapView) {
