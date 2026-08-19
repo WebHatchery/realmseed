@@ -339,8 +339,16 @@ fn draw_terrain_detail(
     match terrain_id {
         "plains" => draw_plains_detail(center, size, seed),
         "forest" => draw_forest_detail(center, size, seed),
-        "hills" => draw_hill_detail(center, quad, size, seed),
-        "mountain" => draw_mountain_detail(center, quad, size, seed),
+        "hills" => {
+            if !seed.is_multiple_of(3) {
+                draw_hill_detail(center, quad, size, seed);
+            }
+        }
+        "mountain" => {
+            if seed.is_multiple_of(3) {
+                draw_mountain_detail(center, quad, size, seed);
+            }
+        }
         "river" => draw_water_detail(center, size, seed),
         "coast" => draw_coast_detail(center, quad, size, seed),
         "marsh" => draw_marsh_detail(center, size, seed),
@@ -629,7 +637,7 @@ fn draw_river_network(ctx: &UiContext<'_>, view: &MapView) {
                 center.x,
                 center.y,
                 tile_size * 0.43,
-                Color::new(0.025, 0.16, 0.25, 0.78),
+                Color::new(0.025, 0.16, 0.25, 0.64),
             );
             draw_river_connections(ctx, view, x, y, tile_size * 0.78, false);
         }
@@ -645,7 +653,7 @@ fn draw_river_network(ctx: &UiContext<'_>, view: &MapView) {
                 center.x,
                 center.y,
                 tile_size * 0.30,
-                Color::new(0.08, 0.40, 0.56, 0.94),
+                Color::new(0.08, 0.40, 0.56, 0.88),
             );
             draw_river_connections(ctx, view, x, y, tile_size * 0.44, true);
         }
@@ -668,9 +676,9 @@ fn draw_river_connections(
 ) {
     let center = view.tile_center(x as i32, y as i32);
     let color = if highlight {
-        Color::new(0.08, 0.40, 0.56, 0.94)
+        Color::new(0.08, 0.40, 0.56, 0.88)
     } else {
-        Color::new(0.025, 0.16, 0.25, 0.78)
+        Color::new(0.025, 0.16, 0.25, 0.64)
     };
     let right = is_river_cell(ctx, (x + 1) as i32, y as i32);
     let down = is_river_cell(ctx, x as i32, (y + 1) as i32);
@@ -711,7 +719,7 @@ fn draw_river_segment(
             midpoint.x + (end.y - center.y) * 0.10,
             midpoint.y - (end.x - center.x) * 0.10,
             1.0,
-            Color::new(0.54, 0.84, 0.88, 0.46),
+            Color::new(0.54, 0.84, 0.88, 0.30),
         );
     }
 }
