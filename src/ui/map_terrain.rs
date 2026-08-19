@@ -689,14 +689,22 @@ fn draw_river_connections(
         draw_river_segment(view, center, x, y + 1, width, color, highlight);
     }
 
-    // A diagonal only bridges a diagonal step in the authored river path. Do
-    // not draw both diagonals through a 2x2 patch, which creates a false loop.
-    if !right && !down {
-        if is_river_cell(ctx, (x + 1) as i32, (y + 1) as i32) {
-            draw_river_segment(view, center, x + 1, y + 1, width, color, highlight);
-        } else if x > 0 && is_river_cell(ctx, (x - 1) as i32, (y + 1) as i32) {
-            draw_river_segment(view, center, x - 1, y + 1, width, color, highlight);
+    // Widened reaches need to hand their outer cells back to the next row;
+    // same-row neighbors must not prevent that join from being drawn.
+    let start = x.saturating_sub(3);
+    let end = (x + 3).min(ctx.data.terrain.width.saturating_sub(1));
+    let mut nearest = None;
+    for nx in start..=end {
+        if nx == x || !is_river_cell(ctx, nx as i32, (y + 1) as i32) {
+            continue;
         }
+        let distance = (nx as i32 - x as i32).abs();
+        if nearest.is_none_or(|candidate: (usize, i32)| distance < candidate.1) {
+            nearest = Some((nx, distance));
+        }
+    }
+    if let Some((nx, _)) = nearest {
+        draw_river_segment(view, center, nx, y + 1, width, color, highlight);
     }
 }
 
