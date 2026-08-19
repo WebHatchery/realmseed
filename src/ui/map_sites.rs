@@ -8,9 +8,26 @@ use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
 use macroquad_toolkit::ui::RectExt;
+use std::cmp::Ordering;
 
 pub(super) fn draw_sites(ctx: &UiContext<'_>, view: &MapView) {
-    for site in &ctx.data.sites {
+    let mut sites: Vec<&SiteDef> = ctx
+        .data
+        .sites
+        .iter()
+        .filter(|site| {
+            ctx.session.is_known(&site.id)
+                || ctx.session.is_adjacent_unknown(ctx.data, &site.id)
+        })
+        .collect();
+    sites.sort_by(|left, right| {
+        view.site_position(left)
+            .y
+            .partial_cmp(&view.site_position(right).y)
+            .unwrap_or(Ordering::Equal)
+    });
+
+    for site in sites {
         if ctx.session.is_known(&site.id) {
             draw_known_site(ctx, view, site);
         } else if ctx.session.is_adjacent_unknown(ctx.data, &site.id) {
