@@ -16,8 +16,7 @@ pub(super) fn draw_sites(ctx: &UiContext<'_>, view: &MapView) {
         .sites
         .iter()
         .filter(|site| {
-            ctx.session.is_known(&site.id)
-                || ctx.session.is_adjacent_unknown(ctx.data, &site.id)
+            ctx.session.is_known(&site.id) || ctx.session.is_adjacent_unknown(ctx.data, &site.id)
         })
         .collect();
     sites.sort_by(|left, right| {

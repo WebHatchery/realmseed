@@ -71,12 +71,7 @@ fn draw_environmental_sprite_anchors(ctx: &UiContext<'_>, view: &MapView) {
             if !view.is_visible(position, width) || !sprite_fits_view(view, position, size) {
                 continue;
             }
-            draw_grounded_sprite(
-                grove,
-                position,
-                size,
-                0.72,
-            );
+            draw_grounded_sprite(grove, position, size, 0.72);
         }
     }
 
@@ -90,12 +85,7 @@ fn draw_environmental_sprite_anchors(ctx: &UiContext<'_>, view: &MapView) {
             let position = view.tile_center(x, y);
             let size = vec2(78.0 * view.scale(), 82.0 * view.scale());
             if view.is_visible(position, 90.0) && sprite_fits_view(view, position, size) {
-                draw_grounded_sprite(
-                    gate,
-                    position,
-                    size,
-                    0.58,
-                );
+                draw_grounded_sprite(gate, position, size, 0.58);
             }
         }
     }

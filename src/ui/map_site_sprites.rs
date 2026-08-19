@@ -70,12 +70,8 @@ fn sprite_spec<'a>(
                 (textures.resource?, 92.0, 86.0, 0.92)
             }
         }
-        MarkerKind::Landmark if site.site_type == "ford" => {
-            (textures.bridge?, 116.0, 88.0, 0.80)
-        }
-        MarkerKind::Landmark if site.site_type == "pass" => {
-            (textures.gate?, 116.0, 118.0, 0.92)
-        }
+        MarkerKind::Landmark if site.site_type == "ford" => (textures.bridge?, 116.0, 88.0, 0.80),
+        MarkerKind::Landmark if site.site_type == "pass" => (textures.gate?, 116.0, 118.0, 0.92),
         MarkerKind::Landmark if site.site_type == "old_road" => {
             (textures.waystone?, 96.0, 104.0, 0.90)
         }
