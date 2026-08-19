@@ -33,5 +33,10 @@
     "key": "river_bridge",
     "path": "assets/images/sprites/river_bridge.png",
     "filter": "linear"
+  },
+  {
+    "key": "mountain_gate",
+    "path": "assets/images/sprites/mountain_gate.png",
+    "filter": "linear"
   }
 ]

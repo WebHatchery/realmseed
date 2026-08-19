@@ -223,6 +223,7 @@ impl Game {
                         resource: self.assets.get_texture("crystal_outcrop"),
                         grove: self.assets.get_texture("ancient_grove"),
                         bridge: self.assets.get_texture("river_bridge"),
+                        gate: self.assets.get_texture("mountain_gate"),
                     },
                     camera_target: self.camera.target,
                     camera_zoom: self.camera.zoom,
