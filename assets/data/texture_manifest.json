@@ -43,5 +43,10 @@
     "key": "road_waystone",
     "path": "assets/images/sprites/road_waystone.png",
     "filter": "linear"
+  },
+  {
+    "key": "marsh_shrine",
+    "path": "assets/images/sprites/marsh_shrine.png",
+    "filter": "linear"
   }
 ]

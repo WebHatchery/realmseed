@@ -225,6 +225,7 @@ impl Game {
                         bridge: self.assets.get_texture("river_bridge"),
                         gate: self.assets.get_texture("mountain_gate"),
                         waystone: self.assets.get_texture("road_waystone"),
+                        shrine: self.assets.get_texture("marsh_shrine"),
                     },
                     camera_target: self.camera.target,
                     camera_zoom: self.camera.zoom,
