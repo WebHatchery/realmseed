@@ -6,6 +6,7 @@ mod endgame;
 mod event;
 mod faction;
 mod map;
+mod map_site_sprites;
 mod map_sites;
 mod map_terrain;
 mod menu;
@@ -88,6 +89,7 @@ impl MapOverlay {
 pub struct UiContext<'a> {
     pub data: &'a GameData,
     pub session: &'a GameSession,
+    pub sprites: MapSpriteTextures<'a>,
     pub camera_target: Vec2,
     pub camera_zoom: f32,
     pub map_overlay: MapOverlay,
@@ -95,6 +97,13 @@ pub struct UiContext<'a> {
     pub show_factions: bool,
     pub input_blocked: bool,
     pub ui: &'a VirtualUi,
+}
+
+pub struct MapSpriteTextures<'a> {
+    pub capital: Option<&'a Texture2D>,
+    pub village: Option<&'a Texture2D>,
+    pub ruin: Option<&'a Texture2D>,
+    pub resource: Option<&'a Texture2D>,
 }
 
 pub struct MenuContext<'a> {

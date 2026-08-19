@@ -1,4 +1,10 @@
 {
   "version": 1,
-  "assets": ["assets/images/title_image.png"]
+  "assets": [
+    "assets/images/title_image.png",
+    "assets/images/sprites/capital_keep.png",
+    "assets/images/sprites/village_cluster.png",
+    "assets/images/sprites/ruin_watchtower.png",
+    "assets/images/sprites/crystal_outcrop.png"
+  ]
 }

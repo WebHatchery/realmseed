@@ -3,5 +3,25 @@
     "key": "title_image",
     "path": "assets/images/title_image.png",
     "filter": "linear"
+  },
+  {
+    "key": "capital_keep",
+    "path": "assets/images/sprites/capital_keep.png",
+    "filter": "linear"
+  },
+  {
+    "key": "village_cluster",
+    "path": "assets/images/sprites/village_cluster.png",
+    "filter": "linear"
+  },
+  {
+    "key": "ruin_watchtower",
+    "path": "assets/images/sprites/ruin_watchtower.png",
+    "filter": "linear"
+  },
+  {
+    "key": "crystal_outcrop",
+    "path": "assets/images/sprites/crystal_outcrop.png",
+    "filter": "linear"
   }
 ]

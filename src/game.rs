@@ -1,9 +1,10 @@
 //! High-level game loop, state transitions, and toolkit integration.
 
 use crate::data::GameData;
-use crate::state::{migrate_save_value, GameSession, SaveData};
+use crate::state::{migrate_save_value, GameSession, SaveData, SiteKnowledge};
 use crate::ui::{
-    self, ExitWarningTarget, MapOverlay, MenuContext, PauseMenuContext, UiAction, UiContext,
+    self, ExitWarningTarget, MapOverlay, MapSpriteTextures, MenuContext, PauseMenuContext,
+    UiAction, UiContext,
 };
 use macroquad::prelude::*;
 use macroquad_toolkit::assets::AssetManager;
@@ -114,6 +115,13 @@ impl Game {
                 self.session = GameSession::new(&self.data);
                 self.screen = GameScreen::PauseMenu;
             }
+            "sprite_showcase" => {
+                self.session = GameSession::new(&self.data);
+                for state in &mut self.session.site_states {
+                    state.knowledge = SiteKnowledge::Known;
+                }
+                self.screen = GameScreen::Playing;
+            }
             _ => {
                 // Default: gameplay. Start a fresh campaign so this works on a
                 // fresh save with no prior state.
@@ -208,6 +216,12 @@ impl Game {
                 let ctx = UiContext {
                     data: &self.data,
                     session: &self.session,
+                    sprites: MapSpriteTextures {
+                        capital: self.assets.get_texture("capital_keep"),
+                        village: self.assets.get_texture("village_cluster"),
+                        ruin: self.assets.get_texture("ruin_watchtower"),
+                        resource: self.assets.get_texture("crystal_outcrop"),
+                    },
                     camera_target: self.camera.target,
                     camera_zoom: self.camera.zoom,
                     map_overlay: self.map_overlay,

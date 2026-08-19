@@ -1,7 +1,7 @@
 //! Site markers, map labels, and picking for the strategic map.
 
 use super::map::MapView;
-use super::{style, MapOverlay, UiContext};
+use super::{map_site_sprites, style, MapOverlay, UiContext};
 use crate::data::{SettlementTier, SiteCategory, SiteDef};
 use crate::state::{SettlementRuntimeState, SettlementStatus};
 use macroquad::prelude::*;
@@ -29,8 +29,15 @@ pub(super) fn picked_site_id(ctx: &UiContext<'_>, view: &MapView, mouse: Vec2) -
             return None;
         }
         let position = view.site_position(site);
-        let radius =
-            marker_radius(site, ctx.session.settlement_at_site(&site.id)) * view.scale() + 9.0;
+        let settlement = ctx.session.settlement_at_site(&site.id);
+        let kind = marker_kind(ctx, site, settlement);
+        let radius = map_site_sprites::hit_radius(
+            &ctx.sprites,
+            site,
+            kind,
+            view.scale(),
+            marker_radius(site, settlement),
+        );
         (position.distance(mouse) <= radius).then(|| site.id.clone())
     })
 }
@@ -48,6 +55,7 @@ fn draw_known_site(ctx: &UiContext<'_>, view: &MapView, site: &SiteDef) {
     let kind = marker_kind(ctx, site, settlement);
 
     draw_landmark_silhouette(site, kind, position, scale, fill);
+    map_site_sprites::draw_site_sprite(ctx, site, kind, position, scale);
     draw_circle(
         position.x,
         position.y,
@@ -521,7 +529,7 @@ fn draw_ruined_marker(ground: Vec2, scale: f32, fill: Color) {
 }
 
 #[derive(Debug, Clone, Copy)]
-enum MarkerKind {
+pub(super) enum MarkerKind {
     Capital,
     PlayerSettlement,
     Rival,
