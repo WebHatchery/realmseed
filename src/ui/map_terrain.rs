@@ -24,21 +24,24 @@ pub(super) fn draw_terrain(ctx: &UiContext<'_>, view: &MapView) {
                 continue;
             }
 
+            let terrain_id = terrain.id.as_str();
             let mut color = terrain_color(color_from_array(terrain.color), x, y);
-            color.a = terrain_fill_alpha(terrain.id.as_str());
+            color.a = terrain_fill_alpha(terrain_id);
             if matches!(terrain.id.as_str(), "hills" | "mountain") {
                 draw_tile_shadow(quad, view.tile_size());
             }
             draw_tile(quad, color);
-            draw_tile_edge(quad, terrain.id.as_str(), view.tile_size());
-            draw_terrain_detail(
-                terrain.id.as_str(),
-                quad,
-                view.tile_center(x as i32, y as i32),
-                x,
-                y,
-                view,
-            );
+            draw_tile_edge(quad, terrain_id, view.tile_size());
+            if terrain_id != "river" {
+                draw_terrain_detail(
+                    terrain_id,
+                    quad,
+                    view.tile_center(x as i32, y as i32),
+                    x,
+                    y,
+                    view,
+                );
+            }
         }
     }
 
@@ -140,12 +143,13 @@ fn draw_world_ground(ctx: &UiContext<'_>, view: &MapView) {
 
 fn terrain_fill_alpha(terrain_id: &str) -> f32 {
     match terrain_id {
-        "plains" => 0.68,
-        "forest" => 0.74,
-        "hills" => 0.78,
+        "plains" => 0.58,
+        "forest" => 0.64,
+        "hills" => 0.72,
         "mountain" => 0.92,
-        "river" | "coast" => 0.96,
-        "marsh" => 0.82,
+        "river" => 0.16,
+        "coast" => 0.80,
+        "marsh" => 0.74,
         _ => 0.86,
     }
 }
@@ -295,18 +299,17 @@ fn draw_tile(quad: [Vec2; 4], color: Color) {
         .copied()
         .fold(Vec2::ZERO, |sum, point| sum + point)
         * 0.25;
-    let filled = quad.map(|point| center + (point - center) * 1.045);
+    let filled = quad.map(|point| center + (point - center) * 1.10);
     draw_triangle(filled[0], filled[1], filled[2], color);
     draw_triangle(filled[0], filled[2], filled[3], color);
 }
 
 fn draw_tile_edge(quad: [Vec2; 4], terrain_id: &str, tile_size: f32) {
-    if !matches!(terrain_id, "mountain" | "river" | "coast") {
+    if terrain_id != "mountain" {
         return;
     }
     let edge = match terrain_id {
         "mountain" => Color::new(0.06, 0.065, 0.07, 0.14),
-        "river" | "coast" => Color::new(0.38, 0.76, 0.82, 0.12),
         _ => Color::new(0.03, 0.045, 0.035, 0.055),
     };
     for index in 0..4 {
@@ -334,7 +337,7 @@ fn draw_terrain_detail(
     let size = view.tile_size();
     let seed = (x as u32 * 11 + y as u32 * 23) % 7;
     match terrain_id {
-        "plains" => draw_plains_detail(center, quad, size, seed),
+        "plains" => draw_plains_detail(center, size, seed),
         "forest" => draw_forest_detail(center, size, seed),
         "hills" => draw_hill_detail(center, quad, size, seed),
         "mountain" => draw_mountain_detail(center, quad, size, seed),
@@ -345,7 +348,7 @@ fn draw_terrain_detail(
     }
 }
 
-fn draw_plains_detail(center: Vec2, quad: [Vec2; 4], size: f32, seed: u32) {
+fn draw_plains_detail(center: Vec2, size: f32, seed: u32) {
     let tint = if seed.is_multiple_of(3) {
         Color::new(0.72, 0.70, 0.34, 0.22)
     } else {
@@ -364,14 +367,7 @@ fn draw_plains_detail(center: Vec2, quad: [Vec2; 4], size: f32, seed: u32) {
         tint,
     );
     if seed % 2 == 0 {
-        draw_line(
-            quad[3].x + size * 0.12,
-            quad[3].y - size * 0.12,
-            quad[2].x - size * 0.14,
-            quad[2].y - size * 0.12,
-            (size * 0.07).clamp(0.8, 1.5),
-            Color::new(0.82, 0.73, 0.38, 0.28),
-        );
+        draw_grass_tuft(center + vec2(size * 0.22, -size * 0.10), size * 0.14);
     }
     draw_grass_tuft(center + vec2(-size * 0.28, size * 0.11), size * 0.18);
 }
@@ -621,41 +617,102 @@ fn draw_region_washes(ctx: &UiContext<'_>, view: &MapView) {
 }
 
 fn draw_river_network(ctx: &UiContext<'_>, view: &MapView) {
+    let tile_size = view.tile_size();
+
     for y in 0..ctx.data.terrain.height {
         for x in 0..ctx.data.terrain.width {
-            let Some(terrain) = ctx.data.terrain_at(x as i32, y as i32) else {
-                continue;
-            };
-            if terrain.id != "river" {
+            if !is_river_cell(ctx, x as i32, y as i32) {
                 continue;
             }
             let center = view.tile_center(x as i32, y as i32);
-            for (nx, ny) in [(x + 1, y), (x, y + 1)] {
-                let Some(next) = ctx.data.terrain_at(nx as i32, ny as i32) else {
-                    continue;
-                };
-                if next.id != "river" {
-                    continue;
-                }
-                let end = view.tile_center(nx as i32, ny as i32);
-                draw_line(
-                    center.x,
-                    center.y,
-                    end.x,
-                    end.y,
-                    view.tile_size() * 0.54,
-                    Color::new(0.05, 0.22, 0.32, 0.54),
-                );
-                draw_line(
-                    center.x,
-                    center.y - view.tile_size() * 0.02,
-                    end.x,
-                    end.y - view.tile_size() * 0.02,
-                    view.tile_size() * 0.30,
-                    Color::new(0.15, 0.55, 0.69, 0.92),
-                );
-            }
+            draw_circle(
+                center.x,
+                center.y,
+                tile_size * 0.43,
+                Color::new(0.025, 0.16, 0.25, 0.78),
+            );
+            draw_river_connections(ctx, view, x, y, tile_size * 0.78, false);
         }
+    }
+
+    for y in 0..ctx.data.terrain.height {
+        for x in 0..ctx.data.terrain.width {
+            if !is_river_cell(ctx, x as i32, y as i32) {
+                continue;
+            }
+            let center = view.tile_center(x as i32, y as i32);
+            draw_circle(
+                center.x,
+                center.y,
+                tile_size * 0.30,
+                Color::new(0.08, 0.40, 0.56, 0.94),
+            );
+            draw_river_connections(ctx, view, x, y, tile_size * 0.44, true);
+        }
+    }
+}
+
+fn is_river_cell(ctx: &UiContext<'_>, x: i32, y: i32) -> bool {
+    ctx.data
+        .terrain_at(x, y)
+        .is_some_and(|terrain| terrain.id == "river")
+}
+
+fn draw_river_connections(
+    ctx: &UiContext<'_>,
+    view: &MapView,
+    x: usize,
+    y: usize,
+    width: f32,
+    highlight: bool,
+) {
+    let center = view.tile_center(x as i32, y as i32);
+    let color = if highlight {
+        Color::new(0.08, 0.40, 0.56, 0.94)
+    } else {
+        Color::new(0.025, 0.16, 0.25, 0.78)
+    };
+    let right = is_river_cell(ctx, (x + 1) as i32, y as i32);
+    let down = is_river_cell(ctx, x as i32, (y + 1) as i32);
+    if right {
+        draw_river_segment(view, center, x + 1, y, width, color, highlight);
+    }
+    if down {
+        draw_river_segment(view, center, x, y + 1, width, color, highlight);
+    }
+
+    // A diagonal only bridges a diagonal step in the authored river path. Do
+    // not draw both diagonals through a 2x2 patch, which creates a false loop.
+    if !right && !down {
+        if is_river_cell(ctx, (x + 1) as i32, (y + 1) as i32) {
+            draw_river_segment(view, center, x + 1, y + 1, width, color, highlight);
+        } else if x > 0 && is_river_cell(ctx, (x - 1) as i32, (y + 1) as i32) {
+            draw_river_segment(view, center, x - 1, y + 1, width, color, highlight);
+        }
+    }
+}
+
+fn draw_river_segment(
+    view: &MapView,
+    center: Vec2,
+    x: usize,
+    y: usize,
+    width: f32,
+    color: Color,
+    highlight: bool,
+) {
+    let end = view.tile_center(x as i32, y as i32);
+    draw_line(center.x, center.y, end.x, end.y, width, color);
+    if highlight {
+        let midpoint = (center + end) * 0.5;
+        draw_line(
+            midpoint.x - (end.y - center.y) * 0.10,
+            midpoint.y + (end.x - center.x) * 0.10,
+            midpoint.x + (end.y - center.y) * 0.10,
+            midpoint.y - (end.x - center.x) * 0.10,
+            1.0,
+            Color::new(0.54, 0.84, 0.88, 0.46),
+        );
     }
 }
 

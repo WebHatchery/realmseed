@@ -647,8 +647,8 @@ impl MapView {
 
     pub(super) fn tile_center(self, x: i32, y: i32) -> Vec2 {
         vec2(
-            self.origin.x + (x as f32 + 0.5) * self.tile_size,
-            self.origin.y + (y as f32 + 0.5) * self.tile_size,
+            self.origin.x + (x as f32 + 0.5) * self.axis_x.x + (y as f32 + 0.5) * self.axis_y.x,
+            self.origin.y + (x as f32 + 0.5) * self.axis_x.y + (y as f32 + 0.5) * self.axis_y.y,
         )
     }
 
