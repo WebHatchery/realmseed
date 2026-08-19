@@ -64,13 +64,14 @@ fn draw_environmental_sprite_anchors(ctx: &UiContext<'_>, view: &MapView) {
                 continue;
             }
             let position = view.tile_center(x, y);
-            if !view.is_visible(position, width) {
+            let size = vec2(width * view.scale(), height * view.scale());
+            if !view.is_visible(position, width) || !sprite_fits_view(view, position, size) {
                 continue;
             }
             draw_grounded_sprite(
                 grove,
                 position,
-                vec2(width * view.scale(), height * view.scale()),
+                size,
                 0.72,
             );
         }
@@ -84,16 +85,23 @@ fn draw_environmental_sprite_anchors(ctx: &UiContext<'_>, view: &MapView) {
             .is_some_and(|terrain| terrain.id == "mountain" || terrain.id == "hills")
         {
             let position = view.tile_center(x, y);
-            if view.is_visible(position, 90.0) {
+            let size = vec2(78.0 * view.scale(), 82.0 * view.scale());
+            if view.is_visible(position, 90.0) && sprite_fits_view(view, position, size) {
                 draw_grounded_sprite(
                     gate,
                     position,
-                    vec2(78.0 * view.scale(), 82.0 * view.scale()),
+                    size,
                     0.58,
                 );
             }
         }
     }
+}
+
+fn sprite_fits_view(view: &MapView, position: Vec2, size: Vec2) -> bool {
+    let top = position.y - size.y * 0.72;
+    let bottom = position.y + size.y * 0.32;
+    top >= view.rect.y + 8.0 && bottom <= view.rect.bottom() - 8.0
 }
 
 fn draw_grounded_sprite(texture: &Texture2D, position: Vec2, size: Vec2, alpha: f32) {

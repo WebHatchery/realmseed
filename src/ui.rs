@@ -92,6 +92,7 @@ pub struct UiContext<'a> {
     pub sprites: MapSpriteTextures<'a>,
     pub camera_target: Vec2,
     pub camera_zoom: f32,
+    pub sprite_showcase: bool,
     pub map_overlay: MapOverlay,
     pub show_chronicle: bool,
     pub show_factions: bool,

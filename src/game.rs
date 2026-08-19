@@ -32,6 +32,7 @@ pub struct Game {
     save_slots: Vec<String>,
     show_chronicle: bool,
     show_factions: bool,
+    capture_sprite_showcase: bool,
     map_overlay: MapOverlay,
     screen: GameScreen,
     fullscreen: bool,
@@ -95,6 +96,7 @@ impl Game {
             save_slots: Vec::new(),
             show_chronicle: false,
             show_factions: false,
+            capture_sprite_showcase: false,
             map_overlay: MapOverlay::Realm,
             screen: GameScreen::Title,
             fullscreen: false,
@@ -107,6 +109,7 @@ impl Game {
 
     /// Seed a specific scene for the screenshot harness.
     pub fn begin_capture_scene(&mut self, scene: &str) {
+        self.capture_sprite_showcase = scene == "sprite_showcase";
         match scene {
             "title" | "menu" => {
                 self.screen = GameScreen::Title;
@@ -117,8 +120,22 @@ impl Game {
             }
             "sprite_showcase" => {
                 self.session = GameSession::new(&self.data);
+                let showcase_sites = [
+                    "charter_hall",
+                    "lowmeadow",
+                    "crown_ruins",
+                    "ironroot_grove",
+                    "redford_crossing",
+                    "northwatch_gate",
+                    "amber_quarry",
+                    "dusk_mire",
+                    "saltwind_rocks",
+                    "seagate",
+                ];
                 for state in &mut self.session.site_states {
-                    state.knowledge = SiteKnowledge::Known;
+                    if showcase_sites.contains(&state.site_id.as_str()) {
+                        state.knowledge = SiteKnowledge::Known;
+                    }
                 }
                 self.screen = GameScreen::Playing;
             }
@@ -229,6 +246,7 @@ impl Game {
                     },
                     camera_target: self.camera.target,
                     camera_zoom: self.camera.zoom,
+                    sprite_showcase: self.capture_sprite_showcase,
                     map_overlay: self.map_overlay,
                     show_chronicle: self.show_chronicle,
                     show_factions: self.show_factions,

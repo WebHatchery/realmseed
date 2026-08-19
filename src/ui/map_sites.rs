@@ -30,7 +30,7 @@ pub(super) fn draw_sites(ctx: &UiContext<'_>, view: &MapView) {
     for site in sites {
         if ctx.session.is_known(&site.id) {
             draw_known_site(ctx, view, site);
-        } else if ctx.session.is_adjacent_unknown(ctx.data, &site.id) {
+        } else if !ctx.sprite_showcase && ctx.session.is_adjacent_unknown(ctx.data, &site.id) {
             draw_unknown_site(ctx, view, site);
         }
     }
