@@ -38,5 +38,10 @@
     "key": "mountain_gate",
     "path": "assets/images/sprites/mountain_gate.png",
     "filter": "linear"
+  },
+  {
+    "key": "road_waystone",
+    "path": "assets/images/sprites/road_waystone.png",
+    "filter": "linear"
   }
 ]

@@ -76,6 +76,9 @@ fn sprite_spec<'a>(
         MarkerKind::Landmark if site.site_type == "pass" => {
             (textures.gate?, 116.0, 118.0, 0.92)
         }
+        MarkerKind::Landmark if site.site_type == "old_road" => {
+            (textures.waystone?, 96.0, 104.0, 0.90)
+        }
         _ => return None,
     };
     Some(SpriteSpec {
