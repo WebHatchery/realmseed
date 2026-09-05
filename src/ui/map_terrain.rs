@@ -364,7 +364,7 @@ fn draw_plains_detail(center: Vec2, size: f32, seed: u32) {
         size * 0.14,
         tint,
     );
-    if seed % 2 == 0 {
+    if seed.is_multiple_of(2) {
         draw_grass_tuft(center + vec2(size * 0.22, -size * 0.10), size * 0.14);
     }
     draw_grass_tuft(center + vec2(-size * 0.28, size * 0.11), size * 0.18);
@@ -442,7 +442,7 @@ fn draw_tree(position: Vec2, size: f32, seed: u32) {
 }
 
 fn draw_hill_detail(center: Vec2, quad: [Vec2; 4], size: f32, seed: u32) {
-    let shift = if seed % 2 == 0 {
+    let shift = if seed.is_multiple_of(2) {
         -size * 0.10
     } else {
         size * 0.08
@@ -519,7 +519,7 @@ fn draw_water_detail(center: Vec2, size: f32, seed: u32) {
     for index in 0..2 {
         let y = center.y + (index as f32 - 0.5) * size * 0.22;
         let x = center.x
-            + if seed % 2 == 0 {
+            + if seed.is_multiple_of(2) {
                 -size * 0.12
             } else {
                 size * 0.12
@@ -545,7 +545,7 @@ fn draw_coast_detail(center: Vec2, quad: [Vec2; 4], size: f32, seed: u32) {
         (size * 0.13).clamp(1.0, 2.4),
         sand,
     );
-    if seed % 2 == 0 {
+    if seed.is_multiple_of(2) {
         draw_circle(
             center.x + size * 0.18,
             center.y,

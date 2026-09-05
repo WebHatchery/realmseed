@@ -13,7 +13,7 @@ pub use road::*;
 pub use settlement::*;
 
 use macroquad_toolkit::assets::TextureConfig;
-use macroquad_toolkit::data_loader::load_embedded_json;
+use macroquad_toolkit::data_loader::load_embedded_json_labeled;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
@@ -180,19 +180,28 @@ pub struct GameData {
 impl GameData {
     pub fn load() -> Result<Self, String> {
         let data = Self {
-            config: load_embedded_json(GAME_CONFIG_JSON)?,
-            terrain: load_embedded_json(TERRAIN_JSON)?,
-            regions: load_embedded_json(REGIONS_JSON)?,
-            sites: load_embedded_json(SITES_JSON)?,
-            roads: load_embedded_json(ROADS_JSON)?,
-            chronicle_templates: load_embedded_json(CHRONICLE_TEMPLATES_JSON)?,
-            settlement_balance: load_embedded_json(SETTLEMENT_BALANCE_JSON)?,
-            road_balance: load_embedded_json(ROAD_BALANCE_JSON)?,
-            event_families: load_embedded_json(EVENT_FAMILIES_JSON)?,
-            event_templates: load_embedded_json(EVENT_TEMPLATES_JSON)?,
-            faction_balance: load_embedded_json(FACTIONS_JSON)?,
-            campaign_balance: load_embedded_json(CAMPAIGN_JSON)?,
-            texture_manifest: load_embedded_json(TEXTURE_MANIFEST_JSON)?,
+            config: load_embedded_json_labeled("game_config", GAME_CONFIG_JSON)?,
+            terrain: load_embedded_json_labeled("terrain", TERRAIN_JSON)?,
+            regions: load_embedded_json_labeled("regions", REGIONS_JSON)?,
+            sites: load_embedded_json_labeled("sites", SITES_JSON)?,
+            roads: load_embedded_json_labeled("roads", ROADS_JSON)?,
+            chronicle_templates: load_embedded_json_labeled(
+                "chronicle_templates",
+                CHRONICLE_TEMPLATES_JSON,
+            )?,
+            settlement_balance: load_embedded_json_labeled(
+                "settlement_balance",
+                SETTLEMENT_BALANCE_JSON,
+            )?,
+            road_balance: load_embedded_json_labeled("road_balance", ROAD_BALANCE_JSON)?,
+            event_families: load_embedded_json_labeled("event_families", EVENT_FAMILIES_JSON)?,
+            event_templates: load_embedded_json_labeled("event_templates", EVENT_TEMPLATES_JSON)?,
+            faction_balance: load_embedded_json_labeled("factions", FACTIONS_JSON)?,
+            campaign_balance: load_embedded_json_labeled("campaign", CAMPAIGN_JSON)?,
+            texture_manifest: load_embedded_json_labeled(
+                "texture_manifest",
+                TEXTURE_MANIFEST_JSON,
+            )?,
         };
         data.validate()?;
         Ok(data)
