@@ -1,5 +1,7 @@
 use realmseed::data::GameData;
+use realmseed::state::migrate_save_value;
 use realmseed::state::{GameSession, Season};
+use serde_json::json;
 
 fn test_data() -> GameData {
     GameData::load().unwrap()
@@ -76,4 +78,17 @@ fn seasons_cycle_and_year_advances_after_winter() {
     session.advance_season(&data);
     assert_eq!(session.clock.season, Season::Spring);
     assert_eq!(session.clock.year, 2);
+}
+
+#[test]
+fn migration_rejects_corrupt_and_unsupported_saves() {
+    let data = test_data();
+
+    let corrupt = migrate_save_value(None, json!({ "data": { "clock": "broken" } }), &data)
+        .expect_err("corrupt save should not become a new campaign");
+    assert!(corrupt.contains("Could not read save"));
+
+    let unsupported = migrate_save_value(Some("9.9.9".to_owned()), json!({}), &data)
+        .expect_err("future save versions should be rejected");
+    assert!(unsupported.contains("Unsupported save version"));
 }

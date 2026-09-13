@@ -685,16 +685,30 @@ fn fill_template(
 }
 
 pub fn migrate_save_value(
-    _detected_version: Option<String>,
+    detected_version: Option<String>,
     value: Value,
     data: &GameData,
 ) -> Result<SaveData, String> {
-    let payload = value.get("data").cloned().unwrap_or(value);
-
-    if let Ok(mut current) = serde_json::from_value::<SaveData>(payload) {
-        current.version = data.config.version.clone();
-        return Ok(current);
+    const SUPPORTED_LEGACY_VERSIONS: &[&str] = &["0.1.0"];
+    if let Some(version) = detected_version.as_deref() {
+        if version != data.config.version && !SUPPORTED_LEGACY_VERSIONS.contains(&version) {
+            return Err(format!(
+                "Unsupported save version `{version}`; expected `{}` or a supported legacy save",
+                data.config.version
+            ));
+        }
     }
 
-    Ok(GameSession::new(data).to_save(&data.config.version))
+    let payload = value.get("data").cloned().unwrap_or(value);
+    let mut current = serde_json::from_value::<SaveData>(payload).map_err(|error| {
+        format!(
+            "Could not read save{}: {error}",
+            detected_version
+                .as_deref()
+                .map(|version| format!(" version `{version}`"))
+                .unwrap_or_default()
+        )
+    })?;
+    current.version = data.config.version.clone();
+    Ok(current)
 }

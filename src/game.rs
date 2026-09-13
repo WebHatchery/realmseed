@@ -69,8 +69,17 @@ impl Game {
         let mut assets = AssetManager::new();
         let placeholder = Image::gen_image_color(16, 16, Color::new(0.75, 0.2, 0.8, 1.0));
         assets.set_placeholder_texture_direct(Texture2D::from_image(&placeholder));
-        let _ = assets.load_asset_pack("assets.zip").await;
-        let _loaded_assets = assets.load_texture_configs(&data.texture_manifest).await;
+        match assets.load_asset_pack("assets.zip").await {
+            Ok(file_count) => println!("Realmseed asset pack loaded: {file_count} files"),
+            Err(error) => eprintln!("Realmseed asset pack unavailable; using fallbacks: {error}"),
+        }
+        let loaded_textures = assets.load_texture_configs(&data.texture_manifest).await;
+        if loaded_textures != data.texture_manifest.len() {
+            eprintln!(
+                "Realmseed loaded {loaded_textures}/{} configured textures; missing assets use the placeholder",
+                data.texture_manifest.len()
+            );
+        }
 
         let notifications = NotificationManager::with_settings(1, 3.0);
 
