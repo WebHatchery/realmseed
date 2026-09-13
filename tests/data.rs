@@ -1,4 +1,4 @@
-use super::*;
+use realmseed::data::GameData;
 
 #[test]
 fn embedded_data_loads_and_matches_phase_contract() {

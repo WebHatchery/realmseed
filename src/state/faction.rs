@@ -433,7 +433,7 @@ impl GameSession {
         }
     }
 
-    pub(super) fn execute_rival_action(
+    pub fn execute_rival_action(
         &mut self,
         data: &GameData,
         goal: FactionGoal,

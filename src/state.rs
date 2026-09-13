@@ -7,17 +7,6 @@ pub mod faction;
 pub mod road;
 pub mod settlement;
 
-#[cfg(test)]
-mod campaign_tests;
-#[cfg(test)]
-mod faction_tests;
-#[cfg(test)]
-mod road_tests;
-#[cfg(test)]
-mod session_tests;
-#[cfg(test)]
-mod settlement_tests;
-
 pub use campaign::*;
 pub use event::*;
 pub use faction::*;

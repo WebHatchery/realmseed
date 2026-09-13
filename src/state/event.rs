@@ -137,7 +137,6 @@ impl GameSession {
         Ok("Deferred event; the issue will keep aging.".to_owned())
     }
 
-    #[cfg(test)]
     pub fn force_next_event(&mut self, data: &GameData) -> Result<String, String> {
         if self.pending_event.is_some() {
             return Err("Resolve or defer the current event first.".to_owned());
@@ -378,7 +377,7 @@ impl GameSession {
         )
     }
 
-    fn can_present_event(&self, data: &GameData, pending: &PendingEventRuntimeState) -> bool {
+    pub fn can_present_event(&self, data: &GameData, pending: &PendingEventRuntimeState) -> bool {
         can_present_event_from_history(data, &self.event_history, self.clock.turn, pending)
     }
 
@@ -624,6 +623,3 @@ fn apply_resource_delta(resources: &mut ResourceStock, delta: ResourceStock) {
 pub fn fill_event_text(text: &str, site_name: &str) -> String {
     text.replace("{site}", site_name)
 }
-
-#[cfg(test)]
-mod tests;

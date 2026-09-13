@@ -1,5 +1,5 @@
-use super::*;
-use crate::data::{FactionGoal, GameData};
+use realmseed::data::{FactionGoal, GameData};
+use realmseed::state::GameSession;
 
 fn test_data() -> GameData {
     GameData::load().unwrap()

@@ -1,5 +1,5 @@
-use super::*;
-use crate::data::{GameData, SettlementTier};
+use realmseed::data::{GameData, SettlementTier};
+use realmseed::state::{GameSession, SettlementStatus};
 
 fn test_data() -> GameData {
     GameData::load().unwrap()

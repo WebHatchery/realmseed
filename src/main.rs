@@ -1,16 +1,8 @@
 //! Realmseed entry point wired to macroquad-toolkit.
 
-#![allow(clippy::too_many_arguments)]
-
 use macroquad::prelude::*;
 use macroquad_toolkit::capture;
-
-mod data;
-mod game;
-mod state;
-mod ui;
-
-use game::Game;
+use realmseed::{game::Game, ui};
 
 fn window_conf() -> Conf {
     capture::capture_window_conf(

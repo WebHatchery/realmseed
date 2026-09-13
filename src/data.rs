@@ -432,6 +432,3 @@ fn validate_featured_event_copy(template: &EventTemplateDef) -> Result<(), Strin
 fn default_chronicle_tag() -> String {
     "memory".to_owned()
 }
-
-#[cfg(test)]
-mod tests;

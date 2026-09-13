@@ -1,5 +1,5 @@
-use super::*;
-use crate::state::GameSession;
+use realmseed::data::{ActiveIssueState, EventStage, GameData};
+use realmseed::state::{ActiveIssueRuntimeState, GameSession, PendingEventRuntimeState};
 
 fn test_data() -> GameData {
     GameData::load().unwrap()
@@ -40,7 +40,7 @@ fn independent_request_choice_updates_independent_target() {
     let data = test_data();
     let mut session = GameSession::new(&data);
     let target_site_id = session.independent_settlements[0].site_id.clone();
-    let issue_id = issue_id("independent_request", &target_site_id);
+    let issue_id = format!("independent_request:{target_site_id}");
     let trust_before = session.independent_settlements[0].trust;
     let pressure_before = session.independent_settlements[0].rival_pressure;
     let source_wealth_before = session

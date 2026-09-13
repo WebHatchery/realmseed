@@ -392,6 +392,3 @@ fn target_weakness_for_event(session: &GameSession, data: &GameData, site_id: &s
         + settlement.rival_pressure
         + isolation
 }
-
-#[cfg(test)]
-mod tests;
