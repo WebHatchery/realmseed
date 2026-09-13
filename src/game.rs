@@ -451,7 +451,10 @@ impl Game {
                 Err(reason) => self.notifications.warning(reason),
             },
             UiAction::OpenIndependentTrade => {
-                match self.session.open_trade_with_selected_independent() {
+                match self
+                    .session
+                    .open_trade_with_selected_independent(&self.data)
+                {
                     Ok(message) => self.notifications.success(message),
                     Err(reason) => self.notifications.warning(reason),
                 }

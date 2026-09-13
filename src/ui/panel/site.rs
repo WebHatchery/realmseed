@@ -191,8 +191,8 @@ pub(super) fn draw_independent_actions(
         y,
         TextStyle::new(14.0, dark::TEXT).params(),
     );
-    let trade_status = ctx.session.independent_trade_status();
-    let integration_status = ctx.session.integration_status();
+    let trade_status = ctx.session.independent_trade_status(ctx.data);
+    let integration_status = ctx.session.integration_status(ctx.data);
     let half = (content.w - 8.0) / 2.0;
     if virtual_icon_button(
         Rect::new(content.x, y + 20.0, half, 30.0),

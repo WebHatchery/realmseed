@@ -498,18 +498,19 @@ impl GameSession {
             .iter()
             .filter(|settlement| settlement.status != SettlementStatus::Active)
             .count() as i32;
-        let legacy_score = controlled * 10
-            + towns * 25
-            + population / 25
-            + connected_roads * 10
-            + integrated * 40
-            + if average_loyalty_stability(self) > 60 {
-                75
+        let scoring = &data.campaign_balance.scoring;
+        let legacy_score = controlled * scoring.controlled_settlement_points
+            + towns * scoring.town_points
+            + population / scoring.population_divisor
+            + connected_roads * scoring.connected_road_points
+            + integrated * scoring.integrated_settlement_points
+            + if average_loyalty_stability(self) > scoring.high_civic_threshold {
+                scoring.high_civic_bonus
             } else {
                 0
             }
-            - lost * 50;
-        let ending_band = ending_band(legacy_score).to_owned();
+            - lost * scoring.lost_settlement_penalty;
+        let ending_band = ending_band(legacy_score, &scoring.ending_bands).to_owned();
         let largest_settlement = self
             .settlements
             .iter()
@@ -575,19 +576,20 @@ fn average_loyalty_stability(session: &GameSession) -> i32 {
     total / (active.len() as i32 * 2)
 }
 
-fn ending_band(score: i32) -> &'static str {
-    match score {
-        i32::MIN..=-1 => "Fallen Charter",
-        0..=149 => "Scarred Survival",
-        150..=299 => "Fragile Realm",
-        300..=499 => "Enduring Realm",
-        _ => "Founding Legend",
-    }
+fn ending_band(score: i32, bands: &[crate::data::EndingBandDef]) -> &str {
+    bands
+        .iter()
+        .rev()
+        .find(|band| score >= band.minimum_score)
+        .map(|band| band.label.as_str())
+        .unwrap_or_else(|| bands[0].label.as_str())
 }
 
 fn strongest_identity(session: &GameSession, data: &GameData) -> String {
     if let Some(ambition_id) = &session.selected_ambition_id {
-        if session.ambition_progress(data, ambition_id) >= 45 {
+        if session.ambition_progress(data, ambition_id)
+            >= data.campaign_balance.scoring.ambition_identity_threshold
+        {
             if let Some(ambition) = data.campaign_balance.ambition(ambition_id) {
                 return ambition.identity_tag.clone();
             }
@@ -608,13 +610,14 @@ fn strongest_identity(session: &GameSession, data: &GameData) -> String {
         .iter()
         .map(|settlement| settlement.stored.wealth)
         .sum::<i32>();
-    if roads >= 6 {
+    let scoring = &data.campaign_balance.scoring;
+    if roads as i32 >= scoring.identity_road_minimum {
         "Roadbound Realm".to_owned()
-    } else if wealth > 250 {
+    } else if wealth > scoring.identity_wealth_minimum {
         "Merchant Realm".to_owned()
-    } else if food > 350 {
+    } else if food > scoring.identity_food_minimum {
         "Breadbasket Realm".to_owned()
-    } else if average_loyalty_stability(session) > 65 {
+    } else if average_loyalty_stability(session) > scoring.identity_civic_minimum {
         "Civic Realm".to_owned()
     } else {
         "Frontier Realm".to_owned()
@@ -629,27 +632,18 @@ fn chronicle_years(session: &GameSession) -> (u32, u32) {
             "notable" => 2,
             _ => 1,
         };
-        let signed = if entry.title.contains("Lost")
-            || entry.title.contains("Hunger")
-            || entry.title.contains("Raid")
-            || entry.title.contains("Behind")
-        {
+        let signed = if matches!(entry.tag.as_str(), "crisis" | "wilderness") {
             -value
         } else {
             value
         };
         *scores.entry(entry.year).or_insert(0) += signed;
     }
-    let worst = scores
-        .iter()
-        .min_by_key(|(_, score)| *score)
-        .map(|(year, _)| *year)
-        .unwrap_or(1);
-    let golden = scores
-        .iter()
-        .max_by_key(|(_, score)| *score)
-        .map(|(year, _)| *year)
-        .unwrap_or(1);
+    let mut years: Vec<(u32, i32)> = scores.into_iter().collect();
+    years.sort_by_key(|(year, score)| (*score, *year));
+    let worst = years.first().map(|(year, _)| *year).unwrap_or(1);
+    years.sort_by_key(|(year, score)| (-*score, *year));
+    let golden = years.first().map(|(year, _)| *year).unwrap_or(1);
     (worst, golden)
 }
 

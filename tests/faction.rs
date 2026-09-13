@@ -51,7 +51,7 @@ fn independent_trade_and_integration_progress() {
 
     scout_site(&mut session, &data, "lowmeadow");
     scout_site(&mut session, &data, "briarford");
-    session.open_trade_with_selected_independent().unwrap();
+    session.open_trade_with_selected_independent(&data).unwrap();
     {
         let independent = session
             .independent_settlements

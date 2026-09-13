@@ -93,5 +93,27 @@
       "name": "Reeve Courts",
       "description": "Improves low-stability settlements and reduces repeated civic pressure."
     }
-  ]
+  ],
+  "scoring": {
+    "controlled_settlement_points": 10,
+    "town_points": 25,
+    "population_divisor": 25,
+    "connected_road_points": 10,
+    "integrated_settlement_points": 40,
+    "high_civic_bonus": 75,
+    "lost_settlement_penalty": 50,
+    "high_civic_threshold": 60,
+    "ambition_identity_threshold": 45,
+    "identity_road_minimum": 6,
+    "identity_wealth_minimum": 250,
+    "identity_food_minimum": 350,
+    "identity_civic_minimum": 65,
+    "ending_bands": [
+      { "id": "fallen", "label": "Fallen Charter", "minimum_score": -2147483648 },
+      { "id": "scarred", "label": "Scarred Survival", "minimum_score": 0 },
+      { "id": "fragile", "label": "Fragile Realm", "minimum_score": 150 },
+      { "id": "enduring", "label": "Enduring Realm", "minimum_score": 300 },
+      { "id": "legend", "label": "Founding Legend", "minimum_score": 500 }
+    ]
+  }
 }

@@ -248,7 +248,19 @@ impl GameData {
         self.roads.iter().filter(move |road| road.connects(site_id))
     }
 
-    fn validate(&self) -> Result<(), String> {
+    pub fn validate(&self) -> Result<(), String> {
+        if self.config.world_width == 0 || self.config.world_height == 0 {
+            return Err("world dimensions must be positive".to_owned());
+        }
+        if !matches!(
+            self.config.starting_season.as_str(),
+            "spring" | "summer" | "autumn" | "winter"
+        ) {
+            return Err(format!(
+                "unsupported starting season `{}`",
+                self.config.starting_season
+            ));
+        }
         if self.config.world_width != self.terrain.width
             || self.config.world_height != self.terrain.height
         {
@@ -266,6 +278,28 @@ impl GameData {
             }
         }
 
+        validate_unique_ids(
+            "terrain",
+            self.terrain
+                .terrains
+                .iter()
+                .map(|terrain| terrain.id.as_str()),
+        )?;
+        validate_unique_ids(
+            "terrain code",
+            self.terrain
+                .terrains
+                .iter()
+                .map(|terrain| terrain.code.as_str()),
+        )?;
+        if self
+            .terrain
+            .terrains
+            .iter()
+            .any(|terrain| terrain.code.chars().count() != 1)
+        {
+            return Err("every terrain code must be one character".to_owned());
+        }
         let terrain_codes: HashSet<&str> = self
             .terrain
             .terrains
@@ -281,6 +315,23 @@ impl GameData {
             }
         }
 
+        validate_unique_ids(
+            "region",
+            self.regions.iter().map(|region| region.id.as_str()),
+        )?;
+        for region in &self.regions {
+            if !point_in_world(
+                &region.label_position,
+                self.config.world_width,
+                self.config.world_height,
+            ) {
+                return Err(format!(
+                    "region {} has an invalid label position",
+                    region.id
+                ));
+            }
+        }
+        validate_unique_ids("site", self.sites.iter().map(|site| site.id.as_str()))?;
         let site_ids: HashSet<&str> = self.sites.iter().map(|site| site.id.as_str()).collect();
         if self.sites.len() != 30 {
             return Err(format!("expected 30 sites, found {}", self.sites.len()));
@@ -322,9 +373,69 @@ impl GameData {
             return Err("expected at least 8 starting visible sites".to_owned());
         }
 
+        for site in &self.sites {
+            if self.region(&site.region_id).is_none() {
+                return Err(format!(
+                    "site {} references unknown region {}",
+                    site.id, site.region_id
+                ));
+            }
+            if !point_in_world(
+                &site.position,
+                self.config.world_width,
+                self.config.world_height,
+            ) {
+                return Err(format!("site {} has an invalid map position", site.id));
+            }
+            let valid_owner = match site.category {
+                SiteCategory::Settlement => {
+                    site.owner.as_deref().is_none_or(|owner| owner == "player")
+                }
+                SiteCategory::Independent => site.owner.as_deref() == Some("independent"),
+                SiteCategory::Landmark => site.owner.is_none(),
+            };
+            if !valid_owner {
+                return Err(format!(
+                    "site {} has an invalid owner for its category",
+                    site.id
+                ));
+            }
+        }
+
+        validate_unique_ids("road", self.roads.iter().map(|road| road.id.as_str()))?;
         for road in &self.roads {
             if !site_ids.contains(road.from.as_str()) || !site_ids.contains(road.to.as_str()) {
                 return Err(format!("road {} references an unknown site", road.id));
+            }
+            if road.from == road.to {
+                return Err(format!("road {} cannot connect a site to itself", road.id));
+            }
+            if road.level > 2 {
+                return Err(format!(
+                    "road {} uses unsupported level {}",
+                    road.id, road.level
+                ));
+            }
+            if !SUPPORTED_ROUTE_TYPES.contains(&road.route_type.as_str()) {
+                return Err(format!(
+                    "road {} uses unsupported route type {}",
+                    road.id, road.route_type
+                ));
+            }
+        }
+
+        for location_id in &self.faction_balance.rival.controlled_locations {
+            let Some(site) = self.site(location_id) else {
+                return Err(format!(
+                    "rival faction references unknown controlled site {}",
+                    location_id
+                ));
+            };
+            if site.category == SiteCategory::Independent {
+                return Err(format!(
+                    "rival faction cannot start controlling independent site {}",
+                    location_id
+                ));
             }
         }
 
@@ -338,6 +449,22 @@ impl GameData {
     }
 
     fn validate_events(&self) -> Result<(), String> {
+        validate_unique_ids(
+            "event family",
+            self.event_families.iter().map(|family| family.id.as_str()),
+        )?;
+        validate_unique_ids(
+            "event template",
+            self.event_templates
+                .iter()
+                .map(|template| template.id.as_str()),
+        )?;
+        validate_unique_ids(
+            "chronicle template",
+            self.chronicle_templates
+                .iter()
+                .map(|template| template.id.as_str()),
+        )?;
         if self.event_families.len() < 12 {
             return Err("expected at least 12 event families".to_owned());
         }
@@ -364,28 +491,59 @@ impl GameData {
                 ));
             }
             for template_id in template_ids {
-                if self.event_template(template_id).is_none() {
+                let Some(template) = self.event_template(template_id) else {
                     return Err(format!(
                         "event family {} references missing template {}",
                         family.id, template_id
                     ));
+                };
+                if template.family_id != family.id
+                    || template.stage != expected_stage(&family, template_id)
+                {
+                    return Err(format!(
+                        "event family {} has inconsistent stage reference {}",
+                        family.id, template_id
+                    ));
                 }
             }
-            let chronicle_count = [
+            let chronicle_ids = [
                 &family.opening_chronicle_template_id,
                 &family.resolution_chronicle_template_id,
-            ]
-            .iter()
-            .filter(|template_id| self.chronicle_template(template_id).is_some())
-            .count();
-            if chronicle_count < 2 {
+            ];
+            if chronicle_ids
+                .iter()
+                .any(|template_id| self.chronicle_template(template_id).is_none())
+            {
                 return Err(format!(
-                    "event family {} needs two chronicle templates",
+                    "event family {} references a missing chronicle template",
                     family.id
                 ));
             }
         }
         for template in &self.event_templates {
+            let Some(family) = self.event_family(&template.family_id) else {
+                return Err(format!(
+                    "event template {} references unknown family {}",
+                    template.id, template.family_id
+                ));
+            };
+            if family
+                .template_ids_for_stage(template.stage)
+                .iter()
+                .all(|id| *id != template.id)
+            {
+                return Err(format!(
+                    "event template {} is not listed for its family stage",
+                    template.id
+                ));
+            }
+            validate_unique_ids(
+                "event choice",
+                template.choices.iter().map(|choice| choice.id.as_str()),
+            )?;
+            if template.choices.is_empty() {
+                return Err(format!("event template {} has no choices", template.id));
+            }
             if FEATURED_EVENT_COPY_FAMILIES.contains(&template.family_id.as_str()) {
                 validate_featured_event_copy(template)?;
             }
@@ -393,6 +551,50 @@ impl GameData {
 
         Ok(())
     }
+}
+
+const SUPPORTED_ROUTE_TYPES: &[&str] = &[
+    "track",
+    "path",
+    "ford",
+    "old_road",
+    "pass",
+    "coast_road",
+    "coast_path",
+    "causeway",
+];
+
+fn point_in_world(point: &MapPoint, width: usize, height: usize) -> bool {
+    point.x >= 0 && point.y >= 0 && (point.x as usize) < width && (point.y as usize) < height
+}
+
+fn validate_unique_ids<'a>(
+    kind: &str,
+    ids: impl IntoIterator<Item = &'a str>,
+) -> Result<(), String> {
+    let mut seen = HashSet::new();
+    for id in ids {
+        if id.is_empty() {
+            return Err(format!("{} id cannot be empty", kind));
+        }
+        if !seen.insert(id) {
+            return Err(format!("duplicate {} id {}", kind, id));
+        }
+    }
+    Ok(())
+}
+
+fn expected_stage(family: &EventFamilyDef, template_id: &str) -> EventStage {
+    for stage in [
+        EventStage::Opening,
+        EventStage::FollowUp,
+        EventStage::Resolution,
+    ] {
+        if family.template_ids_for_stage(stage).contains(&template_id) {
+            return stage;
+        }
+    }
+    EventStage::Opening
 }
 
 const FEATURED_EVENT_COPY_FAMILIES: &[&str] = &["independent_request"];

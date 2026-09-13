@@ -10,6 +10,32 @@ pub struct CampaignBalance {
     pub ambitions: Vec<AmbitionDef>,
     pub projects: Vec<ProjectDef>,
     pub institutions: Vec<InstitutionDef>,
+    pub scoring: CampaignScoringDef,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CampaignScoringDef {
+    pub controlled_settlement_points: i32,
+    pub town_points: i32,
+    pub population_divisor: i32,
+    pub connected_road_points: i32,
+    pub integrated_settlement_points: i32,
+    pub high_civic_bonus: i32,
+    pub lost_settlement_penalty: i32,
+    pub high_civic_threshold: i32,
+    pub ambition_identity_threshold: i32,
+    pub identity_road_minimum: i32,
+    pub identity_wealth_minimum: i32,
+    pub identity_food_minimum: i32,
+    pub identity_civic_minimum: i32,
+    pub ending_bands: Vec<EndingBandDef>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EndingBandDef {
+    pub id: String,
+    pub label: String,
+    pub minimum_score: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -140,6 +166,33 @@ impl CampaignBalance {
         }
         if self.institutions.len() < 2 {
             return Err("campaign needs at least 2 institutions".to_owned());
+        }
+
+        if self.scoring.population_divisor <= 0
+            || self.scoring.high_civic_threshold < 0
+            || self.scoring.ambition_identity_threshold < 0
+            || self.scoring.identity_road_minimum < 0
+            || self.scoring.identity_wealth_minimum < 0
+            || self.scoring.identity_food_minimum < 0
+            || self.scoring.identity_civic_minimum < 0
+        {
+            return Err("campaign scoring thresholds must be non-negative and usable".to_owned());
+        }
+        if self.scoring.ending_bands.is_empty() {
+            return Err("campaign needs at least one ending band".to_owned());
+        }
+        for window in self.scoring.ending_bands.windows(2) {
+            if window[0].minimum_score >= window[1].minimum_score {
+                return Err("ending bands must be ordered by increasing score".to_owned());
+            }
+        }
+        if self
+            .scoring
+            .ending_bands
+            .iter()
+            .any(|band| band.id.is_empty() || band.label.is_empty())
+        {
+            return Err("ending bands must have ids and labels".to_owned());
         }
 
         Ok(())

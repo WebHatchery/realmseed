@@ -1,5 +1,15 @@
 use realmseed::data::GameData;
 
+fn assert_rejected(data: GameData, expected: &str) {
+    let error = data
+        .validate()
+        .expect_err("malformed data should be rejected");
+    assert!(
+        error.contains(expected),
+        "expected `{expected}` in validation error, got `{error}`"
+    );
+}
+
 #[test]
 fn embedded_data_loads_and_matches_phase_contract() {
     let data = GameData::load().unwrap();
@@ -23,4 +33,54 @@ fn embedded_data_loads_and_matches_phase_contract() {
             .count(),
         8
     );
+}
+
+#[test]
+fn validation_rejects_duplicate_and_malformed_world_records() {
+    let data = GameData::load().unwrap();
+
+    let mut duplicate_site = data.clone();
+    duplicate_site.sites[1].id = duplicate_site.sites[0].id.clone();
+    assert_rejected(duplicate_site, "duplicate site id");
+
+    let mut invalid_site_metadata = data.clone();
+    invalid_site_metadata.sites[0].region_id = "missing_region".to_owned();
+    assert_rejected(invalid_site_metadata, "unknown region");
+
+    let mut invalid_site_owner = data.clone();
+    invalid_site_owner.sites[0].owner = Some("ashthorn_clan".to_owned());
+    assert_rejected(invalid_site_owner, "invalid owner");
+}
+
+#[test]
+fn validation_rejects_bad_road_records() {
+    let data = GameData::load().unwrap();
+
+    let mut invalid_level = data.clone();
+    invalid_level.roads[0].level = 3;
+    assert_rejected(invalid_level, "unsupported level");
+
+    let mut invalid_route_type = data;
+    invalid_route_type.roads[0].route_type = "skyway".to_owned();
+    assert_rejected(invalid_route_type, "unsupported route type");
+}
+
+#[test]
+fn validation_rejects_bad_faction_and_event_references() {
+    let data = GameData::load().unwrap();
+
+    let mut invalid_faction_site = data.clone();
+    invalid_faction_site
+        .faction_balance
+        .rival
+        .controlled_locations
+        .push("missing_site".to_owned());
+    assert_rejected(invalid_faction_site, "unknown controlled site");
+
+    let mut invalid_event_stage = data;
+    let resolution_id = invalid_event_stage.event_families[0]
+        .resolution_template_id
+        .clone();
+    invalid_event_stage.event_families[0].opening_template_id = resolution_id;
+    assert_rejected(invalid_event_stage, "inconsistent stage reference");
 }

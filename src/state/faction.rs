@@ -120,7 +120,7 @@ impl GameSession {
             border_pressure: rival.border_pressure,
             recent_losses: 0,
             current_goal: FactionGoal::Expand,
-            goal_age: 4,
+            goal_age: data.faction_balance.rival_actions.goal_max_age,
             action_cooldowns: Vec::new(),
             controlled_locations: rival.controlled_locations.clone(),
             known_targets: Vec::new(),
@@ -130,15 +130,16 @@ impl GameSession {
     }
 
     pub fn create_independent_states(data: &GameData) -> Vec<IndependentSettlementRuntimeState> {
+        let balance = &data.faction_balance.independent_interactions;
         data.sites
             .iter()
             .filter(|site| site.category == SiteCategory::Independent)
             .map(|site| IndependentSettlementRuntimeState {
                 site_id: site.id.clone(),
-                trust: 30,
-                autonomy: 70,
+                trust: balance.starting_trust,
+                autonomy: balance.starting_autonomy,
                 integration_progress: 0,
-                rival_pressure: 10,
+                rival_pressure: balance.starting_rival_pressure,
                 local_need: "road access".to_owned(),
                 trade_relationship: false,
                 protection_relationship: false,
@@ -164,21 +165,29 @@ impl GameSession {
             .find(|state| state.site_id == self.selected_site_id)
     }
 
-    pub fn independent_trade_status(&self) -> SettlementActionStatus {
+    pub fn independent_trade_status(&self, data: &GameData) -> SettlementActionStatus {
         let Some(independent) = self.selected_independent() else {
             return SettlementActionStatus::disabled("No independent settlement selected.");
         };
         if independent.trade_relationship {
             return SettlementActionStatus::disabled("Trade is already open.");
         }
-        if independent.trust < 20 {
-            return SettlementActionStatus::disabled("Trust is too low for trade.");
+        let balance = &data.faction_balance.independent_interactions;
+        if independent.trust < balance.trade_min_trust {
+            return SettlementActionStatus::disabled(format!(
+                "Needs trust {}+ for trade.",
+                balance.trade_min_trust
+            ));
         }
 
-        SettlementActionStatus::enabled("Open trade: +15 trust, starts a trade relationship.")
+        SettlementActionStatus::enabled(format!(
+            "Open trade: +{} trust, starts a trade relationship.",
+            balance.trade_trust_delta
+        ))
     }
 
-    pub fn integration_status(&self) -> SettlementActionStatus {
+    pub fn integration_status(&self, data: &GameData) -> SettlementActionStatus {
+        let balance = &data.faction_balance.independent_interactions;
         let Some(independent) = self.selected_independent() else {
             return SettlementActionStatus::disabled("No independent settlement selected.");
         };
@@ -190,20 +199,31 @@ impl GameSession {
                 "Resistant; improve trust or reduce pressure.",
             );
         }
-        if independent.trust < 45 {
-            return SettlementActionStatus::disabled("Needs trust 45+.");
+        if independent.trust < balance.integration_min_trust {
+            return SettlementActionStatus::disabled(format!(
+                "Needs trust {}+.",
+                balance.integration_min_trust
+            ));
         }
-        if independent.autonomy >= 82 || independent.rival_pressure >= 62 {
+        if independent.autonomy >= balance.integration_max_autonomy
+            || independent.rival_pressure >= balance.integration_max_rival_pressure
+        {
             return SettlementActionStatus::disabled(
                 "Autonomy or rival pressure is too high for integration.",
             );
         }
 
-        SettlementActionStatus::enabled("Begin integration: +30 progress, autonomy falls.")
+        SettlementActionStatus::enabled(format!(
+            "Begin integration: +{} progress, autonomy falls.",
+            balance.integration_progress_delta
+        ))
     }
 
-    pub fn open_trade_with_selected_independent(&mut self) -> Result<String, String> {
-        let status = self.independent_trade_status();
+    pub fn open_trade_with_selected_independent(
+        &mut self,
+        data: &GameData,
+    ) -> Result<String, String> {
+        let status = self.independent_trade_status(data);
         if !status.enabled {
             return Err(status.reason);
         }
@@ -214,14 +234,19 @@ impl GameSession {
             .ok_or_else(|| "No independent settlement selected.".to_owned())?;
         independent.trade_relationship = true;
         independent.integration_state = IntegrationState::Trading;
-        independent.trust = (independent.trust + 15).clamp(0, 100);
+        independent.trust = (independent.trust
+            + data
+                .faction_balance
+                .independent_interactions
+                .trade_trust_delta)
+            .clamp(0, 100);
         independent.local_need = "market access".to_owned();
 
         Ok("Opened independent trade relationship.".to_owned())
     }
 
     pub fn begin_selected_integration(&mut self, data: &GameData) -> Result<String, String> {
-        let status = self.integration_status();
+        let status = self.integration_status(data);
         if !status.enabled {
             return Err(status.reason);
         }
@@ -232,8 +257,11 @@ impl GameSession {
             .find(|state| state.site_id == selected_site_id)
             .ok_or_else(|| "No independent settlement selected.".to_owned())?;
         independent.integration_state = IntegrationState::Integrating;
-        independent.integration_progress = (independent.integration_progress + 30).clamp(0, 100);
-        independent.autonomy = (independent.autonomy - 10).clamp(0, 100);
+        let balance = &data.faction_balance.independent_interactions;
+        independent.integration_progress =
+            (independent.integration_progress + balance.integration_progress_delta).clamp(0, 100);
+        independent.autonomy =
+            (independent.autonomy + balance.integration_autonomy_delta).clamp(0, 100);
         if independent.integration_progress >= 100 {
             independent.integration_state = IntegrationState::Integrated;
             self.add_chronicle_entry(data, "independent_integrated", Some(&selected_site_id));
@@ -282,7 +310,7 @@ impl GameSession {
             .map(|state| state.site_id.clone())
             .collect();
 
-        if self.rival_faction.goal_age >= 4
+        if self.rival_faction.goal_age >= data.faction_balance.rival_actions.goal_max_age
             || !self.goal_has_target(data, self.rival_faction.current_goal)
         {
             self.rival_faction.current_goal = self.score_rival_goal(data);
@@ -317,7 +345,7 @@ impl GameSession {
         }
         self.rival_faction.action_cooldowns.push(FactionCooldown {
             key: self.rival_faction.current_goal.label().to_owned(),
-            remaining: 2,
+            remaining: data.faction_balance.rival_actions.action_cooldown,
         });
         1
     }
@@ -367,10 +395,10 @@ impl GameSession {
             if self.rival_faction.personality == "Opportunist"
                 && matches!(goal, FactionGoal::Raid | FactionGoal::Influence)
             {
-                score += 20;
+                score += data.faction_balance.rival_actions.opportunist_bonus;
             }
             if goal == self.rival_faction.current_goal {
-                score += 8;
+                score += data.faction_balance.rival_actions.repeat_goal_bonus;
             }
             scores.push(GoalScore { goal, score });
         }
@@ -439,6 +467,7 @@ impl GameSession {
         goal: FactionGoal,
         target_site_id: &str,
     ) -> String {
+        let balance = &data.faction_balance.rival_actions;
         match goal {
             FactionGoal::Expand => {
                 if !self.rival_controls_site(target_site_id) {
@@ -446,8 +475,9 @@ impl GameSession {
                         .controlled_locations
                         .push(target_site_id.to_owned());
                 }
-                self.rival_faction.border_pressure =
-                    (self.rival_faction.border_pressure + 4).clamp(0, 100);
+                self.rival_faction.border_pressure = (self.rival_faction.border_pressure
+                    + balance.expand_border_pressure_delta)
+                    .clamp(0, 100);
                 "claimed a frontier site".to_owned()
             }
             FactionGoal::Raid => self.resolve_rival_raid(data, target_site_id),
@@ -457,8 +487,11 @@ impl GameSession {
                     .iter_mut()
                     .find(|settlement| settlement.location_id == target_site_id)
                 {
-                    settlement.rival_pressure = (settlement.rival_pressure + 8).clamp(0, 100);
-                    settlement.loyalty = (settlement.loyalty - 4).clamp(0, 100);
+                    settlement.rival_pressure = (settlement.rival_pressure
+                        + balance.influence_rival_pressure_delta)
+                        .clamp(0, 100);
+                    settlement.loyalty =
+                        (settlement.loyalty + balance.influence_loyalty_delta).clamp(0, 100);
                     add_unique_issue(&mut settlement.active_issue_ids, "rival_influence");
                 }
                 "supported separatist voices".to_owned()
@@ -469,22 +502,31 @@ impl GameSession {
                     .iter_mut()
                     .find(|state| state.site_id == target_site_id)
                 {
-                    independent.rival_pressure = (independent.rival_pressure + 6).clamp(0, 100);
-                    independent.trust = (independent.trust - 3).clamp(0, 100);
+                    independent.rival_pressure = (independent.rival_pressure
+                        + balance.trade_rival_pressure_delta)
+                        .clamp(0, 100);
+                    independent.trust =
+                        (independent.trust + balance.trade_trust_delta).clamp(0, 100);
                 }
                 "sent merchants to an independent settlement".to_owned()
             }
             FactionGoal::Fortify => {
-                self.rival_faction.confidence = (self.rival_faction.confidence + 4).clamp(0, 100);
+                self.rival_faction.confidence = (self.rival_faction.confidence
+                    + balance.fortify_confidence_delta)
+                    .clamp(0, 100);
                 "fortified a border holding".to_owned()
             }
             FactionGoal::Recover => {
-                self.rival_faction.recent_losses = (self.rival_faction.recent_losses - 4).max(0);
-                self.rival_faction.confidence = (self.rival_faction.confidence + 2).clamp(0, 100);
+                self.rival_faction.recent_losses =
+                    (self.rival_faction.recent_losses - balance.recover_losses_delta).max(0);
+                self.rival_faction.confidence = (self.rival_faction.confidence
+                    + balance.recover_confidence_delta)
+                    .clamp(0, 100);
                 "recovered from recent losses".to_owned()
             }
             FactionGoal::Confront => {
-                self.rival_faction.hostility = (self.rival_faction.hostility + 5).clamp(0, 100);
+                self.rival_faction.hostility =
+                    (self.rival_faction.hostility + balance.confront_hostility_delta).clamp(0, 100);
                 if self.close_route_near_target(data, target_site_id) {
                     self.add_chronicle_entry(data, "rival_close_pass", Some(target_site_id));
                     "issued a border demand and closed a pass".to_owned()
@@ -493,17 +535,20 @@ impl GameSession {
                 }
             }
             FactionGoal::Appease => {
-                self.rival_faction.hostility = (self.rival_faction.hostility - 6).clamp(0, 100);
+                self.rival_faction.hostility =
+                    (self.rival_faction.hostility + balance.appease_hostility_delta).clamp(0, 100);
                 "sent a cautious truce feeler".to_owned()
             }
         }
     }
 
     fn resolve_rival_raid(&mut self, data: &GameData, target_site_id: &str) -> String {
+        let balance = &data.faction_balance.rival_actions;
+        let raid = &balance.raid;
         let connected_bonus = if self.is_site_in_capital_network(data, target_site_id) {
-            10
+            raid.connected_defence_bonus
         } else {
-            -10
+            raid.isolated_defence_penalty
         };
         let road_target = self.routes.iter().position(|route| {
             route.connects(target_site_id)
@@ -517,16 +562,20 @@ impl GameSession {
         else {
             return "found no legal raid target".to_owned();
         };
-        let attack = self.rival_faction.confidence + self.rival_faction.hostility / 2;
-        let defence = settlement.defence + settlement.stability / 2 + connected_bonus;
+        let attack =
+            self.rival_faction.confidence + self.rival_faction.hostility / raid.hostility_divisor;
+        let defence =
+            settlement.defence + settlement.stability / raid.stability_divisor + connected_bonus;
         let margin = attack - defence;
-        if margin > 15 {
-            settlement.stored.food = (settlement.stored.food - 25).max(0);
-            settlement.stored.wealth = (settlement.stored.wealth - 20).max(0);
-            settlement.stability = (settlement.stability - 8).clamp(0, 100);
-            settlement.loyalty = (settlement.loyalty - 5).clamp(0, 100);
-            settlement.rival_pressure = (settlement.rival_pressure + 10).clamp(0, 100);
-            self.rival_faction.hostility = (self.rival_faction.hostility + 4).clamp(0, 100);
+        if margin > raid.success_margin {
+            settlement.stored.food = (settlement.stored.food - raid.food_loss).max(0);
+            settlement.stored.wealth = (settlement.stored.wealth - raid.wealth_loss).max(0);
+            settlement.stability = (settlement.stability - raid.stability_loss).clamp(0, 100);
+            settlement.loyalty = (settlement.loyalty - raid.loyalty_loss).clamp(0, 100);
+            settlement.rival_pressure =
+                (settlement.rival_pressure + raid.rival_pressure_delta).clamp(0, 100);
+            self.rival_faction.hostility =
+                (self.rival_faction.hostility + raid.hostility_delta).clamp(0, 100);
             self.add_chronicle_entry(data, "rival_major_raid", Some(target_site_id));
             if let Some(route_index) = road_target {
                 self.routes[route_index].condition = RouteCondition::Damaged;
@@ -540,14 +589,16 @@ impl GameSession {
                 "raided successfully after reading weak supply".to_owned()
             }
         } else {
-            settlement.defence = (settlement.defence + 2).clamp(0, 100);
-            self.rival_faction.recent_losses += 3;
-            self.rival_faction.fear = (self.rival_faction.fear + 3).clamp(0, 100);
+            settlement.defence = (settlement.defence + raid.resistance_defence_delta).clamp(0, 100);
+            self.rival_faction.recent_losses += raid.resistance_recent_losses_delta;
+            self.rival_faction.fear =
+                (self.rival_faction.fear + raid.resistance_fear_delta).clamp(0, 100);
             "tested the border but met resistance".to_owned()
         }
     }
 
     fn update_independents(&mut self, data: &GameData) -> usize {
+        let balance = &data.faction_balance.independent_interactions;
         let mut requests = Vec::new();
         let mut protection_requests = Vec::new();
         let mut resistances = Vec::new();
@@ -556,16 +607,21 @@ impl GameSession {
             if independent.integration_state == IntegrationState::Integrated {
                 continue;
             }
-            independent.rival_pressure = (independent.rival_pressure + 1).clamp(0, 100);
+            independent.rival_pressure =
+                (independent.rival_pressure + balance.seasonal_pressure_delta).clamp(0, 100);
             if independent.trade_relationship {
-                independent.trust = (independent.trust + 1).clamp(0, 100);
+                independent.trust =
+                    (independent.trust + balance.seasonal_trade_trust_delta).clamp(0, 100);
             }
-            if independent.rival_pressure > 35 && independent.local_need != "aid requested" {
+            if independent.rival_pressure > balance.request_pressure_threshold
+                && independent.local_need != "aid requested"
+            {
                 independent.local_need = "aid requested".to_owned();
-                independent.autonomy = (independent.autonomy + 4).clamp(0, 100);
+                independent.autonomy =
+                    (independent.autonomy + balance.request_autonomy_delta).clamp(0, 100);
                 requests.push(independent.site_id.clone());
             }
-            if independent.rival_pressure > 50
+            if independent.rival_pressure > balance.protection_pressure_threshold
                 && !independent.protection_relationship
                 && independent.local_need != "protection"
             {
@@ -573,13 +629,17 @@ impl GameSession {
                 protection_requests.push(independent.site_id.clone());
             }
             if independent.integration_state == IntegrationState::Integrating
-                && (independent.autonomy >= 82 || independent.rival_pressure >= 62)
+                && (independent.autonomy >= balance.resistance_autonomy_threshold
+                    || independent.rival_pressure >= balance.resistance_pressure_threshold)
             {
                 independent.integration_state = IntegrationState::Resistant;
-                independent.integration_progress = (independent.integration_progress - 20).max(0);
+                independent.integration_progress =
+                    (independent.integration_progress - balance.resistance_progress_delta).max(0);
                 resistances.push(independent.site_id.clone());
             }
-            if independent.rival_pressure >= 78 && independent.trust <= 20 {
+            if independent.rival_pressure >= balance.defection_pressure_threshold
+                && independent.trust <= balance.defection_trust_threshold
+            {
                 independent.integration_state = IntegrationState::Resistant;
                 defections.push(independent.site_id.clone());
             }
@@ -655,7 +715,8 @@ impl GameSession {
             let patrol = completed_project_regions
                 .iter()
                 .any(|region_id| region_id == &pressure.region_id);
-            let mut delta = 2 + isolated + wilderness_modifier;
+            let mut delta =
+                data.faction_balance.wilderness_seasonal_delta + isolated + wilderness_modifier;
             delta -= roads * data.faction_balance.road_pressure_reduction;
             delta -= fortifications * data.faction_balance.fortification_pressure_reduction;
             if patrol {
