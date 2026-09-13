@@ -424,200 +424,6 @@ impl Game {
                 }
             }
             UiAction::DeleteSave => self.delete_save(),
-            UiAction::SelectSite(site_id) => {
-                if self.session.select_site(&self.data, &site_id) {
-                    if let Some(site) = self.data.site(&site_id) {
-                        self.notifications.info(
-                            self.data
-                                .text_with("game.selected", &[("{site}", &site.name)]),
-                        );
-                    }
-                }
-            }
-            UiAction::ScoutSelectedSite => match self.session.scout_selected_site(&self.data) {
-                Ok(message) => {
-                    self.notifications.success(message);
-                }
-                Err(reason) => self.notifications.warning(reason),
-            },
-            UiAction::FoundCamp => match self.session.found_selected_camp(&self.data) {
-                Ok(message) => {
-                    self.notifications.success(message);
-                }
-                Err(reason) => self.notifications.warning(reason),
-            },
-            UiAction::UpgradeSelectedSettlement => {
-                match self.session.upgrade_selected_settlement(&self.data) {
-                    Ok(message) => {
-                        self.notifications.success(message);
-                    }
-                    Err(reason) => self.notifications.warning(reason),
-                }
-            }
-            UiAction::SetSettlementFocus(focus_id) => {
-                match self
-                    .session
-                    .set_selected_settlement_focus(&self.data, &focus_id)
-                {
-                    Ok(message) => self.notifications.info(message),
-                    Err(reason) => self.notifications.warning(reason),
-                }
-            }
-            UiAction::BuildOrUpgradeRoute(route_id) => {
-                match self.session.build_or_upgrade_route(&self.data, &route_id) {
-                    Ok(message) => {
-                        self.notifications.success(message);
-                    }
-                    Err(reason) => self.notifications.warning(reason),
-                }
-            }
-            UiAction::CompleteRegionalProject(region_id) => {
-                match self
-                    .session
-                    .complete_regional_project(&self.data, &region_id)
-                {
-                    Ok(message) => {
-                        self.notifications.success(message);
-                    }
-                    Err(reason) => self.notifications.warning(reason),
-                }
-            }
-            UiAction::ResolveEventChoice(choice_id) => {
-                match self
-                    .session
-                    .resolve_pending_event_choice(&self.data, &choice_id)
-                {
-                    Ok(message) => {
-                        self.notifications.success(message);
-                    }
-                    Err(reason) => self.notifications.warning(reason),
-                }
-            }
-            UiAction::DeferEvent => match self.session.defer_pending_event() {
-                Ok(message) => self.notifications.warning(message),
-                Err(reason) => self.notifications.warning(reason),
-            },
-            UiAction::OpenIndependentTrade => {
-                match self
-                    .session
-                    .open_trade_with_selected_independent(&self.data)
-                {
-                    Ok(message) => self.notifications.success(message),
-                    Err(reason) => self.notifications.warning(reason),
-                }
-            }
-            UiAction::BeginIndependentIntegration => {
-                match self.session.begin_selected_integration(&self.data) {
-                    Ok(message) => {
-                        self.notifications.success(message);
-                    }
-                    Err(reason) => self.notifications.warning(reason),
-                }
-            }
-            UiAction::SelectAmbition(ambition_id) => {
-                match self.session.select_ambition(&self.data, &ambition_id) {
-                    Ok(message) => {
-                        self.notifications.success(message);
-                    }
-                    Err(reason) => self.notifications.warning(reason),
-                }
-            }
-            UiAction::CompleteProject(project_id) => {
-                match self.session.complete_project(&self.data, &project_id) {
-                    Ok(message) => {
-                        self.notifications.success(message);
-                    }
-                    Err(reason) => self.notifications.warning(reason),
-                }
-            }
-            UiAction::ActivateInstitution(institution_id) => {
-                match self
-                    .session
-                    .activate_institution(&self.data, &institution_id)
-                {
-                    Ok(message) => {
-                        self.notifications.success(message);
-                    }
-                    Err(reason) => self.notifications.warning(reason),
-                }
-            }
-            UiAction::AdvanceSeason => {
-                let report = self.session.advance_season(&self.data);
-                let season = self.session.clock.season.label().to_owned();
-                let year = self.session.clock.year.to_string();
-                self.notifications.info(
-                    self.data
-                        .text_with("game.season", &[("{season}", &season), ("{year}", &year)]),
-                );
-                if report.food_shortages > 0 {
-                    let count = report.food_shortages.to_string();
-                    self.notifications.warning(
-                        self.data
-                            .text_with("game.food_shortage", &[("{count}", &count)]),
-                    );
-                }
-                if report.settlements_lost > 0 {
-                    let count = report.settlements_lost.to_string();
-                    self.notifications.danger(
-                        self.data
-                            .text_with("game.settlement_lost", &[("{count}", &count)]),
-                    );
-                }
-                if report.road_warnings > 0 {
-                    let count = report.road_warnings.to_string();
-                    self.notifications.warning(
-                        self.data
-                            .text_with("game.road_warning", &[("{count}", &count)]),
-                    );
-                }
-                if report.isolated_settlements > 0 {
-                    let count = report.isolated_settlements.to_string();
-                    self.notifications
-                        .warning(self.data.text_with("game.isolated", &[("{count}", &count)]));
-                }
-                if report.unmanaged_strain > 0 {
-                    let count = report.unmanaged_strain.to_string();
-                    self.notifications.info(
-                        self.data
-                            .text_with("game.unmanaged_strain", &[("{count}", &count)]),
-                    );
-                }
-                if report.events_triggered > 0 {
-                    let count = report.events_triggered.to_string();
-                    self.notifications.info(
-                        self.data
-                            .text_with("game.event_pending", &[("{count}", &count)]),
-                    );
-                }
-                if report.issues_escalated > 0 {
-                    let count = report.issues_escalated.to_string();
-                    self.notifications.warning(
-                        self.data
-                            .text_with("game.issue_escalated", &[("{count}", &count)]),
-                    );
-                }
-                if report.rival_actions > 0 {
-                    self.notifications.info(self.data.text("game.rival_acted"));
-                }
-                if report.independent_requests > 0 {
-                    let count = report.independent_requests.to_string();
-                    self.notifications.warning(
-                        self.data
-                            .text_with("game.independent_request", &[("{count}", &count)]),
-                    );
-                }
-                if report.wilderness_changes > 0 {
-                    let count = report.wilderness_changes.to_string();
-                    self.notifications.warning(
-                        self.data
-                            .text_with("game.wilderness_changed", &[("{count}", &count)]),
-                    );
-                }
-                if report.campaign_finished {
-                    self.notifications
-                        .success(self.data.text("game.campaign_complete"));
-                }
-            }
             UiAction::ToggleChronicle => {
                 self.show_chronicle = !self.show_chronicle;
                 if self.show_chronicle {
@@ -642,7 +448,171 @@ impl Game {
             }
             UiAction::ZoomMapIn => self.zoom_map(1.16),
             UiAction::ZoomMapOut => self.zoom_map(0.86),
+            action => self.apply_gameplay_action(action),
         }
+    }
+
+    fn apply_gameplay_action(&mut self, action: UiAction) {
+        match action {
+            UiAction::SelectSite(site_id) => self.select_site(site_id),
+            UiAction::ScoutSelectedSite => {
+                self.notify_success_with(|session, data| session.scout_selected_site(data))
+            }
+            UiAction::FoundCamp => {
+                self.notify_success_with(|session, data| session.found_selected_camp(data))
+            }
+            UiAction::UpgradeSelectedSettlement => {
+                self.notify_success_with(|session, data| session.upgrade_selected_settlement(data))
+            }
+            UiAction::SetSettlementFocus(focus_id) => self.notify_info_with(|session, data| {
+                session.set_selected_settlement_focus(data, &focus_id)
+            }),
+            UiAction::BuildOrUpgradeRoute(route_id) => self.notify_success_with(|session, data| {
+                session.build_or_upgrade_route(data, &route_id)
+            }),
+            UiAction::CompleteRegionalProject(region_id) => {
+                self.notify_success_with(|session, data| {
+                    session.complete_regional_project(data, &region_id)
+                })
+            }
+            UiAction::ResolveEventChoice(choice_id) => self.notify_success_with(|session, data| {
+                session.resolve_pending_event_choice(data, &choice_id)
+            }),
+            UiAction::DeferEvent => {
+                self.notify_warning_with(|session, _| session.defer_pending_event())
+            }
+            UiAction::OpenIndependentTrade => self.notify_success_with(|session, data| {
+                session.open_trade_with_selected_independent(data)
+            }),
+            UiAction::BeginIndependentIntegration => {
+                self.notify_success_with(|session, data| session.begin_selected_integration(data))
+            }
+            UiAction::SelectAmbition(ambition_id) => self
+                .notify_success_with(|session, data| session.select_ambition(data, &ambition_id)),
+            UiAction::CompleteProject(project_id) => self
+                .notify_success_with(|session, data| session.complete_project(data, &project_id)),
+            UiAction::ActivateInstitution(institution_id) => {
+                self.notify_success_with(|session, data| {
+                    session.activate_institution(data, &institution_id)
+                })
+            }
+            UiAction::AdvanceSeason => self.advance_season(),
+            _ => unreachable!("non-gameplay action routed to gameplay handler"),
+        }
+    }
+
+    fn select_site(&mut self, site_id: String) {
+        if self.session.select_site(&self.data, &site_id) {
+            if let Some(site) = self.data.site(&site_id) {
+                self.notifications.info(
+                    self.data
+                        .text_with("game.selected", &[("{site}", &site.name)]),
+                );
+            }
+        }
+    }
+
+    fn advance_season(&mut self) {
+        let report = self.session.advance_season(&self.data);
+        let season = self.session.clock.season.label().to_owned();
+        let year = self.session.clock.year.to_string();
+        self.notifications.info(
+            self.data
+                .text_with("game.season", &[("{season}", &season), ("{year}", &year)]),
+        );
+        self.notify_season_counts(&report);
+        if report.campaign_finished {
+            self.notifications
+                .success(self.data.text("game.campaign_complete"));
+        }
+    }
+
+    fn notify_season_counts(&mut self, report: &crate::state::SeasonAdvanceReport) {
+        self.notify_count(report.food_shortages as i64, "game.food_shortage", false);
+        self.notify_count(report.settlements_lost as i64, "game.settlement_lost", true);
+        self.notify_count(report.road_warnings as i64, "game.road_warning", false);
+        self.notify_count(report.isolated_settlements as i64, "game.isolated", false);
+        self.notify_count(
+            report.unmanaged_strain as i64,
+            "game.unmanaged_strain",
+            false,
+        );
+        self.notify_count(report.events_triggered as i64, "game.event_pending", false);
+        self.notify_count(
+            report.issues_escalated as i64,
+            "game.issue_escalated",
+            false,
+        );
+        if report.rival_actions > 0 {
+            self.notifications.info(self.data.text("game.rival_acted"));
+        }
+        self.notify_count(
+            report.independent_requests as i64,
+            "game.independent_request",
+            false,
+        );
+        self.notify_count(
+            report.wilderness_changes as i64,
+            "game.wilderness_changed",
+            false,
+        );
+    }
+
+    fn notify_count(&mut self, count: i64, text_id: &str, danger: bool) {
+        if count == 0 {
+            return;
+        }
+        let count = count.to_string();
+        let message = self.data.text_with(text_id, &[("{count}", &count)]);
+        if danger {
+            self.notifications.danger(message);
+        } else {
+            self.notifications.warning(message);
+        }
+    }
+
+    fn notify_success_result(&mut self, result: Result<String, String>) {
+        match result {
+            Ok(message) => self.notifications.success(message),
+            Err(reason) => self.notifications.warning(reason),
+        }
+    }
+
+    fn notify_success_with<F>(&mut self, action: F)
+    where
+        F: FnOnce(&mut GameSession, &GameData) -> Result<String, String>,
+    {
+        let result = action(&mut self.session, &self.data);
+        self.notify_success_result(result);
+    }
+
+    fn notify_info_result(&mut self, result: Result<String, String>) {
+        match result {
+            Ok(message) => self.notifications.info(message),
+            Err(reason) => self.notifications.warning(reason),
+        }
+    }
+
+    fn notify_info_with<F>(&mut self, action: F)
+    where
+        F: FnOnce(&mut GameSession, &GameData) -> Result<String, String>,
+    {
+        let result = action(&mut self.session, &self.data);
+        self.notify_info_result(result);
+    }
+
+    fn notify_warning_result(&mut self, result: Result<String, String>) {
+        match result {
+            Ok(message) | Err(message) => self.notifications.warning(message),
+        }
+    }
+
+    fn notify_warning_with<F>(&mut self, action: F)
+    where
+        F: FnOnce(&mut GameSession, &GameData) -> Result<String, String>,
+    {
+        let result = action(&mut self.session, &self.data);
+        self.notify_warning_result(result);
     }
 
     fn zoom_map(&mut self, factor: f32) {

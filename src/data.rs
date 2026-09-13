@@ -304,6 +304,21 @@ impl GameData {
     }
 
     pub fn validate(&self) -> Result<(), String> {
+        self.validate_world()?;
+        self.validate_sites_and_roads()?;
+        self.validate_faction_links()?;
+
+        self.settlement_balance.validate()?;
+        self.road_balance.validate()?;
+        self.validate_events()?;
+        self.faction_balance.validate()?;
+        self.campaign_balance.validate()?;
+        self.text.validate()?;
+
+        Ok(())
+    }
+
+    fn validate_world(&self) -> Result<(), String> {
         if self.config.world_width == 0 || self.config.world_height == 0 {
             return Err("world dimensions must be positive".to_owned());
         }
@@ -386,6 +401,10 @@ impl GameData {
                 ));
             }
         }
+        Ok(())
+    }
+
+    fn validate_sites_and_roads(&self) -> Result<(), String> {
         validate_unique_ids("site", self.sites.iter().map(|site| site.id.as_str()))?;
         let site_ids: HashSet<&str> = self.sites.iter().map(|site| site.id.as_str()).collect();
         if self.sites.len() != 30 {
@@ -479,6 +498,10 @@ impl GameData {
             }
         }
 
+        Ok(())
+    }
+
+    fn validate_faction_links(&self) -> Result<(), String> {
         for location_id in &self.faction_balance.rival.controlled_locations {
             let Some(site) = self.site(location_id) else {
                 return Err(format!(
@@ -493,13 +516,6 @@ impl GameData {
                 ));
             }
         }
-
-        self.settlement_balance.validate()?;
-        self.road_balance.validate()?;
-        self.validate_events()?;
-        self.faction_balance.validate()?;
-        self.campaign_balance.validate()?;
-        self.text.validate()?;
 
         Ok(())
     }

@@ -261,17 +261,17 @@ impl GameSession {
             };
             if issue.response_score >= issue.improvement_threshold {
                 issue.state = ActiveIssueState::Resolution;
-                if let Some(template_id) = select_template_for_stage(
-                    &event_history,
+                if let Some(template_id) = select_template_for_stage(TemplateSelection {
+                    event_history: &event_history,
                     current_turn,
                     campaign_seed,
                     data,
                     family,
-                    EventStage::Resolution,
-                    &issue.target_site_id,
-                    issue.severity,
-                    "Player response improved the issue.",
-                ) {
+                    stage: EventStage::Resolution,
+                    target_site_id: &issue.target_site_id,
+                    severity: issue.severity,
+                    cause: "Player response improved the issue.",
+                }) {
                     pending_events.push(make_pending_for_issue(
                         family,
                         issue,
@@ -306,17 +306,17 @@ impl GameSession {
                 if issue.state == ActiveIssueState::Escalating {
                     issue.severity = (issue.severity + 1).clamp(1, 3);
                 }
-                if let Some(template_id) = select_template_for_stage(
-                    &event_history,
+                if let Some(template_id) = select_template_for_stage(TemplateSelection {
+                    event_history: &event_history,
                     current_turn,
                     campaign_seed,
                     data,
                     family,
-                    EventStage::FollowUp,
-                    &issue.target_site_id,
-                    issue.severity,
-                    "The active issue escalated after neglect.",
-                ) {
+                    stage: EventStage::FollowUp,
+                    target_site_id: &issue.target_site_id,
+                    severity: issue.severity,
+                    cause: "The active issue escalated after neglect.",
+                }) {
                     pending_events.push(make_pending_for_issue(
                         family,
                         issue,
@@ -364,17 +364,17 @@ impl GameSession {
         severity: i32,
         cause: &str,
     ) -> Option<String> {
-        select_template_for_stage(
-            &self.event_history,
-            self.clock.turn,
-            self.campaign_seed,
+        select_template_for_stage(TemplateSelection {
+            event_history: &self.event_history,
+            current_turn: self.clock.turn,
+            campaign_seed: self.campaign_seed,
             data,
             family,
             stage,
             target_site_id,
             severity,
             cause,
-        )
+        })
     }
 
     pub fn can_present_event(&self, data: &GameData, pending: &PendingEventRuntimeState) -> bool {
@@ -475,18 +475,30 @@ fn issue_id(family_id: &str, target_site_id: &str) -> String {
     format!("{}:{}", family_id, target_site_id)
 }
 
-#[allow(clippy::too_many_arguments)]
-fn select_template_for_stage(
-    event_history: &[EventHistoryEntry],
+struct TemplateSelection<'a> {
+    event_history: &'a [EventHistoryEntry],
     current_turn: u32,
     campaign_seed: u64,
-    data: &GameData,
-    family: &EventFamilyDef,
+    data: &'a GameData,
+    family: &'a EventFamilyDef,
     stage: EventStage,
-    target_site_id: &str,
+    target_site_id: &'a str,
     severity: i32,
-    cause: &str,
-) -> Option<String> {
+    cause: &'a str,
+}
+
+fn select_template_for_stage(request: TemplateSelection<'_>) -> Option<String> {
+    let TemplateSelection {
+        event_history,
+        current_turn,
+        campaign_seed,
+        data,
+        family,
+        stage,
+        target_site_id,
+        severity,
+        cause,
+    } = request;
     let ids = family.template_ids_for_stage(stage);
     if ids.is_empty() {
         return None;

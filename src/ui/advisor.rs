@@ -1,8 +1,8 @@
 //! Realm overview and council guidance surfaces.
 
 use super::{section_label, style, UiAction, UiContext};
-use crate::data::{GameData, SiteCategory};
-use crate::state::SettlementStatus;
+use crate::data::GameData;
+use crate::state::{AdvisorPriority, SettlementStatus};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
@@ -334,92 +334,49 @@ fn draw_log_lines(ctx: &UiContext<'_>, x: f32, y: f32, width: f32) {
 }
 
 fn recommendation_for(ctx: &UiContext<'_>) -> Recommendation {
-    if ctx.session.pending_event.is_some() {
-        return Recommendation {
+    match ctx.session.advisor_priority(ctx.data) {
+        AdvisorPriority::AnswerEvent => Recommendation {
             title: ctx.data.text("ui.advisor_answer_title"),
             detail: ctx.data.text("ui.advisor_scouting"),
-        };
-    }
-
-    if ctx.session.council_actions_remaining <= 0 {
-        return Recommendation {
+        },
+        AdvisorPriority::SpendActions => Recommendation {
             title: ctx.data.text("ui.advisor_actions_title"),
             detail: ctx.data.text("ui.advisor_actions_spent"),
-        };
-    }
-
-    if ctx
-        .session
-        .is_adjacent_unknown(ctx.data, &ctx.session.selected_site_id)
-    {
-        let scout_status = ctx.session.scout_status(ctx.data);
-        let site_name = ctx
-            .session
-            .selected_site(ctx.data)
-            .map(|site| site.name.clone())
-            .unwrap_or_else(|| ctx.data.text("ui.rumor"));
-        return Recommendation {
-            title: ctx
-                .data
-                .text_with("ui.scout_title", &[("{site}", &site_name)]),
-            detail: scout_status.reason.clone(),
-        };
-    }
-
-    if ctx
-        .data
-        .sites
-        .iter()
-        .any(|site| ctx.session.is_adjacent_unknown(ctx.data, &site.id))
-    {
-        return Recommendation {
+        },
+        AdvisorPriority::ScoutSelected => {
+            let scout_status = ctx.session.scout_status(ctx.data);
+            let site_name = ctx
+                .session
+                .selected_site(ctx.data)
+                .map(|site| site.name.clone())
+                .unwrap_or_else(|| ctx.data.text("ui.rumor"));
+            Recommendation {
+                title: ctx
+                    .data
+                    .text_with("ui.scout_title", &[("{site}", &site_name)]),
+                detail: scout_status.reason.clone(),
+            }
+        }
+        AdvisorPriority::RevealFrontier => Recommendation {
             title: ctx.data.text("ui.advisor_reveal_title"),
             detail: ctx.data.text("ui.advisor_reveal"),
-        };
-    }
-
-    if ctx
-        .session
-        .settlements
-        .iter()
-        .filter(|settlement| settlement.status == SettlementStatus::Active)
-        .count()
-        < 2
-    {
-        if ctx.data.sites.iter().any(|site| {
-            site.category == SiteCategory::Settlement
-                && ctx.session.is_known(&site.id)
-                && site.owner.is_none()
-                && ctx.session.settlement_at_site(&site.id).is_none()
-        }) {
-            return Recommendation {
-                title: ctx.data.text("ui.advisor_founding_title"),
-                detail: ctx.data.text("ui.advisor_founding"),
-            };
-        }
-    }
-
-    if ctx.session.routes.iter().any(|route| {
-        route.known
-            && route.level == crate::data::RouteLevel::None
-            && ctx.session.route_action_status(ctx.data, &route.id).enabled
-    }) {
-        return Recommendation {
+        },
+        AdvisorPriority::FoundCamp => Recommendation {
+            title: ctx.data.text("ui.advisor_founding_title"),
+            detail: ctx.data.text("ui.advisor_founding"),
+        },
+        AdvisorPriority::BuildRoad => Recommendation {
             title: ctx.data.text("ui.advisor_roads_title"),
             detail: ctx.data.text("ui.advisor_roads"),
-        };
-    }
-
-    if ctx.session.active_issues.is_empty() {
-        Recommendation {
+        },
+        AdvisorPriority::AdvanceSeason => Recommendation {
             title: ctx.data.text("ui.advisor_season_title"),
             detail: ctx.data.text("ui.advisor_season"),
-        }
-    } else {
-        Recommendation {
+        },
+        AdvisorPriority::ResolveIssues => Recommendation {
             title: ctx.data.text("ui.advisor_issues_title"),
             detail: ctx.data.text("ui.advisor_issues"),
-        }
+        },
     }
 }
 
