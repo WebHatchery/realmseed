@@ -538,7 +538,7 @@ impl GameSession {
             .map(|settlement| settlement.name.clone())
             .unwrap_or_else(|| data.text("state.charter_hall"));
         let strongest_identity = strongest_identity(self, data);
-        let (worst_year, golden_year) = chronicle_years(self);
+        let (worst_year, golden_year) = self.chronicle_years();
         let defining_event = self
             .chronicle
             .iter()
@@ -585,6 +585,11 @@ impl GameSession {
             arcs,
             summary_text,
         }
+    }
+
+    /// Returns the deterministic worst and golden years derived from structured chronicle tags.
+    pub fn chronicle_years(&self) -> (u32, u32) {
+        chronicle_years(self)
     }
 }
 
