@@ -3,7 +3,7 @@
 use super::{
     GameSession, SeasonAdvanceReport, SeasonSummaryRow, SettlementActionStatus, SettlementStatus,
 };
-use crate::data::{GameData, ProjectDef, RouteLevel, SettlementTier, SiteCategory};
+use crate::data::{GameData, ProjectDef, SettlementTier};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -40,65 +40,7 @@ pub struct CampaignAdvanceReport {
     pub campaign_finished: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AdvisorPriority {
-    AnswerEvent,
-    SpendActions,
-    ScoutSelected,
-    RevealFrontier,
-    FoundCamp,
-    BuildRoad,
-    AdvanceSeason,
-    ResolveIssues,
-}
-
 impl GameSession {
-    pub fn advisor_priority(&self, data: &GameData) -> AdvisorPriority {
-        if self.pending_event.is_some() {
-            return AdvisorPriority::AnswerEvent;
-        }
-        if self.council_actions_remaining <= 0 {
-            return AdvisorPriority::SpendActions;
-        }
-        if self.is_adjacent_unknown(data, &self.selected_site_id) {
-            return AdvisorPriority::ScoutSelected;
-        }
-        if data
-            .sites
-            .iter()
-            .any(|site| self.is_adjacent_unknown(data, &site.id))
-        {
-            return AdvisorPriority::RevealFrontier;
-        }
-        if self
-            .settlements
-            .iter()
-            .filter(|settlement| settlement.status == SettlementStatus::Active)
-            .count()
-            < 2
-            && data.sites.iter().any(|site| {
-                site.category == SiteCategory::Settlement
-                    && self.is_known(&site.id)
-                    && site.owner.is_none()
-                    && self.settlement_at_site(&site.id).is_none()
-            })
-        {
-            return AdvisorPriority::FoundCamp;
-        }
-        if self.routes.iter().any(|route| {
-            route.known
-                && route.level == RouteLevel::None
-                && self.route_action_status(data, &route.id).enabled
-        }) {
-            return AdvisorPriority::BuildRoad;
-        }
-        if self.active_issues.is_empty() {
-            AdvisorPriority::AdvanceSeason
-        } else {
-            AdvisorPriority::ResolveIssues
-        }
-    }
-
     pub fn guidance_text(&self, data: &GameData) -> String {
         if self.known_site_count() <= 8 {
             return data.text("state.guidance.scouting");
@@ -189,7 +131,7 @@ impl GameSession {
             "ambition_declared",
             Some(&self.selected_site_id.clone()),
         );
-        Ok(format!("Declared {}", ambition.name))
+        Ok(data.text_with("state.declared", &[("{name}", &ambition.name)]))
     }
 
     pub fn ambition_progress(&self, data: &GameData, ambition_id: &str) -> i32 {
@@ -237,11 +179,11 @@ impl GameSession {
         let Some(source) = self.project_source_settlement(data, project) else {
             return SettlementActionStatus::disabled(data.text("state.valid_project_target"));
         };
-        if let Some(reason) = source.stored.deficit_text(project.cost) {
+        if let Some(reason) = source.stored.deficit_text_with(project.cost, data) {
             return SettlementActionStatus::disabled(reason);
         }
 
-        let cost = project.cost.cost_text();
+        let cost = project.cost.cost_text_with(data);
         let actions = project.action_cost.to_string();
         SettlementActionStatus::enabled(data.text_with(
             "state.project_cost",

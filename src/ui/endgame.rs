@@ -29,8 +29,15 @@ pub(super) fn draw_endgame_summary(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
         TextStyle::new(20.0, dark::TEXT_BRIGHT),
     );
     let content = rect.inset(26.0);
+    let score = ctx.data.text_with(
+        "ui.endgame_score",
+        &[
+            ("{band}", &summary.ending_band),
+            ("{score}", &summary.legacy_score.to_string()),
+        ],
+    );
     draw_ui_text_ex(
-        &format!("{} - {} points", summary.ending_band, summary.legacy_score),
+        &score,
         content.x,
         content.y + 54.0,
         TextStyle::new(24.0, dark::TEXT_BRIGHT).params(),

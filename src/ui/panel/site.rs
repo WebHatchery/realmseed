@@ -1,7 +1,7 @@
 //! Selected-site summary and one-off site decisions (scout, trade, found).
 
 use crate::data::SiteCategory;
-use crate::state::SiteKnowledge;
+use crate::state::{SettlementStatus, SiteKnowledge};
 use crate::ui::{style, virtual_icon_button, UiAction, UiContext};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
@@ -10,7 +10,7 @@ use macroquad_toolkit::ui::draw_ui_text_ex;
 pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> f32 {
     let Some(site) = ctx.session.selected_site(ctx.data) else {
         draw_ui_text_ex(
-            "No site selected",
+            &ctx.data.text("ui.no_site"),
             content.x,
             y + 24.0,
             TextStyle::new(22.0, dark::TEXT_BRIGHT).params(),
@@ -22,13 +22,13 @@ pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> 
     let region_name = ctx
         .data
         .region(&site.region_id)
-        .map(|region| region.name.as_str())
-        .unwrap_or("Unknown region");
+        .map(|region| region.name.clone())
+        .unwrap_or_else(|| ctx.data.text("ui.unknown_region"));
 
     let title = if knowledge == SiteKnowledge::Known {
-        site.name.as_str()
+        site.name.clone()
     } else {
-        "Rumored Site"
+        ctx.data.text("ui.rumored_site")
     };
     let icon = if ctx.session.settlement_at_site(&site.id).is_some() {
         style::IconKind::Castle
@@ -44,7 +44,7 @@ pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> 
         Color::new(0.18, 0.13, 0.07, 0.95),
     );
     draw_text_block(
-        title,
+        &title,
         content.x + 58.0,
         y + 1.0,
         content.w - 150.0,
@@ -54,37 +54,36 @@ pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> 
         style::TEXT_BRIGHT,
     );
 
+    let active =
+        knowledge == SiteKnowledge::Known && ctx.session.settlement_at_site(&site.id).is_some();
     let status = if knowledge == SiteKnowledge::Known {
         if ctx.session.settlement_at_site(&site.id).is_some() {
-            "Active"
+            ctx.data.text("ui.active")
         } else {
-            "Known"
+            ctx.data.text("ui.known")
         }
     } else {
-        "Rumor"
+        ctx.data.text("ui.rumor_status")
     };
     draw_badge(
         Rect::new(content.right() - 86.0, y, 86.0, 27.0),
-        status,
-        if status == "Active" {
+        &status,
+        if active {
             Color::new(0.10, 0.25, 0.09, 0.95)
         } else {
             Color::new(0.15, 0.16, 0.12, 0.95)
         },
-        if status == "Active" {
-            style::GREEN
-        } else {
-            style::TEXT
-        },
+        if active { style::GREEN } else { style::TEXT },
     );
     let site_subtitle = ctx
         .session
         .settlement_at_site(&site.id)
         .map(|settlement| {
-            format!(
-                "{} / {}",
-                settlement.tier.label(),
-                settlement.status.label()
+            let tier = settlement_tier_label(ctx, settlement.tier);
+            let status = settlement_status_label(ctx, settlement.status);
+            ctx.data.text_with(
+                "ui.site_subtitle",
+                &[("{tier}", &tier), ("{status}", &status)],
             )
         })
         .unwrap_or_else(|| site.category.label().to_owned());
@@ -100,21 +99,35 @@ pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> 
     }
 
     let known_text = if knowledge == SiteKnowledge::Known {
-        format!(
-            "Region: {}\nType: {}\nOwner: {}\nTraits: {}\n{}",
-            region_name,
-            site.type_label(),
-            site.owner.as_deref().unwrap_or("Unclaimed"),
-            site.traits.join(", "),
-            site.description
+        let owner = site
+            .owner
+            .clone()
+            .unwrap_or_else(|| ctx.data.text("ui.unclaimed"));
+        let site_type = site.type_label();
+        let traits = site.traits.join(", ");
+        ctx.data.text_with(
+            "ui.site_detail",
+            &[
+                ("{region}", &region_name),
+                ("{type}", &site_type),
+                ("{owner}", &owner),
+                ("{traits}", &traits),
+                ("{description}", &site.description),
+            ],
         )
     } else {
         let scout_status = ctx.session.scout_status(ctx.data);
-        format!(
-            "Region: {}\nKnown status: {}\n{}",
-            region_name,
-            knowledge.label(),
-            scout_status.reason
+        let known_status = match knowledge {
+            SiteKnowledge::Known => ctx.data.text("ui.known"),
+            SiteKnowledge::Unknown => ctx.data.text("ui.unknown"),
+        };
+        ctx.data.text_with(
+            "ui.site_rumor_detail",
+            &[
+                ("{region}", &region_name),
+                ("{status}", &known_status),
+                ("{reason}", &scout_status.reason),
+            ],
         )
     };
     draw_text_block(
@@ -131,6 +144,24 @@ pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> 
     y + 130.0
 }
 
+fn settlement_tier_label(ctx: &UiContext<'_>, tier: crate::data::SettlementTier) -> String {
+    let text_id = match tier {
+        crate::data::SettlementTier::Camp => "ui.tier_camp",
+        crate::data::SettlementTier::Village => "ui.tier_village",
+        crate::data::SettlementTier::Town => "ui.tier_town",
+        crate::data::SettlementTier::City => "ui.tier_city",
+    };
+    ctx.data.text(text_id)
+}
+
+fn settlement_status_label(ctx: &UiContext<'_>, status: SettlementStatus) -> String {
+    let text_id = match status {
+        SettlementStatus::Active => "ui.status_active",
+        SettlementStatus::Lost => "ui.status_lost",
+    };
+    ctx.data.text(text_id)
+}
+
 pub(super) fn draw_scout_action(
     ctx: &UiContext<'_>,
     pointer: Pointer,
@@ -142,7 +173,7 @@ pub(super) fn draw_scout_action(
     let status = ctx.session.scout_status(ctx.data);
     if virtual_icon_button(
         Rect::new(content.x, y, content.w, 34.0),
-        "Scout Site",
+        &ctx.data.text("ui.scout_site"),
         style::IconKind::Compass,
         input_enabled && status.enabled,
         ButtonTone::Primary,
@@ -179,14 +210,21 @@ pub(super) fn draw_independent_actions(
     let Some(independent) = ctx.session.selected_independent() else {
         return y;
     };
+    let trust = independent.trust.to_string();
+    let autonomy = independent.autonomy.to_string();
+    let rival = independent.rival_pressure.to_string();
+    let state = independent.integration_state.label().to_owned();
+    let stats = ctx.data.text_with(
+        "ui.independent_stats",
+        &[
+            ("{trust}", &trust),
+            ("{autonomy}", &autonomy),
+            ("{rival}", &rival),
+            ("{state}", &state),
+        ],
+    );
     draw_ui_text_ex(
-        &format!(
-            "Trust {}  Autonomy {}  Rival {}  {}",
-            independent.trust,
-            independent.autonomy,
-            independent.rival_pressure,
-            independent.integration_state.label()
-        ),
+        &stats,
         content.x,
         y,
         TextStyle::new(14.0, dark::TEXT).params(),
@@ -196,7 +234,7 @@ pub(super) fn draw_independent_actions(
     let half = (content.w - 8.0) / 2.0;
     if virtual_icon_button(
         Rect::new(content.x, y + 20.0, half, 30.0),
-        "Open Trade",
+        &ctx.data.text("ui.open_trade"),
         style::IconKind::Wealth,
         input_enabled && trade_status.enabled,
         ButtonTone::Primary,
@@ -206,7 +244,7 @@ pub(super) fn draw_independent_actions(
     }
     if virtual_icon_button(
         Rect::new(content.x + half + 8.0, y + 20.0, half, 30.0),
-        "Integrate",
+        &ctx.data.text("ui.integrate"),
         style::IconKind::Crown,
         input_enabled && integration_status.enabled,
         ButtonTone::Positive,
@@ -215,7 +253,8 @@ pub(super) fn draw_independent_actions(
         actions.push(UiAction::BeginIndependentIntegration);
     }
     draw_text_block(
-        &format!("Need: {}", independent.local_need),
+        &ctx.data
+            .text_with("ui.need", &[("{need}", &independent.local_need)]),
         content.x,
         y + 56.0,
         content.w,
@@ -238,7 +277,7 @@ pub(super) fn draw_found_camp_action(
     let status = ctx.session.founding_status(ctx.data);
     if virtual_icon_button(
         Rect::new(content.x, y, content.w, 34.0),
-        "Found Camp",
+        &ctx.data.text("ui.found_camp"),
         style::IconKind::Castle,
         input_enabled && status.enabled,
         ButtonTone::Positive,

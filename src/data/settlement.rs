@@ -2,6 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::data::GameData;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SettlementTier {
@@ -80,6 +82,37 @@ impl ResourceStock {
         }
     }
 
+    pub fn deficit_text_with(self, cost: Self, data: &GameData) -> Option<String> {
+        let mut deficits = Vec::new();
+        if self.food < cost.food {
+            deficits.push(resource_amount(data, cost.food - self.food, "ui.food"));
+        }
+        if self.timber < cost.timber {
+            deficits.push(resource_amount(
+                data,
+                cost.timber - self.timber,
+                "ui.timber",
+            ));
+        }
+        if self.stone < cost.stone {
+            deficits.push(resource_amount(data, cost.stone - self.stone, "ui.stone"));
+        }
+        if self.wealth < cost.wealth {
+            deficits.push(resource_amount(
+                data,
+                cost.wealth - self.wealth,
+                "ui.wealth",
+            ));
+        }
+
+        if deficits.is_empty() {
+            None
+        } else {
+            let resources = deficits.join(", ");
+            Some(data.text_with("state.needs_resources", &[("{resources}", &resources)]))
+        }
+    }
+
     pub fn cost_text(self) -> String {
         let mut parts = Vec::new();
         if self.food > 0 {
@@ -101,6 +134,37 @@ impl ResourceStock {
             parts.join(", ")
         }
     }
+
+    pub fn cost_text_with(self, data: &GameData) -> String {
+        let mut parts = Vec::new();
+        if self.food > 0 {
+            parts.push(resource_amount(data, self.food, "ui.food"));
+        }
+        if self.timber > 0 {
+            parts.push(resource_amount(data, self.timber, "ui.timber"));
+        }
+        if self.stone > 0 {
+            parts.push(resource_amount(data, self.stone, "ui.stone"));
+        }
+        if self.wealth > 0 {
+            parts.push(resource_amount(data, self.wealth, "ui.wealth"));
+        }
+
+        if parts.is_empty() {
+            data.text("state.no_resources")
+        } else {
+            parts.join(", ")
+        }
+    }
+}
+
+fn resource_amount(data: &GameData, amount: i32, resource_id: &str) -> String {
+    let amount = amount.to_string();
+    let resource = data.text(resource_id);
+    data.text_with(
+        "state.resource_amount",
+        &[("{amount}", &amount), ("{resource}", &resource)],
+    )
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

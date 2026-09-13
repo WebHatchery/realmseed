@@ -202,14 +202,17 @@ fn draw_header(ctx: &UiContext<'_>) {
         } else {
             96.0
         };
+    let season = clock.season.label().to_owned();
+    let year = clock.year.to_string();
     draw_ui_text_ex(
-        &format!("Year {}, {}", clock.year, clock.season.label()),
+        &ctx.data
+            .text_with("ui.clock", &[("{year}", &year), ("{season}", &season)]),
         clock_x,
         rect.y + 27.0,
         TextStyle::new(20.0, style::TEXT_BRIGHT).params(),
     );
     draw_ui_text_ex(
-        "Clear Skies",
+        &ctx.data.text("ui.clear_skies"),
         clock_x,
         rect.y + 48.0,
         TextStyle::new(12.5, style::TEXT_DIM).params(),
@@ -217,6 +220,8 @@ fn draw_header(ctx: &UiContext<'_>) {
 
     let totals = realm_totals(ctx);
     let flows = realm_flows(ctx);
+    let positive_rate = ctx.data.text("ui.per_turn");
+    let negative_rate = ctx.data.text("ui.per_turn_negative");
     let population: i32 = ctx
         .session
         .settlements
@@ -225,42 +230,42 @@ fn draw_header(ctx: &UiContext<'_>) {
         .sum();
     let badges = [
         (
-            "Food",
+            ctx.data.text("ui.food"),
             totals.food,
             flows.food,
             style::IconKind::Food,
             Color::new(0.93, 0.66, 0.22, 1.0),
         ),
         (
-            "Timber",
+            ctx.data.text("ui.timber"),
             totals.timber,
             flows.timber,
             style::IconKind::Timber,
             Color::new(0.36, 0.65, 0.25, 1.0),
         ),
         (
-            "Stone",
+            ctx.data.text("ui.stone"),
             totals.stone,
             flows.stone,
             style::IconKind::Stone,
             Color::new(0.62, 0.58, 0.50, 1.0),
         ),
         (
-            "Wealth",
+            ctx.data.text("ui.wealth"),
             totals.wealth,
             flows.wealth,
             style::IconKind::Wealth,
             Color::new(0.93, 0.70, 0.26, 1.0),
         ),
         (
-            "People",
+            ctx.data.text("ui.people"),
             population,
             population_flow(ctx),
             style::IconKind::People,
             Color::new(0.48, 0.65, 0.68, 1.0),
         ),
         (
-            "Actions",
+            ctx.data.text("ui.actions"),
             ctx.session.council_actions_remaining,
             0,
             style::IconKind::Actions,
@@ -290,7 +295,17 @@ fn draw_header(ctx: &UiContext<'_>) {
             badge_w,
             43.0,
         );
-        draw_resource_readout(item, label, *value, *rate, *icon, *color);
+        draw_resource_readout(ResourceReadout {
+            rect: item,
+            label,
+            value: *value,
+            rate: *rate,
+            icon: *icon,
+            color: *color,
+            show_rate: index != 5,
+            positive_rate: &positive_rate,
+            negative_rate: &negative_rate,
+        });
     }
 }
 
@@ -308,14 +323,30 @@ fn draw_brand(rect: Rect) {
     style::draw_vertical_divider(rect.x + 76.0, rect.y + 14.0, rect.h - 28.0);
 }
 
-fn draw_resource_readout(
+struct ResourceReadout<'a> {
     rect: Rect,
-    label: &str,
+    label: &'a str,
     value: i32,
     rate: i32,
     icon: style::IconKind,
     color: Color,
-) {
+    show_rate: bool,
+    positive_rate: &'a str,
+    negative_rate: &'a str,
+}
+
+fn draw_resource_readout(readout: ResourceReadout<'_>) {
+    let ResourceReadout {
+        rect,
+        label,
+        value,
+        rate,
+        icon,
+        color,
+        show_rate,
+        positive_rate,
+        negative_rate,
+    } = readout;
     style::draw_vertical_divider(rect.x - 5.0, rect.y + 1.0, rect.h - 2.0);
     let icon_center = vec2(rect.x + 16.0, rect.y + 21.0);
     style::draw_icon(icon, icon_center, 27.0, color);
@@ -325,13 +356,13 @@ fn draw_resource_readout(
         rect.y + 18.0,
         TextStyle::new(15.5, style::TEXT_BRIGHT).params(),
     );
-    if label == "Actions" {
+    if !show_rate {
         return;
     }
     let rate_text = if rate >= 0 {
-        format!("+{}/turn", rate)
+        positive_rate.replace("{rate}", &rate.to_string())
     } else {
-        format!("{}/turn", rate)
+        negative_rate.replace("{rate}", &rate.to_string())
     };
     draw_ui_text_ex(
         &rate_text,

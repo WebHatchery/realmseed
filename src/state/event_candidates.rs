@@ -20,17 +20,17 @@ impl GameSession {
         family: &EventFamilyDef,
     ) -> Option<EventCandidate> {
         match family.trigger_kind.as_str() {
-            "low_food" => self.low_food_candidate(family),
-            "road_warning" => self.road_warning_candidate(family),
+            "low_food" => self.low_food_candidate(data, family),
+            "road_warning" => self.road_warning_candidate(data, family),
             "isolated" => self.isolation_candidate(data, family),
-            "trade_pressure" => self.trade_pressure_candidate(family),
-            "migration_pressure" => self.migration_candidate(family),
-            "low_loyalty" => self.low_loyalty_candidate(family),
+            "trade_pressure" => self.trade_pressure_candidate(data, family),
+            "migration_pressure" => self.migration_candidate(data, family),
+            "low_loyalty" => self.low_loyalty_candidate(data, family),
             "bandit_pressure" => self.bandit_pressure_candidate(data, family),
             "border_tension" => self.border_tension_candidate(data, family),
-            "tax_dispute" => self.tax_dispute_candidate(family),
-            "local_leadership" => self.local_leadership_candidate(family),
-            "resource_boom" => self.resource_boom_candidate(family),
+            "tax_dispute" => self.tax_dispute_candidate(data, family),
+            "local_leadership" => self.local_leadership_candidate(data, family),
+            "resource_boom" => self.resource_boom_candidate(data, family),
             "disaster" => self.disaster_candidate(data, family),
             "independent_request" => self.independent_request_candidate(data, family),
             "rival_move" => self.rival_move_candidate(data, family),
@@ -53,7 +53,11 @@ impl GameSession {
         weight + difficulty + self.ambition_event_weight(family) + severity
     }
 
-    fn low_food_candidate(&self, family: &EventFamilyDef) -> Option<EventCandidate> {
+    fn low_food_candidate(
+        &self,
+        data: &GameData,
+        family: &EventFamilyDef,
+    ) -> Option<EventCandidate> {
         self.settlements
             .iter()
             .filter(|settlement| settlement.status == SettlementStatus::Active)
@@ -70,13 +74,17 @@ impl GameSession {
                     target_site_id: settlement.location_id.clone(),
                     severity,
                     weight: 40 + severity * 10 - settlement.stored.food / 10,
-                    cause: "Food stores are below two seasons of population need.".to_owned(),
+                    cause: data.text("event.cause.food"),
                 }
             })
             .max_by_key(|candidate| candidate.weight)
     }
 
-    fn road_warning_candidate(&self, family: &EventFamilyDef) -> Option<EventCandidate> {
+    fn road_warning_candidate(
+        &self,
+        data: &GameData,
+        family: &EventFamilyDef,
+    ) -> Option<EventCandidate> {
         self.routes
             .iter()
             .filter(|route| !route.active_warning_ids.is_empty())
@@ -90,7 +98,7 @@ impl GameSession {
                     1
                 },
                 weight: 55 + route.active_warning_ids.len() as i32 * 5,
-                cause: "A route warning is active.".to_owned(),
+                cause: data.text("event.cause.road"),
             })
             .max_by_key(|candidate| candidate.weight)
     }
@@ -111,12 +119,16 @@ impl GameSession {
                 target_site_id: settlement.location_id.clone(),
                 severity: 1 + (settlement.autonomy_pressure / 4).clamp(0, 2),
                 weight: 45 + settlement.autonomy_pressure * 2,
-                cause: "No built, unblocked road reaches the capital network.".to_owned(),
+                cause: data.text("event.cause.isolated"),
             })
             .max_by_key(|candidate| candidate.weight)
     }
 
-    fn trade_pressure_candidate(&self, family: &EventFamilyDef) -> Option<EventCandidate> {
+    fn trade_pressure_candidate(
+        &self,
+        data: &GameData,
+        family: &EventFamilyDef,
+    ) -> Option<EventCandidate> {
         self.settlements
             .iter()
             .filter(|settlement| settlement.status == SettlementStatus::Active)
@@ -127,12 +139,16 @@ impl GameSession {
                 target_site_id: settlement.location_id.clone(),
                 severity: 1,
                 weight: 30 + settlement.prosperity / 2,
-                cause: "Prosperity and trade have created local ambition.".to_owned(),
+                cause: data.text("event.cause.trade"),
             })
             .max_by_key(|candidate| candidate.weight)
     }
 
-    fn migration_candidate(&self, family: &EventFamilyDef) -> Option<EventCandidate> {
+    fn migration_candidate(
+        &self,
+        data: &GameData,
+        family: &EventFamilyDef,
+    ) -> Option<EventCandidate> {
         self.settlements
             .iter()
             .filter(|settlement| settlement.status == SettlementStatus::Active)
@@ -145,12 +161,16 @@ impl GameSession {
                 target_site_id: settlement.location_id.clone(),
                 severity: 1,
                 weight: 32 + settlement.stability / 2,
-                cause: "Food security and order attracted migrant families.".to_owned(),
+                cause: data.text("event.cause.migration"),
             })
             .max_by_key(|candidate| candidate.weight)
     }
 
-    fn low_loyalty_candidate(&self, family: &EventFamilyDef) -> Option<EventCandidate> {
+    fn low_loyalty_candidate(
+        &self,
+        data: &GameData,
+        family: &EventFamilyDef,
+    ) -> Option<EventCandidate> {
         self.settlements
             .iter()
             .filter(|settlement| settlement.status == SettlementStatus::Active)
@@ -168,7 +188,7 @@ impl GameSession {
                 target_site_id: settlement.location_id.clone(),
                 severity: 1 + ((70 - settlement.loyalty).max(0) / 20).clamp(0, 2),
                 weight: 35 + (70 - settlement.loyalty).max(0) + settlement.autonomy_pressure,
-                cause: "Low loyalty or autonomy pressure made civic unrest likely.".to_owned(),
+                cause: data.text("event.cause.unrest"),
             })
             .max_by_key(|candidate| candidate.weight)
     }
@@ -189,8 +209,7 @@ impl GameSession {
                     target_site_id: settlement.location_id.clone(),
                     severity: 1 + (wilderness / 35).clamp(0, 2),
                     weight: settlement.danger + wilderness / 2,
-                    cause: "Wilderness and local danger are giving bandits room to move."
-                        .to_owned(),
+                    cause: data.text("event.cause.bandit"),
                 }
             })
             .max_by_key(|candidate| candidate.weight)
@@ -212,13 +231,17 @@ impl GameSession {
                 severity: 1 + (settlement.rival_pressure / 30).clamp(0, 2),
                 weight: target_weakness_for_event(self, data, &settlement.location_id)
                     + self.rival_faction.border_pressure / 2,
-                cause: "Rival pressure is testing a weak border settlement.".to_owned(),
+                cause: data.text("event.cause.border"),
             })
             .max_by_key(|candidate| candidate.weight)
             .filter(|candidate| candidate.weight >= 35)
     }
 
-    fn tax_dispute_candidate(&self, family: &EventFamilyDef) -> Option<EventCandidate> {
+    fn tax_dispute_candidate(
+        &self,
+        data: &GameData,
+        family: &EventFamilyDef,
+    ) -> Option<EventCandidate> {
         self.settlements
             .iter()
             .filter(|settlement| settlement.status == SettlementStatus::Active)
@@ -229,12 +252,16 @@ impl GameSession {
                 target_site_id: settlement.location_id.clone(),
                 severity: 1 + ((70 - settlement.loyalty).max(0) / 25).clamp(0, 2),
                 weight: settlement.prosperity / 2 + (80 - settlement.loyalty).max(0),
-                cause: "Prosperity and charter dues have raised a tax dispute.".to_owned(),
+                cause: data.text("event.cause.tax"),
             })
             .max_by_key(|candidate| candidate.weight)
     }
 
-    fn local_leadership_candidate(&self, family: &EventFamilyDef) -> Option<EventCandidate> {
+    fn local_leadership_candidate(
+        &self,
+        data: &GameData,
+        family: &EventFamilyDef,
+    ) -> Option<EventCandidate> {
         self.settlements
             .iter()
             .filter(|settlement| settlement.status == SettlementStatus::Active)
@@ -244,12 +271,16 @@ impl GameSession {
                 target_site_id: settlement.location_id.clone(),
                 severity: 1,
                 weight: 30 + settlement.prosperity / 3 + settlement.loyalty / 4,
-                cause: "Local leaders are asking for a clearer place in the realm.".to_owned(),
+                cause: data.text("event.cause.leadership"),
             })
             .max_by_key(|candidate| candidate.weight)
     }
 
-    fn resource_boom_candidate(&self, family: &EventFamilyDef) -> Option<EventCandidate> {
+    fn resource_boom_candidate(
+        &self,
+        data: &GameData,
+        family: &EventFamilyDef,
+    ) -> Option<EventCandidate> {
         self.settlements
             .iter()
             .filter(|settlement| settlement.status == SettlementStatus::Active)
@@ -261,7 +292,7 @@ impl GameSession {
                 weight: 20
                     + settlement.prosperity / 2
                     + (settlement.stored.timber + settlement.stored.stone) / 20,
-                cause: "Stored materials and local prosperity have created a boom.".to_owned(),
+                cause: data.text("event.cause.boom"),
             })
             .max_by_key(|candidate| candidate.weight)
             .filter(|candidate| candidate.weight >= 45)
@@ -283,8 +314,7 @@ impl GameSession {
                     target_site_id: settlement.location_id.clone(),
                     severity: 1 + ((settlement.danger + wilderness) / 70).clamp(0, 2),
                     weight: 25 + settlement.danger / 2 + wilderness / 2,
-                    cause: "Terrain danger and seasonal pressure threaten a local disaster."
-                        .to_owned(),
+                    cause: data.text("event.cause.wilderness"),
                 }
             })
             .max_by_key(|candidate| candidate.weight)
@@ -293,7 +323,7 @@ impl GameSession {
 
     fn independent_request_candidate(
         &self,
-        _data: &GameData,
+        data: &GameData,
         family: &EventFamilyDef,
     ) -> Option<EventCandidate> {
         let independent = self
@@ -306,7 +336,7 @@ impl GameSession {
             target_site_id: independent.site_id.clone(),
             severity: 1 + (independent.rival_pressure / 40).clamp(0, 2),
             weight: 25 + independent.rival_pressure + (100 - independent.trust) / 3,
-            cause: "An independent settlement needs aid, trade, or protection.".to_owned(),
+            cause: data.text("event.cause.independent"),
         })
     }
 
@@ -326,7 +356,7 @@ impl GameSession {
                 weight: target_weakness_for_event(self, data, &settlement.location_id)
                     + self.rival_faction.hostility / 2
                     + self.rival_faction.confidence / 3,
-                cause: "The rival clan is converting pressure into a visible move.".to_owned(),
+                cause: data.text("event.cause.rival"),
             })
             .max_by_key(|candidate| candidate.weight)
     }

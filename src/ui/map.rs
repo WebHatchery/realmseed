@@ -31,7 +31,7 @@ pub(super) fn draw_map_panel(
     draw_map_vignette(map_rect);
     draw_overlay_tabs(ctx, rect, ctx.pointer, input_enabled, actions);
     draw_map_controls(rect, ctx.pointer, input_enabled, actions);
-    draw_map_caption(rect);
+    draw_map_caption(ctx, rect);
 
     if input_enabled && ctx.pointer.released {
         if let Some(site_id) = map_sites::picked_site_id(ctx, &view, ctx.pointer.position) {
@@ -40,19 +40,15 @@ pub(super) fn draw_map_panel(
     }
 
     let mode_hint = match ctx.map_overlay {
-        MapOverlay::Realm => {
-            "Realm view: banners are yours, red marks are rivals, diamonds are independents."
-        }
-        MapOverlay::Supply => {
-            "Supply view: green rings are connected to the capital, amber rings are isolated."
-        }
-        MapOverlay::Danger => "Danger view: red washes show wilderness and settlement pressure.",
+        MapOverlay::Realm => ctx.data.text("ui.map_realm_hint"),
+        MapOverlay::Supply => ctx.data.text("ui.map_supply_hint"),
+        MapOverlay::Danger => ctx.data.text("ui.map_danger_hint"),
     };
     style::hover_tooltip(
         tooltip,
         "map_overlay_hint",
         map_rect,
-        mode_hint,
+        &mode_hint,
         ctx.pointer,
     );
 }
@@ -87,15 +83,15 @@ fn draw_map_controls(
     }
 }
 
-fn draw_map_caption(panel_rect: Rect) {
+fn draw_map_caption(ctx: &UiContext<'_>, panel_rect: Rect) {
     draw_ui_text_ex(
-        "STRATEGIC VIEW",
+        &ctx.data.text("ui.strategic_view"),
         panel_rect.x + 18.0,
         panel_rect.y + 74.0,
         TextStyle::new(11.0, Color::new(0.86, 0.72, 0.42, 0.82)).params(),
     );
     draw_ui_text_ex(
-        "Drag the map  ·  Scroll or use + / − to survey",
+        &ctx.data.text("ui.drag_map"),
         panel_rect.x + 18.0,
         panel_rect.bottom() - 14.0,
         TextStyle::new(11.5, Color::new(0.80, 0.84, 0.72, 0.68)).params(),
@@ -127,7 +123,7 @@ fn draw_overlay_tabs(
         };
         if virtual_icon_button(
             rect,
-            overlay.label(),
+            &overlay_label(ctx, *overlay),
             overlay_icon(*overlay),
             input_enabled,
             tone,
@@ -135,6 +131,14 @@ fn draw_overlay_tabs(
         ) {
             actions.push(UiAction::SetMapOverlay(*overlay));
         }
+    }
+}
+
+fn overlay_label(ctx: &UiContext<'_>, overlay: MapOverlay) -> String {
+    match overlay {
+        MapOverlay::Realm => ctx.data.text("ui.overlay_realm"),
+        MapOverlay::Supply => ctx.data.text("ui.overlay_supply"),
+        MapOverlay::Danger => ctx.data.text("ui.overlay_danger"),
     }
 }
 
@@ -169,196 +173,6 @@ fn draw_map_backdrop(rect: Rect) {
         rect.bottom(),
         1.0,
         Color::new(0.82, 0.66, 0.36, 0.20),
-    );
-}
-
-#[allow(dead_code)]
-fn draw_terrain(ctx: &UiContext<'_>, view: &MapView) {
-    draw_rectangle(
-        view.rect.x,
-        view.rect.y,
-        view.rect.w,
-        view.rect.h,
-        Color::new(0.035, 0.056, 0.045, 1.0),
-    );
-    for y in 0..ctx.data.terrain.height {
-        for x in 0..ctx.data.terrain.width {
-            let Some(terrain) = ctx.data.terrain_at(x as i32, y as i32) else {
-                continue;
-            };
-            let tile_rect = view.tile_rect(x as i32, y as i32);
-            if !view.rect.overlaps(&tile_rect) {
-                continue;
-            }
-
-            let color =
-                textured_terrain_color(color_from_array(terrain.color), x, y, tile_rect, view);
-            draw_rectangle(
-                tile_rect.x,
-                tile_rect.y,
-                tile_rect.w + 0.5,
-                tile_rect.h + 0.5,
-                color,
-            );
-            draw_terrain_detail(terrain.id.as_str(), tile_rect, x, y);
-        }
-    }
-
-    draw_river_glow(ctx, view);
-}
-
-#[allow(dead_code)]
-fn textured_terrain_color(base: Color, x: usize, y: usize, rect: Rect, view: &MapView) -> Color {
-    let hash = ((x as u32).wrapping_mul(37) ^ (y as u32).wrapping_mul(53)) % 17;
-    let variation = 0.84 + hash as f32 * 0.014;
-    let center = vec2(rect.x + rect.w * 0.5, rect.y + rect.h * 0.5);
-    let dx = ((center.x - view.rect.x) / view.rect.w - 0.5).abs();
-    let dy = ((center.y - view.rect.y) / view.rect.h - 0.5).abs();
-    let vignette = 1.0 - (dx.max(dy) * 0.72).clamp(0.0, 0.42);
-    Color::new(
-        (base.r * variation * vignette).clamp(0.0, 1.0),
-        (base.g * variation * vignette).clamp(0.0, 1.0),
-        (base.b * variation * vignette).clamp(0.0, 1.0),
-        base.a,
-    )
-}
-
-#[allow(dead_code)]
-fn draw_terrain_detail(terrain_id: &str, rect: Rect, x: usize, y: usize) {
-    if rect.w < 7.0 {
-        return;
-    }
-    let hash = ((x as u32 * 11 + y as u32 * 23) % 5) as f32;
-    let center = vec2(
-        rect.x + rect.w * (0.36 + hash * 0.04),
-        rect.y + rect.h * 0.55,
-    );
-    match terrain_id {
-        "forest" if (x + y).is_multiple_of(3) => {
-            draw_circle(
-                center.x,
-                center.y,
-                rect.w * 0.22,
-                Color::new(0.02, 0.10, 0.05, 0.20),
-            );
-            draw_circle(
-                center.x + rect.w * 0.16,
-                center.y + rect.h * 0.10,
-                rect.w * 0.18,
-                Color::new(0.04, 0.17, 0.08, 0.24),
-            );
-        }
-        "hills" if (x + y).is_multiple_of(4) => {
-            draw_line(
-                rect.x + 2.0,
-                rect.y + rect.h - 3.0,
-                rect.x + rect.w * 0.5,
-                rect.y + 3.0,
-                1.0,
-                Color::new(0.22, 0.20, 0.13, 0.24),
-            );
-            draw_line(
-                rect.x + rect.w * 0.5,
-                rect.y + 3.0,
-                rect.x + rect.w - 2.0,
-                rect.y + rect.h - 3.0,
-                1.0,
-                Color::new(0.22, 0.20, 0.13, 0.24),
-            );
-        }
-        "mountain" if (x + y).is_multiple_of(2) => {
-            draw_triangle(
-                vec2(rect.x + rect.w * 0.5, rect.y + 2.0),
-                vec2(rect.x + 2.0, rect.y + rect.h - 2.0),
-                vec2(rect.x + rect.w - 2.0, rect.y + rect.h - 2.0),
-                Color::new(0.62, 0.62, 0.58, 0.15),
-            );
-        }
-        "river" => {
-            draw_line(
-                rect.x + 1.0,
-                rect.y + rect.h * 0.48,
-                rect.x + rect.w - 1.0,
-                rect.y + rect.h * 0.32,
-                1.5,
-                Color::new(0.58, 0.88, 0.95, 0.32),
-            );
-        }
-        "coast" if y.is_multiple_of(3) => {
-            draw_line(
-                rect.x + 1.0,
-                rect.y + rect.h * 0.65,
-                rect.x + rect.w - 1.0,
-                rect.y + rect.h * 0.55,
-                1.0,
-                Color::new(0.76, 0.82, 0.70, 0.16),
-            );
-        }
-        "marsh" if (x + y) % 3 == 1 => {
-            draw_circle(center.x, center.y, 1.2, Color::new(0.58, 0.68, 0.40, 0.18));
-        }
-        _ => {}
-    }
-}
-
-#[allow(dead_code)]
-fn draw_river_glow(ctx: &UiContext<'_>, view: &MapView) {
-    for y in 0..ctx.data.terrain.height {
-        for x in 0..ctx.data.terrain.width {
-            let Some(terrain) = ctx.data.terrain_at(x as i32, y as i32) else {
-                continue;
-            };
-            if terrain.id != "river" && terrain.id != "coast" {
-                continue;
-            }
-            let rect = view.tile_rect(x as i32, y as i32);
-            draw_rectangle(
-                rect.x,
-                rect.y,
-                rect.w + 0.8,
-                rect.h + 0.8,
-                if terrain.id == "river" {
-                    Color::new(0.16, 0.48, 0.58, 0.18)
-                } else {
-                    Color::new(0.10, 0.31, 0.42, 0.16)
-                },
-            );
-        }
-    }
-}
-
-#[allow(dead_code)]
-fn draw_map_grid(ctx: &UiContext<'_>, view: &MapView) {
-    let grid_color = Color::new(0.95, 0.84, 0.56, 0.055);
-    for x in (0..=ctx.data.terrain.width).step_by(5) {
-        let px = view.origin.x + x as f32 * view.tile_size;
-        draw_line(
-            px,
-            view.rect.y,
-            px,
-            view.rect.y + view.rect.h,
-            1.0,
-            grid_color,
-        );
-    }
-    for y in (0..=ctx.data.terrain.height).step_by(5) {
-        let py = view.origin.y + y as f32 * view.tile_size;
-        draw_line(
-            view.rect.x,
-            py,
-            view.rect.x + view.rect.w,
-            py,
-            1.0,
-            grid_color,
-        );
-    }
-    draw_rectangle_lines(
-        view.rect.x + 2.0,
-        view.rect.y + 2.0,
-        view.rect.w - 4.0,
-        view.rect.h - 4.0,
-        1.0,
-        Color::new(0.03, 0.025, 0.016, 0.45),
     );
 }
 
@@ -638,16 +452,6 @@ impl MapView {
             center + half_x + half_y,
             center - half_x + half_y,
         ]
-    }
-
-    #[allow(dead_code)]
-    pub(super) fn tile_rect(self, x: i32, y: i32) -> Rect {
-        let quad = self.tile_quad(x, y);
-        let min_x = quad.iter().map(|point| point.x).fold(f32::MAX, f32::min);
-        let max_x = quad.iter().map(|point| point.x).fold(f32::MIN, f32::max);
-        let min_y = quad.iter().map(|point| point.y).fold(f32::MAX, f32::min);
-        let max_y = quad.iter().map(|point| point.y).fold(f32::MIN, f32::max);
-        Rect::new(min_x, min_y, max_x - min_x, max_y - min_y)
     }
 
     pub(super) fn tile_center(self, x: i32, y: i32) -> Vec2 {

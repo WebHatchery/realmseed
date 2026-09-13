@@ -39,6 +39,7 @@ pub(super) fn draw_realm_overview(ctx: &UiContext<'_>) {
     let health = realm_health(ctx);
     let mut y = content.y + 132.0;
     draw_stat_bar(
+        ctx,
         content.x,
         y,
         content.w,
@@ -48,6 +49,7 @@ pub(super) fn draw_realm_overview(ctx: &UiContext<'_>) {
     );
     y += 31.0;
     draw_stat_bar(
+        ctx,
         content.x,
         y,
         content.w,
@@ -57,6 +59,7 @@ pub(super) fn draw_realm_overview(ctx: &UiContext<'_>) {
     );
     y += 31.0;
     draw_stat_bar(
+        ctx,
         content.x,
         y,
         content.w,
@@ -66,6 +69,7 @@ pub(super) fn draw_realm_overview(ctx: &UiContext<'_>) {
     );
     y += 31.0;
     draw_stat_bar(
+        ctx,
         content.x,
         y,
         content.w,
@@ -319,16 +323,11 @@ fn draw_log_lines(ctx: &UiContext<'_>, x: f32, y: f32, width: f32) {
         return;
     }
     for row in ctx.session.last_season_rows.iter().take(2) {
-        draw_text_block(
-            &format!("* {} - {}", row.label, row.detail),
-            x,
-            line_y,
-            width,
-            24.0,
-            12.0,
-            1.0,
-            style::TEXT_DIM,
+        let detail = ctx.data.text_with(
+            "ui.advisor_log_line",
+            &[("{label}", &row.label), ("{detail}", &row.detail)],
         );
+        draw_text_block(&detail, x, line_y, width, 24.0, 12.0, 1.0, style::TEXT_DIM);
         line_y += 22.0;
     }
 }
@@ -444,10 +443,22 @@ fn realm_health(ctx: &UiContext<'_>) -> RealmHealth {
     }
 }
 
-fn draw_stat_bar(x: f32, y: f32, width: f32, label: &str, value: i32, color: Color) {
+fn draw_stat_bar(
+    ctx: &UiContext<'_>,
+    x: f32,
+    y: f32,
+    width: f32,
+    label: &str,
+    value: i32,
+    color: Color,
+) {
     draw_ui_text_ex(label, x, y, TextStyle::new(13.0, style::TEXT).params());
+    let value_text = ctx.data.text_with(
+        "ui.stat_value",
+        &[("{value}", &value.clamp(0, 100).to_string())],
+    );
     draw_ui_text_ex(
-        &format!("{}/100", value.clamp(0, 100)),
+        &value_text,
         x + width - 56.0,
         y,
         TextStyle::new(12.5, style::TEXT_BRIGHT).params(),

@@ -35,7 +35,11 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>)
         48.0,
         Color::new(0.13, 0.08, 0.05, 0.96),
     );
-    style::draw_panel_title("COUNCIL EVENT", content.x + 68.0, content.y + 17.0);
+    style::draw_panel_title(
+        &ctx.data.text("ui.council_event"),
+        content.x + 68.0,
+        content.y + 17.0,
+    );
     draw_ui_text_ex(
         &fill_event_text(&template.title, &site_name),
         content.x + 68.0,
@@ -43,6 +47,7 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>)
         TextStyle::new(25.0, style::TEXT_BRIGHT).params(),
     );
     draw_severity_badge(
+        ctx.data,
         Rect::new(content.right() - 126.0, content.y + 18.0, 126.0, 32.0),
         pending.severity,
     );
@@ -61,10 +66,16 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>)
     );
     y += 74.0;
 
-    draw_event_detail("Cause", &pending.cause, content.x, y, content.w);
+    draw_event_detail(
+        &ctx.data.text("ui.cause"),
+        &pending.cause,
+        content.x,
+        y,
+        content.w,
+    );
     y += 42.0;
     draw_event_detail(
-        "Visible",
+        &ctx.data.text("ui.visible"),
         &template.visible_consequences,
         content.x,
         y,
@@ -72,7 +83,7 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>)
     );
     y += 42.0;
     draw_event_detail(
-        "Uncertain",
+        &ctx.data.text("ui.uncertain"),
         &template.hidden_consequences,
         content.x,
         y,
@@ -119,7 +130,7 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>)
                 150.0,
                 32.0,
             ),
-            "Defer",
+            &ctx.data.text("ui.defer"),
             true,
             ButtonTone::Secondary,
             ctx.pointer,
@@ -152,7 +163,7 @@ fn event_icon(severity: i32) -> style::IconKind {
     }
 }
 
-fn draw_severity_badge(rect: Rect, severity: i32) {
+fn draw_severity_badge(data: &crate::data::GameData, rect: Rect, severity: i32) {
     let tone = if severity >= 3 {
         ButtonTone::Danger
     } else {
@@ -160,7 +171,7 @@ fn draw_severity_badge(rect: Rect, severity: i32) {
     };
     style::draw_button_frame(rect, tone, true, false, false);
     draw_text_centered_in_box_ex(
-        &format!("Severity {}", severity),
+        &data.text_with("ui.severity", &[("{severity}", &severity.to_string())]),
         rect.x + 8.0,
         rect.y,
         rect.w - 16.0,

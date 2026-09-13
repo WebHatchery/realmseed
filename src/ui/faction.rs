@@ -1,6 +1,8 @@
 //! Faction, independent settlement, and wilderness pressure overlay.
 
 use super::{style, virtual_button, UiAction, UiContext};
+use crate::data::FactionGoal;
+use crate::state::{IntegrationState, WildernessPressureState};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
@@ -26,16 +28,20 @@ pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
         48.0,
         Color::new(0.13, 0.08, 0.05, 0.96),
     );
-    style::draw_panel_title("FRONTIER PRESSURE", content.x + 68.0, content.y + 17.0);
+    style::draw_panel_title(
+        &ctx.data.text("ui.frontier_pressure"),
+        content.x + 68.0,
+        content.y + 17.0,
+    );
     draw_ui_text_ex(
-        "Faction Pressure",
+        &ctx.data.text("ui.faction_pressure"),
         content.x + 68.0,
         content.y + 48.0,
         TextStyle::new(25.0, style::TEXT_BRIGHT).params(),
     );
     if virtual_button(
         Rect::new(content.right() - 86.0, content.y + 14.0, 86.0, 32.0),
-        "Close",
+        &ctx.data.text("ui.close"),
         true,
         ButtonTone::Secondary,
         ctx.pointer,
@@ -69,7 +75,7 @@ pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
 
 fn draw_rival(ctx: &UiContext<'_>, rect: Rect) {
     let rival = &ctx.session.rival_faction;
-    draw_section_heading("RIVAL CLAN", rect.x, rect.y, rect.w);
+    draw_section_heading(ctx, "ui.rival_clan", rect.x, rect.y, rect.w);
     draw_ui_text_ex(
         &rival.name,
         rect.x,
@@ -77,10 +83,12 @@ fn draw_rival(ctx: &UiContext<'_>, rect: Rect) {
         TextStyle::new(22.0, style::TEXT_BRIGHT).params(),
     );
     draw_text_block(
-        &format!(
-            "{} personality. Goal: {}.",
-            rival.personality,
-            rival.current_goal.label()
+        &ctx.data.text_with(
+            "ui.rival_description",
+            &[
+                ("{personality}", &rival.personality),
+                ("{goal}", &goal_label(ctx, rival.current_goal)),
+            ],
         ),
         rect.x,
         rect.y + 48.0,
@@ -95,14 +103,14 @@ fn draw_rival(ctx: &UiContext<'_>, rect: Rect) {
         rect.y + 88.0,
         rect.w,
         [
-            ("Conf", rival.confidence),
-            ("Fear", rival.fear),
-            ("Hostile", rival.hostility),
-            ("Border", rival.border_pressure),
+            (ctx.data.text("ui.confidence"), rival.confidence),
+            (ctx.data.text("ui.fear"), rival.fear),
+            (ctx.data.text("ui.hostile"), rival.hostility),
+            (ctx.data.text("ui.border"), rival.border_pressure),
         ],
     );
     draw_ui_text_ex(
-        "Recent Actions",
+        &ctx.data.text("ui.recent_actions"),
         rect.x,
         rect.y + 132.0,
         TextStyle::new(16.0, style::GOLD).params(),
@@ -113,17 +121,21 @@ fn draw_rival(ctx: &UiContext<'_>, rect: Rect) {
             .target_site_id
             .as_deref()
             .and_then(|site_id| ctx.data.site(site_id))
-            .map(|site| site.name.as_str())
-            .unwrap_or("the frontier");
+            .map(|site| site.name.clone())
+            .unwrap_or_else(|| ctx.data.text("state.frontier"));
+        let season = entry.season.label().to_owned();
+        let year = entry.year.to_string();
         draw_text_block(
-            &format!(
-                "{} Y{}: {} at {}. Reason: {} Result: {}",
-                entry.season.label(),
-                entry.year,
-                entry.action,
-                target,
-                entry.reason,
-                entry.result
+            &ctx.data.text_with(
+                "ui.rival_action_log",
+                &[
+                    ("{season}", &season),
+                    ("{year}", &year),
+                    ("{action}", &entry.action),
+                    ("{target}", &target),
+                    ("{reason}", &entry.reason),
+                    ("{result}", &entry.result),
+                ],
             ),
             rect.x,
             y,
@@ -137,7 +149,7 @@ fn draw_rival(ctx: &UiContext<'_>, rect: Rect) {
     }
     if rival.action_log.is_empty() {
         draw_text_block(
-            "No rival actions have been logged yet.",
+            &ctx.data.text("ui.no_rival_actions"),
             rect.x,
             y - 4.0,
             rect.w,
@@ -156,9 +168,9 @@ fn draw_campaign_controls(
     rect: Rect,
 ) {
     let compact = rect.h < 182.0;
-    draw_section_heading("CAMPAIGN", rect.x, rect.y, rect.w);
+    draw_section_heading(ctx, "ui.campaign", rect.x, rect.y, rect.w);
     draw_ui_text_ex(
-        "Ambition",
+        &ctx.data.text("ui.ambition"),
         rect.x,
         rect.y + 32.0,
         TextStyle::new(15.0, style::GOLD).params(),
@@ -172,10 +184,17 @@ fn draw_campaign_controls(
             .map(|ambition| ambition.name.as_str())
             .unwrap_or(ambition_id.as_str());
         draw_ui_text_ex(
-            &format!(
-                "{} progress {}",
-                name,
-                ctx.session.ambition_progress(ctx.data, ambition_id)
+            &ctx.data.text_with(
+                "ui.campaign_progress",
+                &[
+                    ("{name}", name),
+                    (
+                        "{progress}",
+                        &ctx.session
+                            .ambition_progress(ctx.data, ambition_id)
+                            .to_string(),
+                    ),
+                ],
             ),
             rect.x,
             y,
@@ -303,22 +322,25 @@ fn draw_campaign_controls(
 }
 
 fn draw_independents(ctx: &UiContext<'_>, rect: Rect) {
-    draw_section_heading("INDEPENDENTS", rect.x, rect.y, rect.w);
+    draw_section_heading(ctx, "ui.independents", rect.x, rect.y, rect.w);
     let mut y = rect.y + 32.0;
     for independent in &ctx.session.independent_settlements {
         let name = ctx
             .data
             .site(&independent.site_id)
-            .map(|site| site.name.as_str())
-            .unwrap_or(independent.site_id.as_str());
+            .map(|site| site.name.clone())
+            .unwrap_or_else(|| ctx.data.text("state.frontier"));
+        let state = integration_label(ctx, independent.integration_state);
         draw_ui_text_ex(
-            &format!(
-                "{}  Trust {}  Autonomy {}  Rival {}  {}",
-                name,
-                independent.trust,
-                independent.autonomy,
-                independent.rival_pressure,
-                independent.integration_state.label()
+            &ctx.data.text_with(
+                "ui.independent_line",
+                &[
+                    ("{name}", &name),
+                    ("{trust}", &independent.trust.to_string()),
+                    ("{autonomy}", &independent.autonomy.to_string()),
+                    ("{rival}", &independent.rival_pressure.to_string()),
+                    ("{state}", &state),
+                ],
             ),
             rect.x,
             y,
@@ -329,24 +351,29 @@ fn draw_independents(ctx: &UiContext<'_>, rect: Rect) {
 }
 
 fn draw_wilderness(ctx: &UiContext<'_>, rect: Rect) {
-    draw_section_heading("WILDERNESS", rect.x, rect.y, rect.w);
+    draw_section_heading(ctx, "ui.wilderness", rect.x, rect.y, rect.w);
     let mut y = rect.y + 34.0;
     for pressure in &ctx.session.wilderness_pressure {
         let region_name = ctx
             .data
             .region(&pressure.region_id)
-            .map(|region| region.name.as_str())
-            .unwrap_or(pressure.region_id.as_str());
+            .map(|region| region.name.clone())
+            .unwrap_or_else(|| pressure.region_id.clone());
+        let band = wilderness_band(ctx, pressure);
         draw_badge(
             Rect::new(rect.x, y - 18.0, 114.0, 24.0),
-            pressure.band(),
+            &band,
             wilderness_color(pressure.pressure),
             style::TEXT,
         );
         draw_ui_text_ex(
-            &format!(
-                "{}  Pressure {} ({:+})",
-                region_name, pressure.pressure, pressure.last_delta
+            &ctx.data.text_with(
+                "ui.wilderness_line",
+                &[
+                    ("{region}", &region_name),
+                    ("{pressure}", &pressure.pressure.to_string()),
+                    ("{delta}", &format!("{:+}", pressure.last_delta)),
+                ],
             ),
             rect.x + 126.0,
             y,
@@ -356,12 +383,47 @@ fn draw_wilderness(ctx: &UiContext<'_>, rect: Rect) {
     }
 }
 
-fn draw_section_heading(text: &str, x: f32, y: f32, width: f32) {
-    style::draw_panel_title(text, x, y + 14.0);
+fn draw_section_heading(ctx: &UiContext<'_>, text_id: &str, x: f32, y: f32, width: f32) {
+    style::draw_panel_title(&ctx.data.text(text_id), x, y + 14.0);
     style::draw_divider(x, y + 26.0, width);
 }
 
-fn draw_rival_stats(x: f32, y: f32, width: f32, stats: [(&str, i32); 4]) {
+fn goal_label(ctx: &UiContext<'_>, goal: FactionGoal) -> String {
+    let text_id = match goal {
+        FactionGoal::Expand => "ui.goal_expand",
+        FactionGoal::Fortify => "ui.goal_fortify",
+        FactionGoal::Raid => "ui.goal_raid",
+        FactionGoal::Trade => "ui.goal_trade",
+        FactionGoal::Influence => "ui.goal_influence",
+        FactionGoal::Recover => "ui.goal_recover",
+        FactionGoal::Confront => "ui.goal_confront",
+        FactionGoal::Appease => "ui.goal_appease",
+    };
+    ctx.data.text(text_id)
+}
+
+fn integration_label(ctx: &UiContext<'_>, state: IntegrationState) -> String {
+    let text_id = match state {
+        IntegrationState::Independent => "ui.integration_independent",
+        IntegrationState::Trading => "ui.integration_trading",
+        IntegrationState::Integrating => "ui.integration_integrating",
+        IntegrationState::Integrated => "ui.integration_integrated",
+        IntegrationState::Resistant => "ui.integration_resistant",
+    };
+    ctx.data.text(text_id)
+}
+
+fn wilderness_band(ctx: &UiContext<'_>, pressure: &WildernessPressureState) -> String {
+    let text_id = match pressure.pressure {
+        0..=24 => "ui.wilderness_quiet",
+        25..=49 => "ui.wilderness_watchful",
+        50..=74 => "ui.wilderness_dangerous",
+        _ => "ui.wilderness_lawless",
+    };
+    ctx.data.text(text_id)
+}
+
+fn draw_rival_stats(x: f32, y: f32, width: f32, stats: [(String, i32); 4]) {
     let gap = 8.0;
     let item_w = (width - gap * 3.0) / 4.0;
     for (index, (label, value)) in stats.iter().enumerate() {

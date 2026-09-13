@@ -58,6 +58,13 @@ enum SettingsReturn {
     PauseMenu,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum NotificationTone {
+    Info,
+    Warning,
+    Danger,
+}
+
 const SAVE_WARNING_WINDOW_SECS: f64 = 60.0;
 
 impl Game {
@@ -479,7 +486,7 @@ impl Game {
                 session.resolve_pending_event_choice(data, &choice_id)
             }),
             UiAction::DeferEvent => {
-                self.notify_warning_with(|session, _| session.defer_pending_event())
+                self.notify_warning_with(|session, data| session.defer_pending_event(data))
             }
             UiAction::OpenIndependentTrade => self.notify_success_with(|session, data| {
                 session.open_trade_with_selected_independent(data)
@@ -528,20 +535,40 @@ impl Game {
     }
 
     fn notify_season_counts(&mut self, report: &crate::state::SeasonAdvanceReport) {
-        self.notify_count(report.food_shortages as i64, "game.food_shortage", false);
-        self.notify_count(report.settlements_lost as i64, "game.settlement_lost", true);
-        self.notify_count(report.road_warnings as i64, "game.road_warning", false);
-        self.notify_count(report.isolated_settlements as i64, "game.isolated", false);
+        self.notify_count(
+            report.food_shortages as i64,
+            "game.food_shortage",
+            NotificationTone::Warning,
+        );
+        self.notify_count(
+            report.settlements_lost as i64,
+            "game.settlement_lost",
+            NotificationTone::Danger,
+        );
+        self.notify_count(
+            report.road_warnings as i64,
+            "game.road_warning",
+            NotificationTone::Warning,
+        );
+        self.notify_count(
+            report.isolated_settlements as i64,
+            "game.isolated",
+            NotificationTone::Warning,
+        );
         self.notify_count(
             report.unmanaged_strain as i64,
             "game.unmanaged_strain",
-            false,
+            NotificationTone::Info,
         );
-        self.notify_count(report.events_triggered as i64, "game.event_pending", false);
+        self.notify_count(
+            report.events_triggered as i64,
+            "game.event_pending",
+            NotificationTone::Info,
+        );
         self.notify_count(
             report.issues_escalated as i64,
             "game.issue_escalated",
-            false,
+            NotificationTone::Warning,
         );
         if report.rival_actions > 0 {
             self.notifications.info(self.data.text("game.rival_acted"));
@@ -549,25 +576,25 @@ impl Game {
         self.notify_count(
             report.independent_requests as i64,
             "game.independent_request",
-            false,
+            NotificationTone::Warning,
         );
         self.notify_count(
             report.wilderness_changes as i64,
             "game.wilderness_changed",
-            false,
+            NotificationTone::Warning,
         );
     }
 
-    fn notify_count(&mut self, count: i64, text_id: &str, danger: bool) {
+    fn notify_count(&mut self, count: i64, text_id: &str, tone: NotificationTone) {
         if count == 0 {
             return;
         }
         let count = count.to_string();
         let message = self.data.text_with(text_id, &[("{count}", &count)]);
-        if danger {
-            self.notifications.danger(message);
-        } else {
-            self.notifications.warning(message);
+        match tone {
+            NotificationTone::Info => self.notifications.info(message),
+            NotificationTone::Warning => self.notifications.warning(message),
+            NotificationTone::Danger => self.notifications.danger(message),
         }
     }
 

@@ -397,7 +397,7 @@ impl GameSession {
         else {
             return SettlementActionStatus::disabled(data.text("state.capital_unavailable"));
         };
-        if let Some(reason) = source.stored.deficit_text(scouting.cost) {
+        if let Some(reason) = source.stored.deficit_text_with(scouting.cost, data) {
             return SettlementActionStatus::disabled(reason);
         }
 
@@ -406,7 +406,7 @@ impl GameSession {
             .map(|site| site.name.clone())
             .unwrap_or_else(|| data.text("state.charter_capital"));
         let actions = scouting.action_cost.to_string();
-        let cost = scouting.cost.cost_text();
+        let cost = scouting.cost.cost_text_with(data);
         SettlementActionStatus::enabled(data.text_with(
             "state.scout_cost",
             &[

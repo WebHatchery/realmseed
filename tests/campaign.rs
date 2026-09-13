@@ -14,7 +14,7 @@ fn resolve_pending_with_first_choice(session: &mut GameSession, data: &GameData)
                 .resolve_pending_event_choice(data, &choice_id)
                 .is_err()
             {
-                let _ = session.defer_pending_event();
+                let _ = session.defer_pending_event(data);
             }
         }
     }
@@ -28,7 +28,7 @@ fn resolve_pending_with_compromise(session: &mut GameSession, data: &GameData) {
                 .resolve_pending_event_choice(data, &choice_id)
                 .is_err()
             {
-                let _ = session.defer_pending_event();
+                let _ = session.defer_pending_event(data);
             }
         }
     }
@@ -193,7 +193,7 @@ fn thirty_turn_validation_matches_complete_prototype_criteria() {
         if let Some(pending) = session.pending_event.clone() {
             match pending.stage {
                 EventStage::Opening => {
-                    let _ = session.defer_pending_event();
+                    let _ = session.defer_pending_event(&data);
                 }
                 EventStage::FollowUp | EventStage::Resolution => {
                     resolve_pending_with_first_choice(&mut session, &data);

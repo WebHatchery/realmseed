@@ -18,14 +18,14 @@ pub(in crate::ui) fn draw_chronicle_overlay(ctx: &UiContext<'_>, actions: &mut V
         .with_header_divider(1.0, Color::new(0.64, 0.55, 0.34, 0.45));
     draw_surface_with_title(
         rect,
-        Some("Chronicle"),
+        Some(&ctx.data.text("ui.chronicle_overlay")),
         &style,
         TextStyle::new(20.0, dark::TEXT_BRIGHT),
     );
 
     if virtual_button(
         Rect::new(rect.right() - 96.0, rect.y + 10.0, 76.0, 30.0),
-        "Close",
+        &ctx.data.text("ui.close"),
         true,
         ButtonTone::Secondary,
         ctx.pointer,
@@ -36,12 +36,16 @@ pub(in crate::ui) fn draw_chronicle_overlay(ctx: &UiContext<'_>, actions: &mut V
     let content = rect.inset(24.0);
     let mut y = content.y + 48.0;
     for entry in ctx.session.chronicle.iter().rev().take(8) {
-        let title = format!(
-            "[{}] {} Year {} - {}",
-            entry.tag,
-            entry.season.label(),
-            entry.year,
-            entry.title
+        let season = entry.season.label().to_owned();
+        let year = entry.year.to_string();
+        let title = ctx.data.text_with(
+            "ui.chronicle_entry",
+            &[
+                ("{tag}", &entry.tag),
+                ("{season}", &season),
+                ("{year}", &year),
+                ("{title}", &entry.title),
+            ],
         );
         draw_ui_text_ex(
             &title,
@@ -64,7 +68,7 @@ pub(in crate::ui) fn draw_chronicle_overlay(ctx: &UiContext<'_>, actions: &mut V
 
     if ctx.session.chronicle.is_empty() {
         draw_text_centered_in_box(
-            "No chronicle entries yet.",
+            &ctx.data.text("ui.no_chronicle"),
             content.x,
             content.y + 90.0,
             content.w,

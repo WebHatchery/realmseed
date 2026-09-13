@@ -79,10 +79,10 @@ impl TextCatalog {
         Ok(())
     }
 
-    fn lookup(&self) -> HashMap<&str, &str> {
+    fn lookup_owned(&self) -> HashMap<String, String> {
         self.entries
             .iter()
-            .map(|entry| (entry.id.as_str(), entry.text.as_str()))
+            .map(|entry| (entry.id.clone(), entry.text.clone()))
             .collect()
     }
 }
@@ -212,6 +212,7 @@ pub struct GameData {
     pub campaign_balance: CampaignBalance,
     pub text: TextCatalog,
     pub texture_manifest: Vec<TextureConfig>,
+    text_lookup: HashMap<String, String>,
 }
 
 impl GameData {
@@ -240,8 +241,12 @@ impl GameData {
                 "texture_manifest",
                 TEXTURE_MANIFEST_JSON,
             )?,
+            text_lookup: HashMap::new(),
         };
         data.validate()?;
+        let text_lookup = data.text.lookup_owned();
+        let mut data = data;
+        data.text_lookup = text_lookup;
         Ok(data)
     }
 
@@ -250,11 +255,10 @@ impl GameData {
     }
 
     pub fn text(&self, id: &str) -> String {
-        self.text
-            .lookup()
+        self.text_lookup
             .get(id)
-            .copied()
-            .unwrap_or_else(|| "[missing text]")
+            .map(String::as_str)
+            .unwrap_or("[missing text]")
             .to_owned()
     }
 
@@ -570,7 +574,7 @@ impl GameData {
                     ));
                 };
                 if template.family_id != family.id
-                    || template.stage != expected_stage(&family, template_id)
+                    || template.stage != expected_stage(family, template_id)
                 {
                     return Err(format!(
                         "event family {} has inconsistent stage reference {}",

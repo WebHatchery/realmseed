@@ -62,7 +62,7 @@ impl GameSession {
             .as_ref()
             .and_then(|event| data.site(&event.target_site_id))
             .map(|site| site.name.clone())
-            .unwrap_or_else(|| "the frontier".to_owned())
+            .unwrap_or_else(|| data.text("event.frontier"))
     }
 
     pub fn event_choice_status(
@@ -71,12 +71,15 @@ impl GameSession {
         choice: &EventChoiceDef,
     ) -> SettlementActionStatus {
         let Some(pending) = &self.pending_event else {
-            return SettlementActionStatus::disabled("No event is pending.");
+            return SettlementActionStatus::disabled(data.text("event.no_pending"));
         };
         let Some(source) = self.event_resource_source(data, &pending.target_site_id) else {
-            return SettlementActionStatus::disabled("This event has no valid target.");
+            return SettlementActionStatus::disabled(data.text("event.invalid_target"));
         };
-        if let Some(reason) = source.stored.deficit_text(choice.requirements.resources) {
+        if let Some(reason) = source
+            .stored
+            .deficit_text_with(choice.requirements.resources, data)
+        {
             return SettlementActionStatus::disabled(reason);
         }
         if let Some(settlement) = self.settlement_at_site(&pending.target_site_id) {
@@ -85,7 +88,7 @@ impl GameSession {
                 .iter()
                 .any(|tag| settlement.memory_tags.contains(tag))
             {
-                return SettlementActionStatus::disabled("Blocked by settlement memory.");
+                return SettlementActionStatus::disabled(data.text("event.blocked_memory"));
             }
         }
 
@@ -100,15 +103,15 @@ impl GameSession {
         let pending = self
             .pending_event
             .clone()
-            .ok_or_else(|| "No event is pending.".to_owned())?;
+            .ok_or_else(|| data.text("event.no_pending"))?;
         let template = data
             .event_template(&pending.template_id)
-            .ok_or_else(|| "Pending event template is missing.".to_owned())?;
+            .ok_or_else(|| data.text("event.template_missing"))?;
         let choice = template
             .choices
             .iter()
             .find(|choice| choice.id == choice_id)
-            .ok_or_else(|| "Unknown event choice.".to_owned())?;
+            .ok_or_else(|| data.text("event.choice_unknown"))?;
         let status = self.event_choice_status(data, choice);
         if !status.enabled {
             return Err(status.reason);
@@ -117,14 +120,14 @@ impl GameSession {
         self.apply_event_effects(data, &pending, choice)?;
         self.pending_event = None;
 
-        Ok(format!("Resolved event choice: {}", choice.label))
+        Ok(data.text_with("event.resolved", &[("{choice}", &choice.label)]))
     }
 
-    pub fn defer_pending_event(&mut self) -> Result<String, String> {
+    pub fn defer_pending_event(&mut self, data: &GameData) -> Result<String, String> {
         let pending = self
             .pending_event
             .clone()
-            .ok_or_else(|| "No event is pending.".to_owned())?;
+            .ok_or_else(|| data.text("event.no_pending"))?;
         if let Some(issue) = self
             .active_issues
             .iter_mut()
@@ -134,12 +137,12 @@ impl GameSession {
             issue.response_score = 0;
         }
         self.pending_event = None;
-        Ok("Deferred event; the issue will keep aging.".to_owned())
+        Ok(data.text("event.deferred"))
     }
 
     pub fn force_next_event(&mut self, data: &GameData) -> Result<String, String> {
         if self.pending_event.is_some() {
-            return Err("Resolve or defer the current event first.".to_owned());
+            return Err(data.text("event.resolve_first"));
         }
         let family_index = (self.event_history.len() as u64 + self.campaign_seed) as usize
             % data.event_families.len().max(1);
@@ -158,11 +161,11 @@ impl GameSession {
                 };
                 candidate.template_id = template_id;
                 self.open_event_for_candidate(data, candidate);
-                return Ok("Forced next eligible event.".to_owned());
+                return Ok(data.text("event.forced"));
             }
         }
 
-        Err("No eligible event target found.".to_owned())
+        Err(data.text("event.no_eligible"))
     }
 
     pub fn advance_event_chains(&mut self, data: &GameData) -> EventAdvanceReport {
@@ -261,6 +264,7 @@ impl GameSession {
             };
             if issue.response_score >= issue.improvement_threshold {
                 issue.state = ActiveIssueState::Resolution;
+                let cause = data.text("event.cause.response");
                 if let Some(template_id) = select_template_for_stage(TemplateSelection {
                     event_history: &event_history,
                     current_turn,
@@ -270,14 +274,14 @@ impl GameSession {
                     stage: EventStage::Resolution,
                     target_site_id: &issue.target_site_id,
                     severity: issue.severity,
-                    cause: "Player response improved the issue.",
+                    cause: &cause,
                 }) {
                     pending_events.push(make_pending_for_issue(
                         family,
                         issue,
                         &template_id,
                         EventStage::Resolution,
-                        "Player response improved the issue.",
+                        &cause,
                     ));
                 }
                 issue.response_score = 0;
@@ -306,6 +310,7 @@ impl GameSession {
                 if issue.state == ActiveIssueState::Escalating {
                     issue.severity = (issue.severity + 1).clamp(1, 3);
                 }
+                let cause = data.text("event.cause.escalation");
                 if let Some(template_id) = select_template_for_stage(TemplateSelection {
                     event_history: &event_history,
                     current_turn,
@@ -315,14 +320,14 @@ impl GameSession {
                     stage: EventStage::FollowUp,
                     target_site_id: &issue.target_site_id,
                     severity: issue.severity,
-                    cause: "The active issue escalated after neglect.",
+                    cause: &cause,
                 }) {
                     pending_events.push(make_pending_for_issue(
                         family,
                         issue,
                         &template_id,
                         EventStage::FollowUp,
-                        "The active issue escalated after neglect.",
+                        &cause,
                     ));
                 }
             }
@@ -426,16 +431,16 @@ impl GameSession {
                 .settlements
                 .iter_mut()
                 .find(|settlement| settlement.location_id == data.road_balance.source_site_id)
-                .ok_or_else(|| "Independent event source settlement is missing.".to_owned())?;
+                .ok_or_else(|| data.text("event.source_missing"))?;
             apply_resource_delta(&mut source.stored, choice.effects.resource_delta);
             let independent = self
                 .independent_settlements
                 .iter_mut()
                 .find(|independent| independent.site_id == pending.target_site_id)
-                .ok_or_else(|| "Event target independent settlement is missing.".to_owned())?;
-            apply_choice_effects_to_independent(independent, &choice.effects);
+                .ok_or_else(|| data.text("event.target_missing"))?;
+            apply_choice_effects_to_independent(independent, &choice.effects, data);
         } else {
-            return Err("Event target is missing.".to_owned());
+            return Err(data.text("event.target_missing"));
         }
 
         if let Some(issue) = self
@@ -603,6 +608,7 @@ fn apply_choice_effects_to_settlement(
 fn apply_choice_effects_to_independent(
     independent: &mut super::IndependentSettlementRuntimeState,
     effects: &EventChoiceEffects,
+    data: &GameData,
 ) {
     let fallback_trust = effects.loyalty_delta + effects.stability_delta / 2;
     let fallback_integration = effects.prosperity_delta.max(0) / 2;
@@ -621,7 +627,7 @@ fn apply_choice_effects_to_independent(
         + fallback_integration)
         .clamp(0, 100);
     if effects.response_score >= 18 {
-        independent.local_need = "answered by the realm council".to_owned();
+        independent.local_need = data.text("event.answered");
     }
 }
 

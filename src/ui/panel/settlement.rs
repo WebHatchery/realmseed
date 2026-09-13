@@ -53,41 +53,53 @@ impl FocusButtonLayout {
     }
 }
 
+pub(super) struct SettlementInteraction<'a> {
+    pub(super) tooltip: &'a mut HoverTooltip,
+    pub(super) pointer: Pointer,
+    pub(super) input_enabled: bool,
+    pub(super) actions: &'a mut Vec<UiAction>,
+}
+
 pub(super) fn draw_existing_settlement(
     ctx: &UiContext<'_>,
-    tooltip: &mut HoverTooltip,
-    pointer: Pointer,
-    input_enabled: bool,
-    actions: &mut Vec<UiAction>,
+    interaction: &mut SettlementInteraction<'_>,
     content: Rect,
     y: f32,
     settlement: &SettlementRuntimeState,
 ) -> f32 {
     draw_metric_grid(
+        ctx.data,
         content.x,
         y,
         content.w,
         [
-            ("Population", settlement.population),
-            ("Loyalty", settlement.loyalty),
-            ("Stability", settlement.stability),
-            ("Danger", settlement.danger),
+            (ctx.data.text("ui.population"), settlement.population),
+            (ctx.data.text("ui.loyalty"), settlement.loyalty),
+            (ctx.data.text("ui.stability"), settlement.stability),
+            (ctx.data.text("ui.danger"), settlement.danger),
         ],
     );
 
     let active_issue_count = active_issue_count(ctx, settlement);
-    crate::ui::section_label("STORES", content.x, y + 48.0);
+    crate::ui::section_label(&ctx.data.text("ui.stores"), content.x, y + 48.0);
     if active_issue_count > 0 {
         draw_badge(
             Rect::new(content.right() - 84.0, y + 35.0, 84.0, 22.0),
-            &format!("{} issue", active_issue_count),
+            &ctx.data.text_with(
+                "ui.active_issues_count",
+                &[("{count}", &active_issue_count.to_string())],
+            ),
             Color::new(0.34, 0.14, 0.12, 1.0),
             style::TEXT,
         );
     }
-    draw_store_grid(settlement, Rect::new(content.x, y + 60.0, content.w, 34.0));
+    draw_store_grid(
+        ctx.data,
+        settlement,
+        Rect::new(content.x, y + 60.0, content.w, 34.0),
+    );
 
-    crate::ui::section_label("CURRENT FOCUS", content.x, y + 108.0);
+    crate::ui::section_label(&ctx.data.text("ui.current_focus"), content.x, y + 108.0);
     draw_focus_card(
         ctx,
         settlement,
@@ -97,12 +109,14 @@ pub(super) fn draw_existing_settlement(
     let actions_label_y = y + 178.0;
     let focus_grid_y = actions_label_y + 13.0;
     let focus_layout = focus_button_layout(ctx, content, y, settlement);
-    crate::ui::section_label("ACTIONS", content.x, actions_label_y);
+    crate::ui::section_label(
+        &ctx.data.text("ui.settlement_actions"),
+        content.x,
+        actions_label_y,
+    );
     let focus_grid_bottom = draw_focus_buttons(
         ctx,
-        pointer,
-        input_enabled,
-        actions,
+        interaction,
         content,
         focus_grid_y,
         settlement,
@@ -114,18 +128,20 @@ pub(super) fn draw_existing_settlement(
         upgrade_rect,
         &ctx.session.selected_upgrade_label(ctx.data),
         style::IconKind::Castle,
-        input_enabled && upgrade_status.enabled,
+        interaction.input_enabled && upgrade_status.enabled,
         ButtonTone::Positive,
-        pointer,
+        interaction.pointer,
     ) {
-        actions.push(UiAction::UpgradeSelectedSettlement);
+        interaction
+            .actions
+            .push(UiAction::UpgradeSelectedSettlement);
     }
     style::hover_tooltip(
-        tooltip,
+        interaction.tooltip,
         "selected_upgrade",
         upgrade_rect,
         &upgrade_preview(ctx, settlement, &upgrade_status.reason),
-        pointer,
+        interaction.pointer,
     );
 
     let mut next_y = upgrade_rect.bottom() + 10.0;
@@ -204,39 +220,59 @@ fn upgrade_preview(
     let Some(upgrade) = ctx.data.settlement_balance.upgrade_from(settlement.tier) else {
         return status_reason.to_owned();
     };
-    let population = check_text(settlement.population >= upgrade.min_population, "pop");
-    let prosperity = check_text(settlement.prosperity >= upgrade.min_prosperity, "pros");
-    let stability = check_text(settlement.stability >= upgrade.min_stability, "stab");
+    let population = check_text(
+        ctx.data,
+        settlement.population >= upgrade.min_population,
+        "ui.requirement_population",
+    );
+    let prosperity = check_text(
+        ctx.data,
+        settlement.prosperity >= upgrade.min_prosperity,
+        "ui.requirement_prosperity",
+    );
+    let stability = check_text(
+        ctx.data,
+        settlement.stability >= upgrade.min_stability,
+        "ui.requirement_stability",
+    );
     let stores = check_text(
+        ctx.data,
         settlement.stored.deficit_text(upgrade.cost).is_none(),
-        "stores",
+        "ui.requirement_stores",
     );
     let supply = check_text(
+        ctx.data,
         !upgrade.requires_capital_network
             || ctx
                 .session
                 .is_site_in_capital_network(ctx.data, &settlement.location_id),
-        "supply",
+        "ui.requirement_supply",
     );
-    format!(
-        "{} {} {} {} {}. {}",
-        population, prosperity, stability, stores, supply, status_reason
+    ctx.data.text_with(
+        "ui.upgrade_preview",
+        &[
+            ("{population}", &population),
+            ("{prosperity}", &prosperity),
+            ("{stability}", &stability),
+            ("{stores}", &stores),
+            ("{supply}", &supply),
+            ("{reason}", status_reason),
+        ],
     )
 }
 
-fn check_text(ok: bool, label: &str) -> String {
+fn check_text(data: &crate::data::GameData, ok: bool, label_id: &str) -> String {
+    let label = data.text(label_id);
     if ok {
-        format!("[ok] {}", label)
+        data.text_with("ui.requirement_met", &[("{label}", &label)])
     } else {
-        format!("[need] {}", label)
+        data.text_with("ui.requirement_needed", &[("{label}", &label)])
     }
 }
 
 fn draw_focus_buttons(
     ctx: &UiContext<'_>,
-    pointer: Pointer,
-    input_enabled: bool,
-    actions: &mut Vec<UiAction>,
+    interaction: &mut SettlementInteraction<'_>,
     content: Rect,
     y: f32,
     settlement: &SettlementRuntimeState,
@@ -264,11 +300,13 @@ fn draw_focus_buttons(
             rect,
             &focus.name,
             focus_icon(&focus.name),
-            input_enabled && status.enabled,
+            interaction.input_enabled && status.enabled,
             tone,
-            pointer,
+            interaction.pointer,
         ) {
-            actions.push(UiAction::SetSettlementFocus(focus.id.clone()));
+            interaction
+                .actions
+                .push(UiAction::SetSettlementFocus(focus.id.clone()));
         }
     }
     layout.grid_bottom(y, ctx.data.settlement_balance.focuses.len())

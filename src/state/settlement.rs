@@ -184,36 +184,34 @@ impl GameSession {
 
     pub fn founding_status(&self, data: &GameData) -> SettlementActionStatus {
         let Some(site) = self.selected_site(data) else {
-            return SettlementActionStatus::disabled("Select a site before founding.");
+            return SettlementActionStatus::disabled(data.text("state.settlement_select"));
         };
 
         if !self.is_known(&site.id) {
-            return SettlementActionStatus::disabled("Scout this site before founding.");
+            return SettlementActionStatus::disabled(data.text("state.settlement_scout"));
         }
         if site.category != SiteCategory::Settlement {
-            return SettlementActionStatus::disabled(
-                "Only settlement-capable sites can be founded.",
-            );
+            return SettlementActionStatus::disabled(data.text("state.settlement_category"));
         }
         if self.settlement_at_site(&site.id).is_some() {
-            return SettlementActionStatus::disabled("This site already has a settlement.");
+            return SettlementActionStatus::disabled(data.text("state.settlement_exists"));
         }
         if site.owner.as_deref().is_some() {
-            return SettlementActionStatus::disabled("This site is already claimed.");
+            return SettlementActionStatus::disabled(data.text("state.settlement_claimed"));
         }
 
         let founding = &data.settlement_balance.founding;
         if self.council_actions_remaining < founding.action_cost {
-            return SettlementActionStatus::disabled(format!(
-                "Needs {} council action.",
-                founding.action_cost
-            ));
+            let actions = founding.action_cost.to_string();
+            return SettlementActionStatus::disabled(
+                data.text_with("state.needs_council_action", &[("{actions}", &actions)]),
+            );
         }
 
         let Some(source) = self.active_settlement_at_site(&founding.source_site_id) else {
-            return SettlementActionStatus::disabled("The charter capital is unavailable.");
+            return SettlementActionStatus::disabled(data.text("state.capital_unavailable"));
         };
-        if let Some(reason) = source.stored.deficit_text(founding.cost) {
+        if let Some(reason) = source.stored.deficit_text_with(founding.cost, data) {
             return SettlementActionStatus::disabled(reason);
         }
 
@@ -221,17 +219,23 @@ impl GameSession {
             source.population - founding.population_transfer >= founding.min_source_population;
         let migrants_can_send = self.migrant_pool >= founding.population_transfer;
         if !source_can_send && !migrants_can_send {
-            return SettlementActionStatus::disabled(format!(
-                "Needs {} available settlers from the capital or migrant pool.",
-                founding.population_transfer
+            let population = founding.population_transfer.to_string();
+            return SettlementActionStatus::disabled(data.text_with(
+                "state.settlement_settlers",
+                &[("{population}", &population)],
             ));
         }
 
-        SettlementActionStatus::enabled(format!(
-            "Costs {} action, {}, and {} settlers.",
-            founding.action_cost,
-            founding.cost.cost_text(),
-            founding.population_transfer
+        let actions = founding.action_cost.to_string();
+        let cost = founding.cost.cost_text_with(data);
+        let population = founding.population_transfer.to_string();
+        SettlementActionStatus::enabled(data.text_with(
+            "state.settlement_found_cost",
+            &[
+                ("{actions}", &actions),
+                ("{cost}", &cost),
+                ("{population}", &population),
+            ],
         ))
     }
 
@@ -244,7 +248,7 @@ impl GameSession {
         let site_id = self.selected_site_id.clone();
         let site = data
             .site(&site_id)
-            .ok_or_else(|| "Selected site is missing.".to_owned())?;
+            .ok_or_else(|| data.text("state.settlement_missing"))?;
         let founding = &data.settlement_balance.founding;
         let source_index = self
             .settlements
@@ -252,7 +256,7 @@ impl GameSession {
             .position(|settlement| {
                 settlement.location_id == founding.source_site_id && settlement.is_active()
             })
-            .ok_or_else(|| "The charter capital is unavailable.".to_owned())?;
+            .ok_or_else(|| data.text("state.capital_unavailable"))?;
 
         let source_can_send = self.settlements[source_index].population
             - founding.population_transfer
@@ -284,82 +288,82 @@ impl GameSession {
         self.settlements.push(settlement);
         self.add_chronicle_entry(data, "settlement_founded", Some(&site_id));
 
-        Ok(format!("Founded camp at {}", site.name))
+        Ok(data.text_with("state.settlement_founded", &[("{site}", &site.name)]))
     }
 
     pub fn selected_upgrade_label(&self, data: &GameData) -> String {
         let Some(settlement) = self.selected_settlement() else {
-            return "Upgrade Settlement".to_owned();
+            return data.text("state.upgrade_label");
         };
         data.settlement_balance
             .upgrade_from(settlement.tier)
-            .map(|upgrade| format!("Upgrade to {}", upgrade.to.label()))
-            .unwrap_or_else(|| "Upgrade Settlement".to_owned())
+            .map(|upgrade| {
+                let tier = upgrade.to.label().to_owned();
+                data.text_with("state.upgrade_to", &[("{tier}", &tier)])
+            })
+            .unwrap_or_else(|| data.text("state.upgrade_label"))
     }
 
     pub fn upgrade_status(&self, data: &GameData) -> SettlementActionStatus {
         let Some(settlement) = self.selected_settlement() else {
-            return SettlementActionStatus::disabled("No settlement selected.");
+            return SettlementActionStatus::disabled(data.text("state.upgrade_selected"));
         };
         if !settlement.is_active() {
-            return SettlementActionStatus::disabled("Lost settlements cannot be upgraded.");
+            return SettlementActionStatus::disabled(data.text("state.upgrade_lost"));
         }
 
         let Some(upgrade) = data.settlement_balance.upgrade_from(settlement.tier) else {
-            return SettlementActionStatus::disabled("City is the current prototype ceiling.");
+            return SettlementActionStatus::disabled(data.text("state.upgrade_ceiling"));
         };
         if self.council_actions_remaining < upgrade.action_cost {
-            return SettlementActionStatus::disabled(format!(
-                "Needs {} council action.",
-                upgrade.action_cost
-            ));
+            let actions = upgrade.action_cost.to_string();
+            return SettlementActionStatus::disabled(
+                data.text_with("state.needs_council_action", &[("{actions}", &actions)]),
+            );
         }
         if settlement
             .active_issue_ids
             .contains(&data.settlement_balance.famine.issue_id)
         {
-            return SettlementActionStatus::disabled("Resolve famine before upgrading.");
+            return SettlementActionStatus::disabled(data.text("state.upgrade_famine"));
         }
         if settlement.population < upgrade.min_population {
-            return SettlementActionStatus::disabled(format!(
-                "Needs population {}+.",
-                upgrade.min_population
-            ));
+            let minimum = upgrade.min_population.to_string();
+            return SettlementActionStatus::disabled(
+                data.text_with("state.upgrade_population", &[("{minimum}", &minimum)]),
+            );
         }
         if settlement.prosperity < upgrade.min_prosperity {
-            return SettlementActionStatus::disabled(format!(
-                "Needs prosperity {}+.",
-                upgrade.min_prosperity
-            ));
+            let minimum = upgrade.min_prosperity.to_string();
+            return SettlementActionStatus::disabled(
+                data.text_with("state.upgrade_prosperity", &[("{minimum}", &minimum)]),
+            );
         }
         if settlement.stability < upgrade.min_stability {
-            return SettlementActionStatus::disabled(format!(
-                "Needs stability {}+.",
-                upgrade.min_stability
-            ));
+            let minimum = upgrade.min_stability.to_string();
+            return SettlementActionStatus::disabled(
+                data.text_with("state.upgrade_stability", &[("{minimum}", &minimum)]),
+            );
         }
-        if let Some(reason) = settlement.stored.deficit_text(upgrade.cost) {
+        if let Some(reason) = settlement.stored.deficit_text_with(upgrade.cost, data) {
             return SettlementActionStatus::disabled(reason);
         }
         if upgrade.requires_capital_network
             && !self.has_capital_network_access(data, &settlement.location_id)
         {
-            return SettlementActionStatus::disabled(
-                "Needs a road connection to the capital network.",
-            );
+            return SettlementActionStatus::disabled(data.text("state.upgrade_network"));
         }
         if upgrade.requires_stone_road_or_port
             && !self.has_stone_road_or_port_access(data, &settlement.location_id)
         {
-            return SettlementActionStatus::disabled(
-                "Needs a stone road or port connection; this gate is stubbed until road upgrades.",
-            );
+            return SettlementActionStatus::disabled(data.text("state.upgrade_stone_network"));
         }
 
-        SettlementActionStatus::enabled(format!(
-            "Costs {} action and {}.",
-            upgrade.action_cost,
-            upgrade.cost.cost_text()
+        let actions = upgrade.action_cost.to_string();
+        let cost = upgrade.cost.cost_text_with(data);
+        SettlementActionStatus::enabled(data.text_with(
+            "state.upgrade_ready",
+            &[("{actions}", &actions), ("{cost}", &cost)],
         ))
     }
 
@@ -374,11 +378,11 @@ impl GameSession {
             .settlements
             .iter()
             .position(|settlement| settlement.location_id == site_id)
-            .ok_or_else(|| "No settlement selected.".to_owned())?;
+            .ok_or_else(|| data.text("state.upgrade_selected"))?;
         let upgrade = data
             .settlement_balance
             .upgrade_from(self.settlements[settlement_index].tier)
-            .ok_or_else(|| "No upgrade is available.".to_owned())?
+            .ok_or_else(|| data.text("state.upgrade_no_available"))?
             .clone();
         let settlement = &mut self.settlements[settlement_index];
         settlement.stored.subtract(upgrade.cost);
@@ -394,38 +398,39 @@ impl GameSession {
         self.council_actions_remaining -= upgrade.action_cost;
         self.add_chronicle_entry(data, "settlement_upgraded", Some(&site_id));
 
-        Ok(format!(
-            "{} became a {}",
-            settlement_name,
-            upgrade.to.label()
+        let tier = upgrade.to.label().to_owned();
+        Ok(data.text_with(
+            "state.upgrade_completed",
+            &[("{settlement}", &settlement_name), ("{tier}", &tier)],
         ))
     }
 
     pub fn focus_change_status(&self, data: &GameData, focus_id: &str) -> SettlementActionStatus {
         let Some(settlement) = self.selected_settlement() else {
-            return SettlementActionStatus::disabled("No settlement selected.");
+            return SettlementActionStatus::disabled(data.text("state.focus_selected"));
         };
         if !settlement.is_active() {
-            return SettlementActionStatus::disabled("Lost settlements cannot change focus.");
+            return SettlementActionStatus::disabled(data.text("state.focus_lost"));
         }
         let Some(focus) = data.settlement_balance.focus(focus_id) else {
-            return SettlementActionStatus::disabled("Unknown focus.");
+            return SettlementActionStatus::disabled(data.text("state.focus_unknown"));
         };
         if settlement.focus_id == focus.id {
-            return SettlementActionStatus::disabled("This focus is already active.");
+            return SettlementActionStatus::disabled(data.text("state.focus_active"));
         }
         let action_cost = data.settlement_balance.focus_change_action_cost;
         if self.council_actions_remaining < action_cost {
-            return SettlementActionStatus::disabled(format!(
-                "Needs {} council action.",
-                action_cost
-            ));
+            let actions = action_cost.to_string();
+            return SettlementActionStatus::disabled(
+                data.text_with("state.needs_council_action", &[("{actions}", &actions)]),
+            );
         }
 
         if action_cost > 0 {
-            SettlementActionStatus::enabled(format!(
-                "Costs {} action. {}",
-                action_cost, focus.notes
+            let actions = action_cost.to_string();
+            SettlementActionStatus::enabled(data.text_with(
+                "state.focus_cost_action",
+                &[("{actions}", &actions), ("{notes}", &focus.notes)],
             ))
         } else {
             SettlementActionStatus::enabled(focus.notes.clone())
@@ -445,18 +450,21 @@ impl GameSession {
             .settlement_balance
             .focus(focus_id)
             .map(|focus| focus.name.clone())
-            .ok_or_else(|| "Unknown focus.".to_owned())?;
+            .ok_or_else(|| data.text("state.focus_unknown"))?;
         let site_id = self.selected_site_id.clone();
         let action_cost = data.settlement_balance.focus_change_action_cost;
         let settlement = self
             .settlements
             .iter_mut()
             .find(|settlement| settlement.location_id == site_id)
-            .ok_or_else(|| "No settlement selected.".to_owned())?;
+            .ok_or_else(|| data.text("state.focus_selected"))?;
         settlement.focus_id = focus_id.to_owned();
         self.council_actions_remaining -= action_cost;
 
-        Ok(format!("{} focus set to {}", settlement.name, focus_name))
+        Ok(data.text_with(
+            "state.focus_changed",
+            &[("{settlement}", &settlement.name), ("{focus}", &focus_name)],
+        ))
     }
 
     pub fn advance_settlement_economy(&mut self, data: &GameData) -> SeasonAdvanceReport {

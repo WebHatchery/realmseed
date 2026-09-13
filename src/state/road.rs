@@ -125,56 +125,55 @@ impl GameSession {
 
     pub fn route_action_label(&self, data: &GameData, route_id: &str) -> String {
         let Some(route) = self.routes.iter().find(|route| route.id == route_id) else {
-            return "Route Action".to_owned();
+            return data.text("state.route_action");
         };
         if route.condition != RouteCondition::Clear {
-            return "Repair Route".to_owned();
+            return data.text("state.route_repair");
         }
         data.road_balance
             .action_for_level(route.level)
             .map(|action| match action.to {
-                RouteLevel::Path => "Build Path".to_owned(),
-                RouteLevel::Road => "Upgrade to Road".to_owned(),
-                RouteLevel::StoneRoad => "Upgrade to Stone Road".to_owned(),
-                RouteLevel::None => "Route Action".to_owned(),
+                RouteLevel::Path => data.text("state.route_build_path"),
+                RouteLevel::Road => data.text("state.route_upgrade_road"),
+                RouteLevel::StoneRoad => data.text("state.route_upgrade_stone"),
+                RouteLevel::None => data.text("state.route_action"),
             })
-            .unwrap_or_else(|| "Route Complete".to_owned())
+            .unwrap_or_else(|| data.text("state.route_complete"))
     }
 
     pub fn route_action_status(&self, data: &GameData, route_id: &str) -> SettlementActionStatus {
         let Some(route) = self.routes.iter().find(|route| route.id == route_id) else {
-            return SettlementActionStatus::disabled("Unknown route.");
+            return SettlementActionStatus::disabled(data.text("state.route_unknown"));
         };
         if !route.known {
-            return SettlementActionStatus::disabled("Both endpoints must be known.");
+            return SettlementActionStatus::disabled(data.text("state.route_endpoints"));
         }
         if !self.route_has_controlled_endpoint(route) {
-            return SettlementActionStatus::disabled(
-                "Settle one endpoint before funding this route.",
-            );
+            return SettlementActionStatus::disabled(data.text("state.route_controlled"));
         }
 
         let Some(action) = self.route_action_for(data, route) else {
-            return SettlementActionStatus::disabled("This route is already fully upgraded.");
+            return SettlementActionStatus::disabled(data.text("state.route_upgraded"));
         };
         if self.council_actions_remaining < action.action_cost {
-            return SettlementActionStatus::disabled(format!(
-                "Needs {} council action.",
-                action.action_cost
-            ));
+            let actions = action.action_cost.to_string();
+            return SettlementActionStatus::disabled(
+                data.text_with("state.needs_council_action", &[("{actions}", &actions)]),
+            );
         }
         let cost = adjusted_route_cost(data, route, action.cost);
         let Some(source) = self.road_source_settlement(data) else {
-            return SettlementActionStatus::disabled("The charter capital is unavailable.");
+            return SettlementActionStatus::disabled(data.text("state.capital_unavailable"));
         };
-        if let Some(reason) = source.stored.deficit_text(cost) {
+        if let Some(reason) = source.stored.deficit_text_with(cost, data) {
             return SettlementActionStatus::disabled(reason);
         }
 
-        SettlementActionStatus::enabled(format!(
-            "Costs {} action and {} from Charter Hall.",
-            action.action_cost,
-            cost.cost_text()
+        let actions = action.action_cost.to_string();
+        let cost = cost.cost_text_with(data);
+        SettlementActionStatus::enabled(data.text_with(
+            "state.route_cost",
+            &[("{actions}", &actions), ("{cost}", &cost)],
         ))
     }
 
@@ -192,10 +191,10 @@ impl GameSession {
             .routes
             .iter()
             .position(|route| route.id == route_id)
-            .ok_or_else(|| "Unknown route.".to_owned())?;
+            .ok_or_else(|| data.text("state.route_unknown"))?;
         let action = self
             .route_action_for(data, &self.routes[route_index])
-            .ok_or_else(|| "This route is already fully upgraded.".to_owned())?
+            .ok_or_else(|| data.text("state.route_upgraded"))?
             .clone();
         let cost = adjusted_route_cost(data, &self.routes[route_index], action.cost);
         let source_index = self
@@ -205,7 +204,7 @@ impl GameSession {
                 settlement.location_id == data.road_balance.source_site_id
                     && settlement.status == SettlementStatus::Active
             })
-            .ok_or_else(|| "The charter capital is unavailable.".to_owned())?;
+            .ok_or_else(|| data.text("state.capital_unavailable"))?;
         self.settlements[source_index].stored.subtract(cost);
         self.council_actions_remaining -= action.action_cost;
 
@@ -216,7 +215,7 @@ impl GameSession {
             if route.condition != RouteCondition::Clear {
                 route.condition = RouteCondition::Clear;
                 route.active_warning_ids.clear();
-                format!("Repaired route {}", route.id)
+                data.text_with("state.route_repaired", &[("{route}", &route.id)])
             } else {
                 route.level = action.to;
                 let template_id = if old_level == RouteLevel::None {
@@ -225,10 +224,11 @@ impl GameSession {
                     "road_upgraded"
                 };
                 chronicle_event = Some((template_id, route.site_a.clone()));
-                format!(
-                    "{} now has {}",
-                    route_label(data, route),
-                    route.level.label()
+                let route_name = route_label(data, route);
+                let level = route.level.label().to_owned();
+                data.text_with(
+                    "state.route_level",
+                    &[("{route}", &route_name), ("{level}", &level)],
                 )
             }
         };
@@ -246,32 +246,36 @@ impl GameSession {
         region_id: &str,
     ) -> SettlementActionStatus {
         if self.has_regional_project(region_id) {
-            return SettlementActionStatus::disabled("Trail Wardens already patrol this region.");
+            return SettlementActionStatus::disabled(data.text("state.regional_complete"));
         }
         let Some(project) = data
             .road_balance
             .regional_project(&data.road_balance.regional_project_id)
         else {
-            return SettlementActionStatus::disabled("Regional project data is missing.");
+            return SettlementActionStatus::disabled(data.text("state.regional_missing"));
         };
         if self.council_actions_remaining < project.action_cost {
-            return SettlementActionStatus::disabled(format!(
-                "Needs {} council action.",
-                project.action_cost
-            ));
+            let actions = project.action_cost.to_string();
+            return SettlementActionStatus::disabled(
+                data.text_with("state.needs_council_action", &[("{actions}", &actions)]),
+            );
         }
         let Some(source) = self.road_source_settlement(data) else {
-            return SettlementActionStatus::disabled("The charter capital is unavailable.");
+            return SettlementActionStatus::disabled(data.text("state.capital_unavailable"));
         };
-        if let Some(reason) = source.stored.deficit_text(project.cost) {
+        if let Some(reason) = source.stored.deficit_text_with(project.cost, data) {
             return SettlementActionStatus::disabled(reason);
         }
 
-        SettlementActionStatus::enabled(format!(
-            "Costs {} action and {}. {}",
-            project.action_cost,
-            project.cost.cost_text(),
-            project.description
+        let actions = project.action_cost.to_string();
+        let cost = project.cost.cost_text_with(data);
+        SettlementActionStatus::enabled(data.text_with(
+            "state.regional_cost",
+            &[
+                ("{actions}", &actions),
+                ("{cost}", &cost),
+                ("{description}", &project.description),
+            ],
         ))
     }
 
@@ -287,7 +291,7 @@ impl GameSession {
         let project = data
             .road_balance
             .regional_project(&data.road_balance.regional_project_id)
-            .ok_or_else(|| "Regional project data is missing.".to_owned())?
+            .ok_or_else(|| data.text("state.regional_missing"))?
             .clone();
         let source_index = self
             .settlements
@@ -296,7 +300,7 @@ impl GameSession {
                 settlement.location_id == data.road_balance.source_site_id
                     && settlement.status == SettlementStatus::Active
             })
-            .ok_or_else(|| "The charter capital is unavailable.".to_owned())?;
+            .ok_or_else(|| data.text("state.capital_unavailable"))?;
         self.settlements[source_index].stored.subtract(project.cost);
         self.council_actions_remaining -= project.action_cost;
         self.regional_projects.push(RegionalProjectRuntimeState {
@@ -329,20 +333,23 @@ impl GameSession {
             chronicle_site_id.as_deref(),
         );
 
-        Ok(format!(
-            "Completed {} in {}",
-            project.name,
-            region_label(data, region_id)
+        let region = region_label(data, region_id);
+        Ok(data.text_with(
+            "state.regional_completed",
+            &[("{name}", &project.name), ("{region}", &region)],
         ))
     }
 
     pub fn settlement_supply_summary(&self, data: &GameData, site_id: &str) -> String {
         if site_id == data.road_balance.source_site_id {
-            return "Capital network root.".to_owned();
+            return data.text("state.supply_root");
         }
         match self.supply_distance(data, site_id) {
-            Some(distance) => format!("Connected to capital. Supply distance {}.", distance),
-            None => "Isolated: no built, unblocked route reaches Charter Hall.".to_owned(),
+            Some(distance) => {
+                let distance = distance.to_string();
+                data.text_with("state.supply_connected", &[("{distance}", &distance)])
+            }
+            None => data.text("state.supply_isolated"),
         }
     }
 
