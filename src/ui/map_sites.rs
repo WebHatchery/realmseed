@@ -1,12 +1,10 @@
 //! Site markers, map labels, and picking for the strategic map.
 
 use super::map::MapView;
-use super::{map_site_sprites, style, MapOverlay, UiContext};
+use super::{map_site_shapes, map_site_sprites, style, MapOverlay, UiContext};
 use crate::data::{SettlementTier, SiteCategory, SiteDef};
 use crate::state::{SettlementRuntimeState, SettlementStatus};
 use macroquad::prelude::*;
-use macroquad_toolkit::prelude::*;
-use macroquad_toolkit::ui::draw_ui_text_ex;
 use macroquad_toolkit::ui::RectExt;
 use std::cmp::Ordering;
 
@@ -30,7 +28,7 @@ pub(super) fn draw_sites(ctx: &UiContext<'_>, view: &MapView) {
         if ctx.session.is_known(&site.id) {
             draw_known_site(ctx, view, site);
         } else if !ctx.sprite_showcase && ctx.session.is_adjacent_unknown(ctx.data, &site.id) {
-            draw_unknown_site(ctx, view, site);
+            map_site_shapes::draw_unknown_site(ctx, view, site);
         }
     }
 }
@@ -113,54 +111,7 @@ fn draw_known_site(ctx: &UiContext<'_>, view: &MapView, site: &SiteDef) {
                 | MarkerKind::Independent
         )
     {
-        draw_site_label(site, position, radius, selected);
-    }
-}
-
-fn draw_unknown_site(ctx: &UiContext<'_>, view: &MapView, site: &SiteDef) {
-    let position = view.site_position(site);
-    let scale = view.scale();
-    if !view.is_visible(position, 48.0 * scale) {
-        return;
-    }
-    let selected = ctx.session.selected_site_id == site.id;
-    let radius = 7.0 * scale;
-    draw_circle(
-        position.x,
-        position.y,
-        radius + 5.0,
-        Color::new(0.02, 0.02, 0.014, 0.70),
-    );
-    draw_circle(
-        position.x,
-        position.y,
-        radius + 2.0,
-        Color::new(0.12, 0.10, 0.06, 0.92),
-    );
-    draw_circle_lines(position.x, position.y, radius + 2.0, 1.4, style::GOLD);
-    let pulse = (get_time() as f32 * 2.2).sin() * 1.5 + 3.0;
-    draw_circle_lines(
-        position.x,
-        position.y,
-        radius + pulse,
-        1.4,
-        Color::new(0.94, 0.82, 0.52, 0.42),
-    );
-    draw_text_centered(
-        "?",
-        position.x,
-        position.y + 5.0,
-        TextStyle::new(17.0, style::TEXT_BRIGHT),
-    );
-
-    if selected {
-        draw_circle_lines(position.x, position.y, radius + 8.0, 2.0, style::CYAN);
-        draw_ui_text_ex(
-            "Scout",
-            position.x + radius + 5.0,
-            position.y - radius - 2.0,
-            TextStyle::new(12.0, style::TEXT_BRIGHT).params(),
-        );
+        map_site_shapes::draw_site_label(site, position, radius, selected);
     }
 }
 
@@ -704,23 +655,6 @@ fn draw_supply_ring(ctx: &UiContext<'_>, site: &SiteDef, position: Vec2, radius:
         Color::new(0.94, 0.56, 0.20, 0.74)
     };
     draw_circle_lines(position.x, position.y, radius + 10.0, 2.2, color);
-}
-
-fn draw_site_label(site: &SiteDef, position: Vec2, radius: f32, selected: bool) {
-    let x = position.x + radius + 6.0;
-    let y = position.y - radius - 3.0;
-    let color = if selected {
-        style::TEXT_BRIGHT
-    } else {
-        Color::new(0.89, 0.84, 0.69, 0.88)
-    };
-    draw_ui_text_ex(
-        &site.name,
-        x + 1.0,
-        y + 1.0,
-        TextStyle::new(13.0, Color::new(0.02, 0.018, 0.012, 0.80)).params(),
-    );
-    draw_ui_text_ex(&site.name, x, y, TextStyle::new(13.0, color).params());
 }
 
 fn marker_radius(site: &SiteDef, settlement: Option<&SettlementRuntimeState>) -> f32 {

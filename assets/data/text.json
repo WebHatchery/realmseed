@@ -119,6 +119,7 @@
     { "id": "ui.unknown_region", "text": "Unknown region" },
     { "id": "ui.rumored_site", "text": "Rumored Site" },
     { "id": "ui.scout_site", "text": "Scout Site" },
+    { "id": "ui.scout", "text": "Scout" },
     { "id": "ui.open_trade", "text": "Open Trade" },
     { "id": "ui.integrate", "text": "Integrate" },
     { "id": "ui.found_camp", "text": "Found Camp" },

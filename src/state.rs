@@ -1,12 +1,15 @@
 //! Runtime campaign state, seasonal turns, scouting, and save migration.
 
+pub mod advisor;
 pub mod campaign;
 pub mod event;
 pub mod event_candidates;
 pub mod faction;
 pub mod road;
+pub mod road_supply;
 pub mod settlement;
 
+pub use advisor::*;
 pub use campaign::*;
 pub use event::*;
 pub use faction::*;

@@ -6,6 +6,7 @@ mod endgame;
 mod event;
 mod faction;
 mod map;
+mod map_site_shapes;
 mod map_site_sprites;
 mod map_sites;
 mod map_terrain;
