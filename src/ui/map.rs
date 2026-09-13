@@ -15,7 +15,6 @@ use macroquad_toolkit::ui::RectExt;
 pub(super) fn draw_map_panel(
     ctx: &UiContext<'_>,
     tooltip: &mut HoverTooltip,
-    mouse: Vec2,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
 ) {
@@ -30,12 +29,12 @@ pub(super) fn draw_map_panel(
     draw_roads(ctx, &view);
     map_sites::draw_sites(ctx, &view);
     draw_map_vignette(map_rect);
-    draw_overlay_tabs(ctx, rect, mouse, input_enabled, actions);
-    draw_map_controls(rect, mouse, input_enabled, actions);
+    draw_overlay_tabs(ctx, rect, ctx.pointer, input_enabled, actions);
+    draw_map_controls(rect, ctx.pointer, input_enabled, actions);
     draw_map_caption(rect);
 
-    if input_enabled && is_mouse_button_released(MouseButton::Left) {
-        if let Some(site_id) = map_sites::picked_site_id(ctx, &view, mouse) {
+    if input_enabled && ctx.pointer.released {
+        if let Some(site_id) = map_sites::picked_site_id(ctx, &view, ctx.pointer.position) {
             actions.push(UiAction::SelectSite(site_id));
         }
     }
@@ -49,12 +48,18 @@ pub(super) fn draw_map_panel(
         }
         MapOverlay::Danger => "Danger view: red washes show wilderness and settlement pressure.",
     };
-    style::hover_tooltip(tooltip, "map_overlay_hint", map_rect, mode_hint, mouse);
+    style::hover_tooltip(
+        tooltip,
+        "map_overlay_hint",
+        map_rect,
+        mode_hint,
+        ctx.pointer,
+    );
 }
 
 fn draw_map_controls(
     panel_rect: Rect,
-    mouse: Vec2,
+    pointer: Pointer,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
 ) {
@@ -67,7 +72,7 @@ fn draw_map_controls(
         "−",
         input_enabled,
         ButtonTone::Secondary,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::ZoomMapOut);
     }
@@ -76,7 +81,7 @@ fn draw_map_controls(
         "+",
         input_enabled,
         ButtonTone::Secondary,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::ZoomMapIn);
     }
@@ -100,7 +105,7 @@ fn draw_map_caption(panel_rect: Rect) {
 fn draw_overlay_tabs(
     ctx: &UiContext<'_>,
     panel_rect: Rect,
-    mouse: Vec2,
+    pointer: Pointer,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
 ) {
@@ -126,7 +131,7 @@ fn draw_overlay_tabs(
             overlay_icon(*overlay),
             input_enabled,
             tone,
-            mouse,
+            pointer,
         ) {
             actions.push(UiAction::SetMapOverlay(*overlay));
         }

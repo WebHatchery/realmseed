@@ -18,7 +18,7 @@ use crate::data::{GameData, ResourceStock};
 use crate::state::GameSession;
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
-use macroquad_toolkit::ui::{HoverTooltip, RectExt, VirtualUi};
+use macroquad_toolkit::ui::{HoverTooltip, VirtualUi};
 
 pub const LOGICAL_WIDTH: f32 = 1280.0;
 pub const LOGICAL_HEIGHT: f32 = 720.0;
@@ -67,6 +67,8 @@ pub enum UiAction {
     ActivateInstitution(String),
     AdvanceSeason,
     ToggleChronicle,
+    EndgameNewGame,
+    EndgameReturnToTitle,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -97,6 +99,8 @@ pub struct UiContext<'a> {
     pub show_chronicle: bool,
     pub show_factions: bool,
     pub input_blocked: bool,
+    pub touch_claimed: bool,
+    pub pointer: Pointer,
     pub ui: &'a VirtualUi,
 }
 
@@ -116,12 +120,14 @@ pub struct MenuContext<'a> {
     pub title_texture: Option<&'a Texture2D>,
     pub save_exists: bool,
     pub fullscreen: bool,
+    pub pointer: Pointer,
     pub ui: &'a VirtualUi,
 }
 
 pub struct PauseMenuContext<'a> {
     pub save_exists: bool,
     pub pending_exit_warning: Option<ExitWarningTarget>,
+    pub pointer: Pointer,
     pub ui: &'a VirtualUi,
 }
 
@@ -145,46 +151,30 @@ pub fn draw_pause_menu(ctx: PauseMenuContext<'_>) -> Vec<UiAction> {
 
 pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAction> {
     let mut actions = Vec::new();
-    let mouse = ctx.ui.mouse_position();
     let event_open = ctx.session.pending_event.is_some();
-    let input_enabled = !ctx.input_blocked && !ctx.show_chronicle && !event_open;
+    let endgame_open = ctx.session.endgame_summary.is_some();
+    let modal_open =
+        ctx.input_blocked || ctx.show_chronicle || ctx.show_factions || event_open || endgame_open;
+    let input_enabled = !modal_open && !ctx.touch_claimed;
 
     draw_header(&ctx);
-    map::draw_map_panel(&ctx, tooltip, mouse, input_enabled, &mut actions);
-    advisor::draw_realm_overview(&ctx, mouse, input_enabled, &mut actions);
-    panel::draw_side_panel(&ctx, tooltip, mouse, input_enabled, &mut actions);
-    advisor::draw_council_footer(&ctx, mouse, input_enabled, &mut actions);
+    map::draw_map_panel(&ctx, tooltip, input_enabled, &mut actions);
+    advisor::draw_realm_overview(&ctx, input_enabled, &mut actions);
+    panel::draw_side_panel(&ctx, tooltip, input_enabled, &mut actions);
+    advisor::draw_council_footer(&ctx, input_enabled, &mut actions);
     // The close strategic projection intentionally extends beyond its viewport
     // while panning. Repaint the fixed header last so its chrome stays crisp.
     draw_header(&ctx);
     style::draw_tooltip_overlay(tooltip);
 
-    if ctx.show_chronicle {
-        if ctx.input_blocked {
-            let mut ignored_actions = Vec::new();
-            panel::draw_chronicle_overlay(&ctx, mouse, &mut ignored_actions);
-        } else {
-            panel::draw_chronicle_overlay(&ctx, mouse, &mut actions);
-        }
-    }
-    if ctx.show_factions {
-        if ctx.input_blocked {
-            let mut ignored_actions = Vec::new();
-            faction::draw_faction_overlay(&ctx, mouse, &mut ignored_actions);
-        } else {
-            faction::draw_faction_overlay(&ctx, mouse, &mut actions);
-        }
-    }
-    if event_open {
-        if ctx.input_blocked {
-            let mut ignored_actions = Vec::new();
-            event::draw_event_modal(&ctx, mouse, &mut ignored_actions);
-        } else {
-            event::draw_event_modal(&ctx, mouse, &mut actions);
-        }
-    }
-    if ctx.session.endgame_summary.is_some() {
-        endgame::draw_endgame_summary(&ctx);
+    if endgame_open {
+        endgame::draw_endgame_summary(&ctx, &mut actions);
+    } else if event_open {
+        event::draw_event_modal(&ctx, &mut actions);
+    } else if ctx.show_factions {
+        faction::draw_faction_overlay(&ctx, &mut actions);
+    } else if ctx.show_chronicle {
+        panel::draw_chronicle_overlay(&ctx, &mut actions);
     }
 
     actions
@@ -394,11 +384,12 @@ pub(super) fn virtual_button(
     text: &str,
     enabled: bool,
     tone: ButtonTone,
-    mouse: Vec2,
+    pointer: Pointer,
 ) -> bool {
-    let hovered = enabled && rect.contains_point(mouse);
-    let pressed = hovered && is_mouse_button_down(MouseButton::Left);
-    let activated = hovered && is_mouse_button_released(MouseButton::Left);
+    let hit_rect = touch_area(rect);
+    let hovered = enabled && pointer.hovering_over(rect);
+    let pressed = enabled && pointer.pressing(hit_rect);
+    let activated = enabled && pointer.released_on(hit_rect);
     style::draw_button_frame(rect, tone, enabled, hovered, pressed);
     draw_text_centered_in_box_ex(
         text,
@@ -428,11 +419,12 @@ pub(super) fn virtual_icon_button(
     icon: style::IconKind,
     enabled: bool,
     tone: ButtonTone,
-    mouse: Vec2,
+    pointer: Pointer,
 ) -> bool {
-    let hovered = enabled && rect.contains_point(mouse);
-    let pressed = hovered && is_mouse_button_down(MouseButton::Left);
-    let activated = hovered && is_mouse_button_released(MouseButton::Left);
+    let hit_rect = touch_area(rect);
+    let hovered = enabled && pointer.hovering_over(rect);
+    let pressed = enabled && pointer.pressing(hit_rect);
+    let activated = enabled && pointer.released_on(hit_rect);
     style::draw_button_frame(rect, tone, enabled, hovered, pressed);
 
     let text_color = if enabled {

@@ -85,9 +85,9 @@ pub(super) fn hover_tooltip(
     id: &str,
     hover_rect: Rect,
     text: &str,
-    mouse: Vec2,
+    pointer: Pointer,
 ) {
-    if hover_rect.contains_point(mouse) {
+    if pointer.hovering_over(hover_rect) {
         tooltip.hover(id, text, tooltip_anchor(hover_rect), get_time());
     }
 }

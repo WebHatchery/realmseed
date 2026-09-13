@@ -7,21 +7,19 @@ use macroquad_toolkit::ui::RectExt;
 
 pub(super) fn draw_title_menu(ctx: MenuContext<'_>) -> Vec<UiAction> {
     let mut actions = Vec::new();
-    let mouse = ctx.ui.mouse_position();
     let screen = Rect::new(0.0, 0.0, ctx.ui.logical_width, ctx.ui.logical_height);
 
     draw_title_background(screen, ctx.title_texture);
     draw_title_vignette(screen);
 
     let menu = menu_rect(screen);
-    draw_menu_buttons(menu, mouse, ctx.save_exists, &mut actions);
+    draw_menu_buttons(menu, ctx.pointer, ctx.save_exists, &mut actions);
 
     actions
 }
 
 pub(super) fn draw_settings_page(ctx: MenuContext<'_>) -> Vec<UiAction> {
     let mut actions = Vec::new();
-    let mouse = ctx.ui.mouse_position();
     let screen = Rect::new(0.0, 0.0, ctx.ui.logical_width, ctx.ui.logical_height);
 
     draw_title_background(screen, ctx.title_texture);
@@ -55,7 +53,13 @@ pub(super) fn draw_settings_page(ctx: MenuContext<'_>) -> Vec<UiAction> {
     } else {
         "Fullscreen: Off"
     };
-    if virtual_button(toggle_rect, toggle_text, true, ButtonTone::Primary, mouse) {
+    if virtual_button(
+        toggle_rect,
+        toggle_text,
+        true,
+        ButtonTone::Primary,
+        ctx.pointer,
+    ) {
         actions.push(UiAction::ToggleFullscreen);
     }
 
@@ -65,7 +69,7 @@ pub(super) fn draw_settings_page(ctx: MenuContext<'_>) -> Vec<UiAction> {
         content.w - 260.0,
         44.0,
     );
-    if virtual_button(back_rect, "Back", true, ButtonTone::Secondary, mouse) {
+    if virtual_button(back_rect, "Back", true, ButtonTone::Secondary, ctx.pointer) {
         actions.push(UiAction::CloseSettings);
     }
 
@@ -74,7 +78,6 @@ pub(super) fn draw_settings_page(ctx: MenuContext<'_>) -> Vec<UiAction> {
 
 pub(super) fn draw_pause_menu(ctx: PauseMenuContext<'_>) -> Vec<UiAction> {
     let mut actions = Vec::new();
-    let mouse = ctx.ui.mouse_position();
     let screen = Rect::new(0.0, 0.0, ctx.ui.logical_width, ctx.ui.logical_height);
 
     draw_rectangle(
@@ -98,11 +101,11 @@ pub(super) fn draw_pause_menu(ctx: PauseMenuContext<'_>) -> Vec<UiAction> {
     style::draw_divider(menu.x + 28.0, menu.y + 76.0, menu.w - 56.0);
 
     if ctx.pending_exit_warning.is_none() {
-        draw_pause_buttons(menu.inset(30.0), mouse, ctx.save_exists, &mut actions);
+        draw_pause_buttons(menu.inset(30.0), ctx.pointer, ctx.save_exists, &mut actions);
     }
 
     if let Some(target) = ctx.pending_exit_warning {
-        draw_exit_warning(screen, mouse, target, &mut actions);
+        draw_exit_warning(screen, ctx.pointer, target, &mut actions);
     }
 
     actions
@@ -175,7 +178,7 @@ fn menu_metrics(screen: Rect) -> (f32, f32) {
     }
 }
 
-fn draw_menu_buttons(rect: Rect, mouse: Vec2, save_exists: bool, actions: &mut Vec<UiAction>) {
+fn draw_menu_buttons(rect: Rect, pointer: Pointer, save_exists: bool, actions: &mut Vec<UiAction>) {
     let button_h = if rect.h < 170.0 { 31.0 } else { 42.0 };
     let gap = if rect.h < 170.0 { 5.0 } else { 10.0 };
     let mut y = rect.y;
@@ -184,7 +187,7 @@ fn draw_menu_buttons(rect: Rect, mouse: Vec2, save_exists: bool, actions: &mut V
         "New Game",
         true,
         ButtonTone::Primary,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::NewGame);
     }
@@ -195,7 +198,7 @@ fn draw_menu_buttons(rect: Rect, mouse: Vec2, save_exists: bool, actions: &mut V
         "Continue",
         save_exists,
         ButtonTone::Secondary,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::ContinueGame);
     }
@@ -206,7 +209,7 @@ fn draw_menu_buttons(rect: Rect, mouse: Vec2, save_exists: bool, actions: &mut V
         "Settings",
         true,
         ButtonTone::Secondary,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::OpenSettings);
     }
@@ -217,7 +220,7 @@ fn draw_menu_buttons(rect: Rect, mouse: Vec2, save_exists: bool, actions: &mut V
         "Exit Game",
         true,
         ButtonTone::Danger,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::ExitGame);
     }
@@ -235,7 +238,12 @@ fn pause_menu_rect(screen: Rect) -> Rect {
     )
 }
 
-fn draw_pause_buttons(rect: Rect, mouse: Vec2, save_exists: bool, actions: &mut Vec<UiAction>) {
+fn draw_pause_buttons(
+    rect: Rect,
+    pointer: Pointer,
+    save_exists: bool,
+    actions: &mut Vec<UiAction>,
+) {
     let button_h = if rect.h < 310.0 { 31.0 } else { 42.0 };
     let gap = if rect.h < 310.0 { 5.0 } else { 10.0 };
     let mut y = rect.y + 70.0;
@@ -270,7 +278,7 @@ fn draw_pause_buttons(rect: Rect, mouse: Vec2, save_exists: bool, actions: &mut 
             label,
             enabled,
             tone,
-            mouse,
+            pointer,
         ) {
             actions.push(action);
         }
@@ -280,7 +288,7 @@ fn draw_pause_buttons(rect: Rect, mouse: Vec2, save_exists: bool, actions: &mut 
 
 fn draw_exit_warning(
     screen: Rect,
-    mouse: Vec2,
+    pointer: Pointer,
     target: ExitWarningTarget,
     actions: &mut Vec<UiAction>,
 ) {
@@ -337,7 +345,7 @@ fn draw_exit_warning(
         "Save First",
         true,
         ButtonTone::Primary,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::SaveAndConfirmPendingExit);
     }
@@ -350,7 +358,7 @@ fn draw_exit_warning(
         anyway_label,
         true,
         ButtonTone::Danger,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::ConfirmPendingExit);
     }
@@ -359,7 +367,7 @@ fn draw_exit_warning(
         "Cancel",
         true,
         ButtonTone::Secondary,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::CancelPendingExit);
     }

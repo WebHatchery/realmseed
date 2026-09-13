@@ -133,7 +133,7 @@ pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> 
 
 pub(super) fn draw_scout_action(
     ctx: &UiContext<'_>,
-    mouse: Vec2,
+    pointer: Pointer,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
     content: Rect,
@@ -146,7 +146,7 @@ pub(super) fn draw_scout_action(
         style::IconKind::Compass,
         input_enabled && status.enabled,
         ButtonTone::Primary,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::ScoutSelectedSite);
     }
@@ -170,7 +170,7 @@ pub(super) fn draw_scout_action(
 
 pub(super) fn draw_independent_actions(
     ctx: &UiContext<'_>,
-    mouse: Vec2,
+    pointer: Pointer,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
     content: Rect,
@@ -200,7 +200,7 @@ pub(super) fn draw_independent_actions(
         style::IconKind::Wealth,
         input_enabled && trade_status.enabled,
         ButtonTone::Primary,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::OpenIndependentTrade);
     }
@@ -210,7 +210,7 @@ pub(super) fn draw_independent_actions(
         style::IconKind::Crown,
         input_enabled && integration_status.enabled,
         ButtonTone::Positive,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::BeginIndependentIntegration);
     }
@@ -229,7 +229,7 @@ pub(super) fn draw_independent_actions(
 
 pub(super) fn draw_found_camp_action(
     ctx: &UiContext<'_>,
-    mouse: Vec2,
+    pointer: Pointer,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
     content: Rect,
@@ -242,7 +242,7 @@ pub(super) fn draw_found_camp_action(
         style::IconKind::Castle,
         input_enabled && status.enabled,
         ButtonTone::Positive,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::FoundCamp);
     }

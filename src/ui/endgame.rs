@@ -1,12 +1,12 @@
 //! Endgame legacy summary modal.
 
-use super::UiContext;
+use super::{virtual_button, UiAction, UiContext};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
 use macroquad_toolkit::ui::RectExt;
 
-pub(super) fn draw_endgame_summary(ctx: &UiContext<'_>) {
+pub(super) fn draw_endgame_summary(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
     let Some(summary) = &ctx.session.endgame_summary else {
         return;
     };
@@ -63,4 +63,24 @@ pub(super) fn draw_endgame_summary(ctx: &UiContext<'_>) {
         4.0,
         dark::TEXT_DIM,
     );
+    let button_y = content.bottom() - 42.0;
+    let button_w = (content.w - 14.0) * 0.5;
+    if virtual_button(
+        Rect::new(content.x, button_y, button_w, 38.0),
+        "Restart Campaign",
+        true,
+        ButtonTone::Primary,
+        ctx.pointer,
+    ) {
+        actions.push(UiAction::EndgameNewGame);
+    }
+    if virtual_button(
+        Rect::new(content.x + button_w + 14.0, button_y, button_w, 38.0),
+        "Return to Title",
+        true,
+        ButtonTone::Secondary,
+        ctx.pointer,
+    ) {
+        actions.push(UiAction::EndgameReturnToTitle);
+    }
 }

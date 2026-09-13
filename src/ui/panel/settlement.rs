@@ -56,7 +56,7 @@ impl FocusButtonLayout {
 pub(super) fn draw_existing_settlement(
     ctx: &UiContext<'_>,
     tooltip: &mut HoverTooltip,
-    mouse: Vec2,
+    pointer: Pointer,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
     content: Rect,
@@ -100,7 +100,7 @@ pub(super) fn draw_existing_settlement(
     crate::ui::section_label("ACTIONS", content.x, actions_label_y);
     let focus_grid_bottom = draw_focus_buttons(
         ctx,
-        mouse,
+        pointer,
         input_enabled,
         actions,
         content,
@@ -116,7 +116,7 @@ pub(super) fn draw_existing_settlement(
         style::IconKind::Castle,
         input_enabled && upgrade_status.enabled,
         ButtonTone::Positive,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::UpgradeSelectedSettlement);
     }
@@ -125,7 +125,7 @@ pub(super) fn draw_existing_settlement(
         "selected_upgrade",
         upgrade_rect,
         &upgrade_preview(ctx, settlement, &upgrade_status.reason),
-        mouse,
+        pointer,
     );
 
     let mut next_y = upgrade_rect.bottom() + 10.0;
@@ -234,7 +234,7 @@ fn check_text(ok: bool, label: &str) -> String {
 
 fn draw_focus_buttons(
     ctx: &UiContext<'_>,
-    mouse: Vec2,
+    pointer: Pointer,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
     content: Rect,
@@ -266,7 +266,7 @@ fn draw_focus_buttons(
             focus_icon(&focus.name),
             input_enabled && status.enabled,
             tone,
-            mouse,
+            pointer,
         ) {
             actions.push(UiAction::SetSettlementFocus(focus.id.clone()));
         }

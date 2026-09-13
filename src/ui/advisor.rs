@@ -1,6 +1,6 @@
 //! Realm overview and council guidance surfaces.
 
-use super::{section_label, style, virtual_icon_button, UiAction, UiContext};
+use super::{section_label, style, UiAction, UiContext};
 use crate::data::SiteCategory;
 use crate::state::SettlementStatus;
 use macroquad::prelude::*;
@@ -12,16 +12,10 @@ use macroquad_toolkit::ui::RectExt;
 struct Recommendation {
     title: String,
     detail: String,
-    button_label: String,
-    action: UiAction,
-    enabled: bool,
-    show_button: bool,
-    tone: ButtonTone,
 }
 
 pub(super) fn draw_realm_overview(
     ctx: &UiContext<'_>,
-    _mouse: Vec2,
     _input_enabled: bool,
     _actions: &mut Vec<UiAction>,
 ) {
@@ -147,7 +141,6 @@ pub(super) fn draw_realm_overview(
 
 pub(super) fn draw_council_footer(
     ctx: &UiContext<'_>,
-    mouse: Vec2,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
 ) {
@@ -205,29 +198,7 @@ pub(super) fn draw_council_footer(
     );
     draw_log_lines(ctx, center.x, center.y + 44.0, center.w);
 
-    if recommendation.show_button {
-        if virtual_icon_button(
-            Rect::new(right.x, right.y + 10.0, right.w, 38.0),
-            &recommendation.button_label.to_uppercase(),
-            recommendation_icon(&recommendation.action),
-            input_enabled && recommendation.enabled,
-            recommendation.tone,
-            mouse,
-        ) {
-            actions.push(recommendation.action);
-        }
-    } else {
-        draw_text_block(
-            &recommendation.title,
-            right.x,
-            right.y + 12.0,
-            right.w,
-            36.0,
-            14.0,
-            2.0,
-            style::TEXT_BRIGHT,
-        );
-    }
+    draw_quick_actions(right, input_enabled, ctx.pointer, actions);
     draw_ui_text_ex(
         &format!(
             "{} Actions Remaining",
@@ -239,14 +210,40 @@ pub(super) fn draw_council_footer(
     );
 }
 
-fn recommendation_icon(action: &UiAction) -> style::IconKind {
-    match action {
-        UiAction::ScoutSelectedSite | UiAction::SelectSite(_) => style::IconKind::Compass,
-        UiAction::FoundCamp | UiAction::UpgradeSelectedSettlement => style::IconKind::Castle,
-        UiAction::AdvanceSeason => style::IconKind::Actions,
-        UiAction::ToggleChronicle => style::IconKind::Crown,
-        UiAction::SetMapOverlay(_) => style::IconKind::Road,
-        _ => style::IconKind::Crown,
+fn draw_quick_actions(
+    rect: Rect,
+    input_enabled: bool,
+    pointer: Pointer,
+    actions: &mut Vec<UiAction>,
+) {
+    let gap = 6.0;
+    let button_w = (rect.w - gap * 3.0) / 4.0;
+    let controls = [
+        ("Pause", UiAction::OpenPauseMenu),
+        ("Chronicle", UiAction::ToggleChronicle),
+        ("Factions", UiAction::ToggleFactionPanel),
+        ("Advance", UiAction::AdvanceSeason),
+    ];
+    for (index, (label, action)) in controls.into_iter().enumerate() {
+        let button = Rect::new(
+            rect.x + index as f32 * (button_w + gap),
+            rect.y + 8.0,
+            button_w,
+            42.0,
+        );
+        if super::virtual_button(
+            button,
+            label,
+            input_enabled,
+            if matches!(action, UiAction::AdvanceSeason) {
+                ButtonTone::Primary
+            } else {
+                ButtonTone::Secondary
+            },
+            pointer,
+        ) {
+            actions.push(action);
+        }
     }
 }
 
@@ -327,11 +324,6 @@ fn recommendation_for(ctx: &UiContext<'_>) -> Recommendation {
             detail:
                 "A live petition is waiting for a decision before the realm can breathe easily."
                     .to_owned(),
-            button_label: "Review Petition".to_owned(),
-            action: UiAction::DeferEvent,
-            enabled: false,
-            show_button: true,
-            tone: ButtonTone::Primary,
         };
     }
 
@@ -340,11 +332,6 @@ fn recommendation_for(ctx: &UiContext<'_>) -> Recommendation {
             title: "Council actions spent".to_owned(),
             detail: "End the season to resolve production, roads, rival moves, and new warnings."
                 .to_owned(),
-            button_label: "End Season".to_owned(),
-            action: UiAction::AdvanceSeason,
-            enabled: true,
-            show_button: true,
-            tone: ButtonTone::Positive,
         };
     }
 
@@ -361,29 +348,19 @@ fn recommendation_for(ctx: &UiContext<'_>) -> Recommendation {
         return Recommendation {
             title: format!("Scout {}", site_name),
             detail: scout_status.reason.clone(),
-            button_label: "Scout Site".to_owned(),
-            action: UiAction::ScoutSelectedSite,
-            enabled: scout_status.enabled,
-            show_button: false,
-            tone: ButtonTone::Primary,
         };
     }
 
-    if let Some(site) = ctx
+    if ctx
         .data
         .sites
         .iter()
-        .find(|site| ctx.session.is_adjacent_unknown(ctx.data, &site.id))
+        .any(|site| ctx.session.is_adjacent_unknown(ctx.data, &site.id))
     {
         return Recommendation {
             title: "Reveal the next frontier".to_owned(),
             detail: "Question markers show places your scouts can reach from known roads."
                 .to_owned(),
-            button_label: "Select Scout Target".to_owned(),
-            action: UiAction::SelectSite(site.id.clone()),
-            enabled: true,
-            show_button: true,
-            tone: ButtonTone::Primary,
         };
     }
 
@@ -395,30 +372,15 @@ fn recommendation_for(ctx: &UiContext<'_>) -> Recommendation {
         .count()
         < 2
     {
-        if let Some(site) = ctx.data.sites.iter().find(|site| {
+        if ctx.data.sites.iter().any(|site| {
             site.category == SiteCategory::Settlement
                 && ctx.session.is_known(&site.id)
                 && site.owner.is_none()
                 && ctx.session.settlement_at_site(&site.id).is_none()
         }) {
-            let selected = ctx.session.selected_site_id == site.id;
             return Recommendation {
                 title: "Found the first outpost".to_owned(),
                 detail: "A second settlement turns Greenvale from a seat into a realm.".to_owned(),
-                button_label: if selected {
-                    "Found Camp"
-                } else {
-                    "Select Site"
-                }
-                .to_owned(),
-                action: if selected {
-                    UiAction::FoundCamp
-                } else {
-                    UiAction::SelectSite(site.id.clone())
-                },
-                enabled: true,
-                show_button: true,
-                tone: ButtonTone::Positive,
             };
         }
     }
@@ -432,11 +394,6 @@ fn recommendation_for(ctx: &UiContext<'_>) -> Recommendation {
             title: "Bind the realm with roads".to_owned(),
             detail: "A built path reduces isolation and lets the capital support frontier sites."
                 .to_owned(),
-            button_label: "Open Routes".to_owned(),
-            action: UiAction::SetMapOverlay(super::MapOverlay::Supply),
-            enabled: true,
-            show_button: true,
-            tone: ButtonTone::Primary,
         };
     }
 
@@ -444,22 +401,12 @@ fn recommendation_for(ctx: &UiContext<'_>) -> Recommendation {
         Recommendation {
             title: "Let the season turn".to_owned(),
             detail: "Production, roads, rivals, and wilderness pressure will all resolve into the chronicle.".to_owned(),
-            button_label: "Advance Season".to_owned(),
-            action: UiAction::AdvanceSeason,
-            enabled: true,
-            show_button: true,
-            tone: ButtonTone::Positive,
         }
     } else {
         Recommendation {
             title: "Stabilize active issues".to_owned(),
             detail: "Warnings tied to settlements and roads can grow if seasons pass unattended."
                 .to_owned(),
-            button_label: "Open Chronicle".to_owned(),
-            action: UiAction::ToggleChronicle,
-            enabled: true,
-            show_button: true,
-            tone: ButtonTone::Danger,
         }
     }
 }

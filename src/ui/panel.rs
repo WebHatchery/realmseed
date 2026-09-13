@@ -17,7 +17,6 @@ use macroquad_toolkit::ui::RectExt;
 pub(super) fn draw_side_panel(
     ctx: &UiContext<'_>,
     tooltip: &mut HoverTooltip,
-    mouse: Vec2,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
 ) {
@@ -28,19 +27,11 @@ pub(super) fn draw_side_panel(
     style::draw_panel_title("SELECTED SITE", content.x, content.y + 16.0);
     let mut y = content.y + 50.0;
     y = site::draw_selected_site(ctx, content, y);
-    y = draw_settlement_section(
-        ctx,
-        tooltip,
-        mouse,
-        input_enabled,
-        actions,
-        content,
-        y + 2.0,
-    );
+    y = draw_settlement_section(ctx, tooltip, input_enabled, actions, content, y + 2.0);
     routes::draw_route_section(
         ctx,
         tooltip,
-        mouse,
+        ctx.pointer,
         input_enabled,
         actions,
         content,
@@ -51,7 +42,6 @@ pub(super) fn draw_side_panel(
 fn draw_settlement_section(
     ctx: &UiContext<'_>,
     tooltip: &mut HoverTooltip,
-    mouse: Vec2,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
     content: Rect,
@@ -62,14 +52,21 @@ fn draw_settlement_section(
     };
     if ctx.session.site_knowledge(&site.id) != SiteKnowledge::Known {
         super::section_label("SCOUTING", content.x, y);
-        return site::draw_scout_action(ctx, mouse, input_enabled, actions, content, y + 14.0);
+        return site::draw_scout_action(
+            ctx,
+            ctx.pointer,
+            input_enabled,
+            actions,
+            content,
+            y + 14.0,
+        );
     }
 
     if let Some(settlement) = ctx.session.settlement_at_site(&site.id) {
         settlement::draw_existing_settlement(
             ctx,
             tooltip,
-            mouse,
+            ctx.pointer,
             input_enabled,
             actions,
             content,
@@ -78,10 +75,10 @@ fn draw_settlement_section(
         )
     } else if site.category == SiteCategory::Independent {
         super::section_label("SITE DECISIONS", content.x, y);
-        site::draw_independent_actions(ctx, mouse, input_enabled, actions, content, y + 14.0)
+        site::draw_independent_actions(ctx, ctx.pointer, input_enabled, actions, content, y + 14.0)
     } else if site.category == SiteCategory::Settlement {
         super::section_label("SITE DECISIONS", content.x, y);
-        site::draw_found_camp_action(ctx, mouse, input_enabled, actions, content, y + 14.0)
+        site::draw_found_camp_action(ctx, ctx.pointer, input_enabled, actions, content, y + 14.0)
     } else {
         y
     }

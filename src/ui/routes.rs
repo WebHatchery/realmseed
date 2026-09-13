@@ -6,12 +6,11 @@ use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
 use macroquad_toolkit::ui::HoverTooltip;
-use macroquad_toolkit::ui::RectExt;
 
 pub(super) fn draw_route_section(
     ctx: &UiContext<'_>,
     tooltip: &mut HoverTooltip,
-    mouse: Vec2,
+    pointer: Pointer,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
     content: Rect,
@@ -47,7 +46,7 @@ pub(super) fn draw_route_section(
         draw_route_row(
             ctx,
             tooltip,
-            mouse,
+            pointer,
             input_enabled,
             actions,
             content,
@@ -69,7 +68,7 @@ pub(super) fn draw_route_section(
         style::IconKind::Road,
         input_enabled && project_status.enabled,
         ButtonTone::Secondary,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::CompleteRegionalProject(site.region_id.clone()));
     }
@@ -78,7 +77,7 @@ pub(super) fn draw_route_section(
         "regional_project_wardens",
         project_rect,
         &regional_project_tooltip(ctx, &project_status.reason, project_status.enabled),
-        mouse,
+        pointer,
     );
 
     next_y + 2.0
@@ -111,7 +110,7 @@ fn regional_project_tooltip(ctx: &UiContext<'_>, status_reason: &str, enabled: b
 fn draw_route_row(
     ctx: &UiContext<'_>,
     tooltip: &mut HoverTooltip,
-    mouse: Vec2,
+    pointer: Pointer,
     input_enabled: bool,
     actions: &mut Vec<UiAction>,
     content: Rect,
@@ -120,7 +119,7 @@ fn draw_route_row(
     selected_site_id: &str,
 ) {
     let row_rect = Rect::new(content.x, y - 1.0, content.w, 26.0);
-    if row_rect.contains_point(mouse) {
+    if pointer.hovering_over(row_rect) {
         draw_rectangle(
             row_rect.x,
             row_rect.y,
@@ -176,11 +175,7 @@ fn draw_route_row(
     );
 
     let status = ctx.session.route_action_status(ctx.data, &route.id);
-    if input_enabled
-        && status.enabled
-        && row_rect.contains_point(mouse)
-        && is_mouse_button_released(MouseButton::Left)
-    {
+    if input_enabled && status.enabled && pointer.released_on(touch_area(row_rect)) {
         actions.push(UiAction::BuildOrUpgradeRoute(route.id.clone()));
     }
     let tooltip_id = format!("route_{}", route.id);
@@ -194,7 +189,7 @@ fn draw_route_row(
             ctx.session.route_action_label(ctx.data, &route.id),
             status.reason
         ),
-        mouse,
+        pointer,
     );
 }
 

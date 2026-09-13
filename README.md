@@ -67,11 +67,15 @@ it becomes the basis for the final legacy summary.
 - Click a question marker, then use `Scout Selected Site` to reveal it.
 - Use settlement and route buttons in the side panel to found, upgrade, set
   focus, build roads, trade, or begin integration.
-- Press `Space` or use `Advance Season` to move from season to season.
-- Press `C` or use `Chronicle` to open the campaign chronicle.
-- Press `F` to open faction pressure, ambitions, projects, and institutions.
-- Use right mouse drag and `+ / -` to adjust the map view.
-- Use `S / L` to save or load the current campaign.
+- Use the persistent `Advance` button to move from season to season. `Space`
+  remains available as a keyboard shortcut.
+- Use the persistent `Chronicle` button to review campaign history.
+- Use the persistent `Factions` button to open faction pressure, ambitions,
+  projects, and institutions.
+- Drag the map with a mouse or one finger; use the visible `+ / −` buttons to
+  zoom. A two-finger pinch also zooms the map.
+- Open the persistent `Pause` button to reach `Save`, `Load`, and the title
+  screen. Keyboard shortcuts `S` and `L` remain available during play.
 
 ## Current Prototype
 
@@ -91,4 +95,3 @@ The current build focuses on a complete 20-year prototype campaign:
 
 `gdd.md` is the design document for the seed campaign. Remaining work is
 tracked in `TODO.md`.
-

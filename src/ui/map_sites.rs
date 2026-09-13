@@ -35,8 +35,8 @@ pub(super) fn draw_sites(ctx: &UiContext<'_>, view: &MapView) {
     }
 }
 
-pub(super) fn picked_site_id(ctx: &UiContext<'_>, view: &MapView, mouse: Vec2) -> Option<String> {
-    if !view.rect.contains_point(mouse) {
+pub(super) fn picked_site_id(ctx: &UiContext<'_>, view: &MapView, pointer: Vec2) -> Option<String> {
+    if !view.rect.contains_point(pointer) {
         return None;
     }
 
@@ -54,7 +54,7 @@ pub(super) fn picked_site_id(ctx: &UiContext<'_>, view: &MapView, mouse: Vec2) -
             view.scale(),
             marker_radius(site, settlement),
         );
-        (position.distance(mouse) <= radius).then(|| site.id.clone())
+        (position.distance(pointer) <= radius.max(22.0)).then(|| site.id.clone())
     })
 }
 

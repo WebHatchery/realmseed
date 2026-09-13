@@ -17,7 +17,9 @@ use macroquad_toolkit::persistence::{
     delete_slot, get_save_slots, load_from_slot_with_migration, save_to_slot_with_version,
     slot_exists,
 };
-use macroquad_toolkit::prelude::{begin_virtual_ui_frame, dark, end_virtual_ui_frame, InputState};
+use macroquad_toolkit::prelude::{
+    begin_virtual_ui_frame, dark, end_virtual_ui_frame, InputState, Pointer, TouchGesture,
+};
 use macroquad_toolkit::ui::HoverTooltip;
 
 pub struct Game {
@@ -38,6 +40,8 @@ pub struct Game {
     fullscreen: bool,
     pending_exit_warning: Option<ExitWarningTarget>,
     last_save_at: Option<f64>,
+    touch_gesture: TouchGesture,
+    touch_claimed: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -102,6 +106,8 @@ impl Game {
             fullscreen: false,
             pending_exit_warning: None,
             last_save_at: None,
+            touch_gesture: TouchGesture::new(),
+            touch_claimed: false,
         };
         game.refresh_save_state();
         game
@@ -152,6 +158,8 @@ impl Game {
         self.notifications.update(dt);
 
         let input = InputState::capture();
+        let touch_frame = self.touch_gesture.update();
+        self.touch_claimed = touch_frame.claimed;
 
         match self.screen {
             GameScreen::Title => {
@@ -168,9 +176,28 @@ impl Game {
                 }
             }
             GameScreen::Playing => {
-                if input.escape_pressed {
-                    self.events.push(UiAction::OpenPauseMenu);
-                } else {
+                let modal_open = self.session.pending_event.is_some()
+                    || self.session.endgame_summary.is_some()
+                    || self.show_chronicle
+                    || self.show_factions;
+                if input.escape_pressed && self.session.pending_event.is_none() {
+                    if self.session.endgame_summary.is_some() {
+                        // The completed campaign keeps its visible recovery controls.
+                    } else if self.show_factions {
+                        self.events.push(UiAction::ToggleFactionPanel);
+                    } else if self.show_chronicle {
+                        self.events.push(UiAction::ToggleChronicle);
+                    } else {
+                        self.events.push(UiAction::OpenPauseMenu);
+                    }
+                } else if !modal_open {
+                    if touch_frame.claimed {
+                        self.camera
+                            .pan(-touch_frame.pan / (self.camera.zoom * 0.92).max(0.0001));
+                        if (touch_frame.scale - 1.0).abs() > f32::EPSILON {
+                            self.zoom_map(touch_frame.scale);
+                        }
+                    }
                     if input.space_pressed {
                         self.events.push(UiAction::AdvanceSeason);
                     }
@@ -215,17 +242,20 @@ impl Game {
     pub fn draw(&mut self) {
         clear_background(dark::BACKGROUND);
         let virtual_ui = begin_virtual_ui_frame(screen_width().max(1.0), screen_height().max(1.0));
+        let pointer = Pointer::read(|point| virtual_ui.screen_to_ui(point));
         let actions = match self.screen {
             GameScreen::Title => ui::draw_title_menu(MenuContext {
                 title_texture: self.assets.get_texture("title_image"),
                 save_exists: self.save_exists,
                 fullscreen: self.fullscreen,
+                pointer,
                 ui: &virtual_ui,
             }),
             GameScreen::Settings(_) => ui::draw_settings_page(MenuContext {
                 title_texture: self.assets.get_texture("title_image"),
                 save_exists: self.save_exists,
                 fullscreen: self.fullscreen,
+                pointer,
                 ui: &virtual_ui,
             }),
             GameScreen::Playing | GameScreen::PauseMenu => {
@@ -251,6 +281,8 @@ impl Game {
                     show_chronicle: self.show_chronicle,
                     show_factions: self.show_factions,
                     input_blocked: paused,
+                    touch_claimed: self.touch_claimed,
+                    pointer,
                     ui: &virtual_ui,
                 };
 
@@ -259,6 +291,7 @@ impl Game {
                     actions.extend(ui::draw_pause_menu(PauseMenuContext {
                         save_exists: self.save_exists,
                         pending_exit_warning: self.pending_exit_warning,
+                        pointer,
                         ui: &virtual_ui,
                     }));
                 }
@@ -559,9 +592,22 @@ impl Game {
             }
             UiAction::ToggleChronicle => {
                 self.show_chronicle = !self.show_chronicle;
+                if self.show_chronicle {
+                    self.show_factions = false;
+                }
             }
             UiAction::ToggleFactionPanel => {
                 self.show_factions = !self.show_factions;
+                if self.show_factions {
+                    self.show_chronicle = false;
+                }
+            }
+            UiAction::EndgameNewGame => self.apply_action(UiAction::NewGame),
+            UiAction::EndgameReturnToTitle => {
+                self.show_chronicle = false;
+                self.show_factions = false;
+                self.pending_exit_warning = None;
+                self.screen = GameScreen::Title;
             }
             UiAction::SetMapOverlay(overlay) => {
                 self.map_overlay = overlay;

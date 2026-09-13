@@ -10,28 +10,32 @@
   ],
   "controls": [
     {
-      "key": "Arrow Keys / WASD",
-      "desc": "Pan the map"
+      "key": "Pause",
+      "desc": "Open save, load, settings, and title controls"
     },
     {
-      "key": "Right Mouse",
-      "desc": "Drag camera"
+      "key": "Chronicle",
+      "desc": "Review campaign history"
     },
     {
-      "key": "+ / -",
-      "desc": "Zoom camera"
+      "key": "Factions",
+      "desc": "Open faction pressure and campaign controls"
     },
     {
-      "key": "Space",
-      "desc": "Advance season"
+      "key": "Advance",
+      "desc": "Resolve the season"
     },
     {
-      "key": "C",
-      "desc": "Open chronicle"
+      "key": "Drag / pinch",
+      "desc": "Pan or zoom the map with mouse or touch"
     },
     {
-      "key": "S / L",
-      "desc": "Save / load campaign"
+      "key": "+ / −",
+      "desc": "Zoom the map"
+    },
+    {
+      "key": "Space / S / L",
+      "desc": "Optional keyboard shortcuts for advance, save, and load"
     }
   ],
   "details": [

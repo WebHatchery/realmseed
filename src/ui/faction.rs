@@ -6,7 +6,7 @@ use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
 use macroquad_toolkit::ui::RectExt;
 
-pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, mouse: Vec2, actions: &mut Vec<UiAction>) {
+pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
     let screen = super::screen_rect(ctx);
     draw_rectangle(
         screen.x,
@@ -38,7 +38,7 @@ pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, mouse: Vec2, actions: &m
         "Close",
         true,
         ButtonTone::Secondary,
-        mouse,
+        ctx.pointer,
     ) {
         actions.push(UiAction::ToggleFactionPanel);
     }
@@ -52,7 +52,7 @@ pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, mouse: Vec2, actions: &m
     draw_rival(ctx, Rect::new(content.x, body_y, column_w, body_h * 0.58));
     draw_campaign_controls(
         ctx,
-        mouse,
+        ctx.pointer,
         actions,
         Rect::new(content.x, body_y + body_h * 0.64, column_w, body_h * 0.32),
     );
@@ -151,7 +151,7 @@ fn draw_rival(ctx: &UiContext<'_>, rect: Rect) {
 
 fn draw_campaign_controls(
     ctx: &UiContext<'_>,
-    mouse: Vec2,
+    pointer: Pointer,
     actions: &mut Vec<UiAction>,
     rect: Rect,
 ) {
@@ -209,7 +209,7 @@ fn draw_campaign_controls(
                 &ambition.name.replace(" Charter", ""),
                 true,
                 ButtonTone::Primary,
-                mouse,
+                pointer,
             ) {
                 actions.push(UiAction::SelectAmbition(ambition.id.clone()));
             }
@@ -242,7 +242,7 @@ fn draw_campaign_controls(
                     &label,
                     true,
                     ButtonTone::Secondary,
-                    mouse,
+                    pointer,
                 ) {
                     actions.push(UiAction::SelectSite(site_id.clone()));
                 }
@@ -275,7 +275,7 @@ fn draw_campaign_controls(
             &project.name,
             status.enabled,
             ButtonTone::Secondary,
-            mouse,
+            pointer,
         ) {
             actions.push(UiAction::CompleteProject(project.id.clone()));
         }
@@ -295,7 +295,7 @@ fn draw_campaign_controls(
             &institution.name,
             status.enabled,
             ButtonTone::Positive,
-            mouse,
+            pointer,
         ) {
             actions.push(UiAction::ActivateInstitution(institution.id.clone()));
         }

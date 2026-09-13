@@ -6,11 +6,7 @@ use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
 use macroquad_toolkit::ui::RectExt;
 
-pub(in crate::ui) fn draw_chronicle_overlay(
-    ctx: &UiContext<'_>,
-    mouse: Vec2,
-    actions: &mut Vec<UiAction>,
-) {
+pub(in crate::ui) fn draw_chronicle_overlay(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
     let shade = Color::new(0.02, 0.025, 0.02, 0.60);
     let screen = crate::ui::screen_rect(ctx);
     draw_rectangle(screen.x, screen.y, screen.w, screen.h, shade);
@@ -32,7 +28,7 @@ pub(in crate::ui) fn draw_chronicle_overlay(
         "Close",
         true,
         ButtonTone::Secondary,
-        mouse,
+        ctx.pointer,
     ) {
         actions.push(UiAction::ToggleChronicle);
     }

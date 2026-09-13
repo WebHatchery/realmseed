@@ -7,7 +7,7 @@ use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
 use macroquad_toolkit::ui::RectExt;
 
-pub(super) fn draw_event_modal(ctx: &UiContext<'_>, mouse: Vec2, actions: &mut Vec<UiAction>) {
+pub(super) fn draw_event_modal(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
     let Some(pending) = &ctx.session.pending_event else {
         return;
     };
@@ -90,7 +90,7 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, mouse: Vec2, actions: &mut V
             &choice.label,
             status.enabled,
             ButtonTone::Primary,
-            mouse,
+            ctx.pointer,
         ) {
             actions.push(UiAction::ResolveEventChoice(choice.id.clone()));
         }
@@ -122,7 +122,7 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, mouse: Vec2, actions: &mut V
             "Defer",
             true,
             ButtonTone::Secondary,
-            mouse,
+            ctx.pointer,
         )
     {
         actions.push(UiAction::DeferEvent);
