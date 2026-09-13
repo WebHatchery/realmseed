@@ -249,7 +249,7 @@ impl GameSession {
             selected_difficulty_id: default_difficulty_id(),
             completed_projects: Vec::new(),
             active_institutions: Vec::new(),
-            last_season_summary: "No season summary yet.".to_owned(),
+            last_season_summary: data.text("state.no_season_summary"),
             last_season_rows: Vec::new(),
             endgame_summary: None,
             unmanaged_strain: 0,
@@ -369,24 +369,22 @@ impl GameSession {
 
     pub fn scout_status(&self, data: &GameData) -> SettlementActionStatus {
         let Some(site) = self.selected_site(data) else {
-            return SettlementActionStatus::disabled("Select a scout target.");
+            return SettlementActionStatus::disabled(data.text("state.select_scout_target"));
         };
 
         if self.is_known(&site.id) {
-            return SettlementActionStatus::disabled("This site is already known.");
+            return SettlementActionStatus::disabled(data.text("state.site_already_known"));
         }
         if !self.is_adjacent_unknown(data, &site.id) {
-            return SettlementActionStatus::disabled(
-                "Scout outward from a neighboring known site first.",
-            );
+            return SettlementActionStatus::disabled(data.text("state.scout_adjacent_first"));
         }
 
         let scouting = &data.settlement_balance.scouting;
         if self.council_actions_remaining < scouting.action_cost {
-            return SettlementActionStatus::disabled(format!(
-                "Needs {} council action.",
-                scouting.action_cost
-            ));
+            let actions = scouting.action_cost.to_string();
+            return SettlementActionStatus::disabled(
+                data.text_with("state.needs_council_action", &[("{actions}", &actions)]),
+            );
         }
         let source_site_id = &data.settlement_balance.founding.source_site_id;
         let Some(source) = self
@@ -394,7 +392,7 @@ impl GameSession {
             .iter()
             .find(|settlement| settlement.location_id == *source_site_id && settlement.is_active())
         else {
-            return SettlementActionStatus::disabled("The charter capital is unavailable.");
+            return SettlementActionStatus::disabled(data.text("state.capital_unavailable"));
         };
         if let Some(reason) = source.stored.deficit_text(scouting.cost) {
             return SettlementActionStatus::disabled(reason);
@@ -402,13 +400,17 @@ impl GameSession {
 
         let source_name = data
             .site(source_site_id)
-            .map(|site| site.name.as_str())
-            .unwrap_or("the charter capital");
-        SettlementActionStatus::enabled(format!(
-            "Costs {} action and {} from {}.",
-            scouting.action_cost,
-            scouting.cost.cost_text(),
-            source_name
+            .map(|site| site.name.clone())
+            .unwrap_or_else(|| data.text("state.charter_capital"));
+        let actions = scouting.action_cost.to_string();
+        let cost = scouting.cost.cost_text();
+        SettlementActionStatus::enabled(data.text_with(
+            "state.scout_cost",
+            &[
+                ("{actions}", &actions),
+                ("{cost}", &cost),
+                ("{source}", &source_name),
+            ],
         ))
     }
 
@@ -422,7 +424,7 @@ impl GameSession {
         let site_name = data
             .site(&site_id)
             .map(|site| site.name.clone())
-            .unwrap_or_else(|| "site".to_owned());
+            .unwrap_or_else(|| data.text("state.site"));
         let source_site_id = &data.settlement_balance.founding.source_site_id;
         let source_index = self
             .settlements
@@ -430,7 +432,7 @@ impl GameSession {
             .position(|settlement| {
                 settlement.location_id == *source_site_id && settlement.is_active()
             })
-            .ok_or_else(|| "The charter capital is unavailable.".to_owned())?;
+            .ok_or_else(|| data.text("state.capital_unavailable"))?;
         self.settlements[source_index]
             .stored
             .subtract(data.settlement_balance.scouting.cost);
@@ -447,27 +449,31 @@ impl GameSession {
         let report = data
             .site(&site_id)
             .map(|site| self.scout_report_for_site(data, site))
-            .unwrap_or_else(|| "Scout report unavailable.".to_owned());
-        Ok(format!("Scouted {}. {}", site_name, report))
+            .unwrap_or_else(|| data.text("state.scout_report_unavailable"));
+        Ok(data.text_with(
+            "state.scouted",
+            &[("{site}", &site_name), ("{report}", &report)],
+        ))
     }
 
     fn scout_report_for_site(&self, data: &GameData, site: &SiteDef) -> String {
         let terrain = data.terrain_at(site.position.x, site.position.y);
         let terrain_name = terrain
-            .map(|terrain| terrain.name.as_str())
-            .unwrap_or("unknown ground");
+            .map(|terrain| terrain.name.clone())
+            .unwrap_or_else(|| data.text("state.unknown_ground"));
         let region_name = data
             .region(&site.region_id)
-            .map(|region| region.name.as_str())
-            .unwrap_or("the frontier");
+            .map(|region| region.name.clone())
+            .unwrap_or_else(|| data.text("state.frontier"));
         let route_count = data.roads_for_site(&site.id).count();
         let route_text = if route_count == 1 {
-            "1 route".to_owned()
+            data.text("state.one_route")
         } else {
-            format!("{} routes", route_count)
+            let count = route_count.to_string();
+            data.text_with("state.routes", &[("{count}", &count)])
         };
         let traits = if site.traits.is_empty() {
-            "no notable traits".to_owned()
+            data.text("state.no_traits")
         } else {
             site.traits
                 .iter()
@@ -482,16 +488,23 @@ impl GameSession {
                 let prospect = terrain
                     .map(|terrain| {
                         strongest_terrain_prospect(
+                            data,
                             terrain.fertility,
                             terrain.timber,
                             terrain.stone,
                             terrain.danger,
                         )
                     })
-                    .unwrap_or("uncertain prospects");
-                format!(
-                    "Scout report: {} in {}, {} nearby, traits: {}; {}.",
-                    terrain_name, region_name, route_text, traits, prospect
+                    .unwrap_or_else(|| data.text("state.uncertain_prospects"));
+                data.text_with(
+                    "state.scout_settlement_report",
+                    &[
+                        ("{terrain}", &terrain_name),
+                        ("{region}", &region_name),
+                        ("{routes}", &route_text),
+                        ("{traits}", &traits),
+                        ("{prospect}", &prospect),
+                    ],
                 )
             }
             SiteCategory::Independent => {
@@ -500,24 +513,38 @@ impl GameSession {
                     .iter()
                     .find(|independent| independent.site_id == site.id)
                 {
-                    format!(
-                        "Scout report: independent settlement in {}, trust {}, autonomy {}, rival pressure {}, current need: {}.",
-                        region_name,
-                        independent.trust,
-                        independent.autonomy,
-                        independent.rival_pressure,
-                        independent.local_need
+                    let trust = independent.trust.to_string();
+                    let autonomy = independent.autonomy.to_string();
+                    let pressure = independent.rival_pressure.to_string();
+                    data.text_with(
+                        "state.scout_independent_report",
+                        &[
+                            ("{region}", &region_name),
+                            ("{trust}", &trust),
+                            ("{autonomy}", &autonomy),
+                            ("{pressure}", &pressure),
+                            ("{need}", &independent.local_need),
+                        ],
                     )
                 } else {
-                    format!(
-                        "Scout report: independent settlement in {}, {} nearby, traits: {}.",
-                        region_name, route_text, traits
+                    data.text_with(
+                        "state.scout_independent_brief",
+                        &[
+                            ("{region}", &region_name),
+                            ("{routes}", &route_text),
+                            ("{traits}", &traits),
+                        ],
                     )
                 }
             }
-            SiteCategory::Landmark => format!(
-                "Scout report: landmark on {}, {} nearby, traits: {}; {}.",
-                terrain_name, route_text, traits, site.description
+            SiteCategory::Landmark => data.text_with(
+                "state.scout_landmark_report",
+                &[
+                    ("{terrain}", &terrain_name),
+                    ("{routes}", &route_text),
+                    ("{traits}", &traits),
+                    ("{description}", &site.description),
+                ],
             ),
         }
     }
@@ -567,11 +594,11 @@ impl GameSession {
         let site = site_id.and_then(|id| data.site(id));
         let region_name = site
             .and_then(|site_def| data.region(&site_def.region_id))
-            .map(|region| region.name.as_str())
-            .unwrap_or("the frontier");
+            .map(|region| region.name.clone())
+            .unwrap_or_else(|| data.text("state.frontier"));
         let site_name = site
-            .map(|site_def| site_def.name.as_str())
-            .unwrap_or("the charter map");
+            .map(|site_def| site_def.name.clone())
+            .unwrap_or_else(|| data.text("state.charter_map"));
 
         ChronicleEntry {
             year: self.clock.year,
@@ -580,15 +607,15 @@ impl GameSession {
                 &template.title,
                 self.clock.year,
                 self.clock.season,
-                site_name,
-                region_name,
+                &site_name,
+                &region_name,
             ),
             body: fill_template(
                 &template.body,
                 self.clock.year,
                 self.clock.season,
-                site_name,
-                region_name,
+                &site_name,
+                &region_name,
             ),
             site_id: site_id.map(str::to_owned),
             importance: template.importance.clone(),
@@ -616,7 +643,7 @@ impl GameSession {
             self.wilderness_pressure = Self::create_wilderness_pressure(data);
         }
         if self.last_season_summary.is_empty() {
-            self.last_season_summary = "No season summary yet.".to_owned();
+            self.last_season_summary = data.text("state.no_season_summary");
         }
         if self.selected_difficulty_id.is_empty() {
             self.selected_difficulty_id = default_difficulty_id();
@@ -654,20 +681,21 @@ fn default_rival_faction() -> FactionRuntimeState {
 }
 
 fn strongest_terrain_prospect(
+    data: &GameData,
     fertility: i32,
     timber: i32,
     stone: i32,
     danger: i32,
-) -> &'static str {
+) -> String {
     let best_yield = fertility.max(timber).max(stone);
     if danger >= best_yield + 2 {
-        "hazards will need early attention"
+        data.text("state.prospect.hazards")
     } else if fertility >= timber && fertility >= stone {
-        "food prospects look strongest"
+        data.text("state.prospect.food")
     } else if timber >= stone {
-        "timber prospects look strongest"
+        data.text("state.prospect.timber")
     } else {
-        "stone prospects look strongest"
+        data.text("state.prospect.stone")
     }
 }
 
@@ -692,21 +720,22 @@ pub fn migrate_save_value(
     const SUPPORTED_LEGACY_VERSIONS: &[&str] = &["0.1.0"];
     if let Some(version) = detected_version.as_deref() {
         if version != data.config.version && !SUPPORTED_LEGACY_VERSIONS.contains(&version) {
-            return Err(format!(
-                "Unsupported save version `{version}`; expected `{}` or a supported legacy save",
-                data.config.version
+            return Err(data.text_with(
+                "state.migrate.unsupported",
+                &[("{version}", version), ("{current}", &data.config.version)],
             ));
         }
     }
 
     let payload = value.get("data").cloned().unwrap_or(value);
+    let version = detected_version
+        .as_deref()
+        .map(|version| format!(" version `{version}`"))
+        .unwrap_or_default();
     let mut current = serde_json::from_value::<SaveData>(payload).map_err(|error| {
-        format!(
-            "Could not read save{}: {error}",
-            detected_version
-                .as_deref()
-                .map(|version| format!(" version `{version}`"))
-                .unwrap_or_default()
+        data.text_with(
+            "state.migrate.read",
+            &[("{version}", &version), ("{error}", &error.to_string())],
         )
     })?;
     current.version = data.config.version.clone();

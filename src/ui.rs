@@ -117,6 +117,7 @@ pub struct MapSpriteTextures<'a> {
 }
 
 pub struct MenuContext<'a> {
+    pub data: &'a GameData,
     pub title_texture: Option<&'a Texture2D>,
     pub save_exists: bool,
     pub fullscreen: bool,
@@ -125,6 +126,7 @@ pub struct MenuContext<'a> {
 }
 
 pub struct PauseMenuContext<'a> {
+    pub data: &'a GameData,
     pub save_exists: bool,
     pub pending_exit_warning: Option<ExitWarningTarget>,
     pub pointer: Pointer,
@@ -159,7 +161,7 @@ pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAct
 
     draw_header(&ctx);
     map::draw_map_panel(&ctx, tooltip, input_enabled, &mut actions);
-    advisor::draw_realm_overview(&ctx, input_enabled, &mut actions);
+    advisor::draw_realm_overview(&ctx);
     panel::draw_side_panel(&ctx, tooltip, input_enabled, &mut actions);
     advisor::draw_council_footer(&ctx, input_enabled, &mut actions);
     // The close strategic projection intentionally extends beyond its viewport

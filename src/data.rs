@@ -15,7 +15,7 @@ pub use settlement::*;
 use macroquad_toolkit::assets::TextureConfig;
 use macroquad_toolkit::data_loader::load_embedded_json_labeled;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 const GAME_CONFIG_JSON: &str =
     macroquad_toolkit::include_json_str!("../assets/data/game_config.json");
@@ -37,6 +37,7 @@ const EVENT_TEMPLATES_JSON: &str =
     macroquad_toolkit::include_json_str!("../assets/data/event_templates.json");
 const FACTIONS_JSON: &str = macroquad_toolkit::include_json_str!("../assets/data/factions.json");
 const CAMPAIGN_JSON: &str = macroquad_toolkit::include_json_str!("../assets/data/campaign.json");
+const TEXT_JSON: &str = macroquad_toolkit::include_json_str!("../assets/data/text.json");
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameConfig {
@@ -49,6 +50,41 @@ pub struct GameConfig {
     pub starting_year: u32,
     pub starting_season: String,
     pub campaign_seed: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TextCatalog {
+    pub entries: Vec<TextEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TextEntry {
+    pub id: String,
+    pub text: String,
+}
+
+impl TextCatalog {
+    fn validate(&self) -> Result<(), String> {
+        validate_unique_ids(
+            "text entry",
+            self.entries.iter().map(|entry| entry.id.as_str()),
+        )?;
+        if self
+            .entries
+            .iter()
+            .any(|entry| entry.text.trim().is_empty())
+        {
+            return Err("text entries cannot be empty".to_owned());
+        }
+        Ok(())
+    }
+
+    fn lookup(&self) -> HashMap<&str, &str> {
+        self.entries
+            .iter()
+            .map(|entry| (entry.id.as_str(), entry.text.as_str()))
+            .collect()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -174,6 +210,7 @@ pub struct GameData {
     pub event_templates: Vec<EventTemplateDef>,
     pub faction_balance: FactionBalance,
     pub campaign_balance: CampaignBalance,
+    pub text: TextCatalog,
     pub texture_manifest: Vec<TextureConfig>,
 }
 
@@ -198,6 +235,7 @@ impl GameData {
             event_templates: load_embedded_json_labeled("event_templates", EVENT_TEMPLATES_JSON)?,
             faction_balance: load_embedded_json_labeled("factions", FACTIONS_JSON)?,
             campaign_balance: load_embedded_json_labeled("campaign", CAMPAIGN_JSON)?,
+            text: load_embedded_json_labeled("text", TEXT_JSON)?,
             texture_manifest: load_embedded_json_labeled(
                 "texture_manifest",
                 TEXTURE_MANIFEST_JSON,
@@ -209,6 +247,23 @@ impl GameData {
 
     pub fn site(&self, id: &str) -> Option<&SiteDef> {
         self.sites.iter().find(|site| site.id == id)
+    }
+
+    pub fn text(&self, id: &str) -> String {
+        self.text
+            .lookup()
+            .get(id)
+            .copied()
+            .unwrap_or_else(|| "[missing text]")
+            .to_owned()
+    }
+
+    pub fn text_with(&self, id: &str, replacements: &[(&str, &str)]) -> String {
+        let mut text = self.text(id);
+        for (token, value) in replacements {
+            text = text.replace(token, value);
+        }
+        text
     }
 
     pub fn region(&self, id: &str) -> Option<&RegionDef> {
@@ -444,6 +499,7 @@ impl GameData {
         self.validate_events()?;
         self.faction_balance.validate()?;
         self.campaign_balance.validate()?;
+        self.text.validate()?;
 
         Ok(())
     }

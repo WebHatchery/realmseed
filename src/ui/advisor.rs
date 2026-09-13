@@ -1,7 +1,7 @@
 //! Realm overview and council guidance surfaces.
 
 use super::{section_label, style, UiAction, UiContext};
-use crate::data::SiteCategory;
+use crate::data::{GameData, SiteCategory};
 use crate::state::SettlementStatus;
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
@@ -14,16 +14,16 @@ struct Recommendation {
     detail: String,
 }
 
-pub(super) fn draw_realm_overview(
-    ctx: &UiContext<'_>,
-    _input_enabled: bool,
-    _actions: &mut Vec<UiAction>,
-) {
+pub(super) fn draw_realm_overview(ctx: &UiContext<'_>) {
     let rect = super::left_panel_rect(ctx);
     style::draw_panel(rect);
 
     let content = rect.inset(17.0);
-    style::draw_panel_title("REALM OVERVIEW", content.x, content.y + 16.0);
+    style::draw_panel_title(
+        &ctx.data.text("ui.realm_overview"),
+        content.x,
+        content.y + 16.0,
+    );
     draw_realm_crest(content.x + 38.0, content.y + 68.0);
     draw_text_block(
         &realm_subtitle(ctx),
@@ -42,7 +42,7 @@ pub(super) fn draw_realm_overview(
         content.x,
         y,
         content.w,
-        "Stability",
+        &ctx.data.text("ui.stability"),
         health.stability,
         Color::new(0.40, 0.70, 0.34, 1.0),
     );
@@ -51,7 +51,7 @@ pub(super) fn draw_realm_overview(
         content.x,
         y,
         content.w,
-        "Loyalty",
+        &ctx.data.text("ui.loyalty"),
         health.loyalty,
         dark::ACCENT,
     );
@@ -60,7 +60,7 @@ pub(super) fn draw_realm_overview(
         content.x,
         y,
         content.w,
-        "Supply",
+        &ctx.data.text("ui.supply"),
         health.supply,
         Color::new(0.75, 0.68, 0.43, 1.0),
     );
@@ -69,7 +69,7 @@ pub(super) fn draw_realm_overview(
         content.x,
         y,
         content.w,
-        "Danger",
+        &ctx.data.text("ui.danger"),
         health.danger,
         Color::new(0.86, 0.33, 0.22, 1.0),
     );
@@ -89,28 +89,40 @@ pub(super) fn draw_realm_overview(
         content.x,
         y,
         style::IconKind::Castle,
-        &format!("{} of {} sites known", known, total_sites),
+        &ctx.data.text_with(
+            "ui.known_sites",
+            &[
+                ("{known}", &known.to_string()),
+                ("{total}", &total_sites.to_string()),
+            ],
+        ),
     );
     y += 24.0;
     draw_fact_row(
         content.x,
         y,
         style::IconKind::Crown,
-        &format!("{} active settlement", active_settlements),
+        &ctx.data.text_with(
+            "ui.active_settlement",
+            &[("{count}", &active_settlements.to_string())],
+        ),
     );
     y += 24.0;
     draw_fact_row(
         content.x,
         y,
         style::IconKind::Danger,
-        &format!("{} active issues", ctx.session.active_issues.len()),
+        &ctx.data.text_with(
+            "ui.active_issues",
+            &[("{count}", &ctx.session.active_issues.len().to_string())],
+        ),
     );
 
     y += 38.0;
     style::draw_divider(content.x, y, content.w);
     y += 26.0;
     let recommendation = recommendation_for(ctx);
-    section_label("ADVISOR'S COUNSEL", content.x, y);
+    section_label(&ctx.data.text("ui.advisor_counsel"), content.x, y);
     let button_y = rect.bottom() - 64.0;
     draw_text_block(
         &recommendation.title,
@@ -148,7 +160,7 @@ pub(super) fn draw_council_footer(
     style::draw_panel(rect);
 
     let recommendation = recommendation_for(ctx);
-    let fallback_guidance = ctx.session.guidance_text();
+    let fallback_guidance = ctx.session.guidance_text(ctx.data);
     let content = rect.inset(16.0);
     let left_w = content.w * 0.38;
     let center_w = content.w * 0.32;
@@ -164,7 +176,7 @@ pub(super) fn draw_council_footer(
         style::GOLD,
     );
     draw_ui_text_ex(
-        "COUNCIL GUIDANCE",
+        &ctx.data.text("ui.council_guidance"),
         left.x + 70.0,
         left.y + 26.0,
         TextStyle::new(14.5, style::GOLD).params(),
@@ -191,18 +203,21 @@ pub(super) fn draw_council_footer(
 
     style::draw_vertical_divider(center.x - 9.0, center.y + 4.0, center.h - 8.0);
     draw_ui_text_ex(
-        "SEASON LOG",
+        &ctx.data.text("ui.season_log"),
         center.x,
         center.y + 26.0,
         TextStyle::new(14.5, style::GOLD).params(),
     );
     draw_log_lines(ctx, center.x, center.y + 44.0, center.w);
 
-    draw_quick_actions(right, input_enabled, ctx.pointer, actions);
+    draw_quick_actions(ctx.data, right, input_enabled, ctx.pointer, actions);
     draw_ui_text_ex(
-        &format!(
-            "{} Actions Remaining",
-            ctx.session.council_actions_remaining
+        &ctx.data.text_with(
+            "ui.actions_remaining",
+            &[(
+                "{count}",
+                &ctx.session.council_actions_remaining.to_string(),
+            )],
         ),
         right.x + right.w * 0.5 - 58.0,
         right.y + 66.0,
@@ -211,6 +226,7 @@ pub(super) fn draw_council_footer(
 }
 
 fn draw_quick_actions(
+    data: &GameData,
     rect: Rect,
     input_enabled: bool,
     pointer: Pointer,
@@ -219,10 +235,10 @@ fn draw_quick_actions(
     let gap = 6.0;
     let button_w = (rect.w - gap * 3.0) / 4.0;
     let controls = [
-        ("Pause", UiAction::OpenPauseMenu),
-        ("Chronicle", UiAction::ToggleChronicle),
-        ("Factions", UiAction::ToggleFactionPanel),
-        ("Advance", UiAction::AdvanceSeason),
+        (data.text("ui.pause"), UiAction::OpenPauseMenu),
+        (data.text("ui.chronicle"), UiAction::ToggleChronicle),
+        (data.text("ui.factions"), UiAction::ToggleFactionPanel),
+        (data.text("ui.advance"), UiAction::AdvanceSeason),
     ];
     for (index, (label, action)) in controls.into_iter().enumerate() {
         let button = Rect::new(
@@ -233,7 +249,7 @@ fn draw_quick_actions(
         );
         if super::virtual_button(
             button,
-            label,
+            &label,
             input_enabled,
             if matches!(action, UiAction::AdvanceSeason) {
                 ButtonTone::Primary
@@ -320,18 +336,15 @@ fn draw_log_lines(ctx: &UiContext<'_>, x: f32, y: f32, width: f32) {
 fn recommendation_for(ctx: &UiContext<'_>) -> Recommendation {
     if ctx.session.pending_event.is_some() {
         return Recommendation {
-            title: "Answer the council matter".to_owned(),
-            detail:
-                "A live petition is waiting for a decision before the realm can breathe easily."
-                    .to_owned(),
+            title: ctx.data.text("ui.advisor_answer_title"),
+            detail: ctx.data.text("ui.advisor_scouting"),
         };
     }
 
     if ctx.session.council_actions_remaining <= 0 {
         return Recommendation {
-            title: "Council actions spent".to_owned(),
-            detail: "End the season to resolve production, roads, rival moves, and new warnings."
-                .to_owned(),
+            title: ctx.data.text("ui.advisor_actions_title"),
+            detail: ctx.data.text("ui.advisor_actions_spent"),
         };
     }
 
@@ -343,10 +356,12 @@ fn recommendation_for(ctx: &UiContext<'_>) -> Recommendation {
         let site_name = ctx
             .session
             .selected_site(ctx.data)
-            .map(|site| site.name.as_str())
-            .unwrap_or("the rumor");
+            .map(|site| site.name.clone())
+            .unwrap_or_else(|| ctx.data.text("ui.rumor"));
         return Recommendation {
-            title: format!("Scout {}", site_name),
+            title: ctx
+                .data
+                .text_with("ui.scout_title", &[("{site}", &site_name)]),
             detail: scout_status.reason.clone(),
         };
     }
@@ -358,9 +373,8 @@ fn recommendation_for(ctx: &UiContext<'_>) -> Recommendation {
         .any(|site| ctx.session.is_adjacent_unknown(ctx.data, &site.id))
     {
         return Recommendation {
-            title: "Reveal the next frontier".to_owned(),
-            detail: "Question markers show places your scouts can reach from known roads."
-                .to_owned(),
+            title: ctx.data.text("ui.advisor_reveal_title"),
+            detail: ctx.data.text("ui.advisor_reveal"),
         };
     }
 
@@ -379,8 +393,8 @@ fn recommendation_for(ctx: &UiContext<'_>) -> Recommendation {
                 && ctx.session.settlement_at_site(&site.id).is_none()
         }) {
             return Recommendation {
-                title: "Found the first outpost".to_owned(),
-                detail: "A second settlement turns Greenvale from a seat into a realm.".to_owned(),
+                title: ctx.data.text("ui.advisor_founding_title"),
+                detail: ctx.data.text("ui.advisor_founding"),
             };
         }
     }
@@ -391,22 +405,20 @@ fn recommendation_for(ctx: &UiContext<'_>) -> Recommendation {
             && ctx.session.route_action_status(ctx.data, &route.id).enabled
     }) {
         return Recommendation {
-            title: "Bind the realm with roads".to_owned(),
-            detail: "A built path reduces isolation and lets the capital support frontier sites."
-                .to_owned(),
+            title: ctx.data.text("ui.advisor_roads_title"),
+            detail: ctx.data.text("ui.advisor_roads"),
         };
     }
 
     if ctx.session.active_issues.is_empty() {
         Recommendation {
-            title: "Let the season turn".to_owned(),
-            detail: "Production, roads, rivals, and wilderness pressure will all resolve into the chronicle.".to_owned(),
+            title: ctx.data.text("ui.advisor_season_title"),
+            detail: ctx.data.text("ui.advisor_season"),
         }
     } else {
         Recommendation {
-            title: "Stabilize active issues".to_owned(),
-            detail: "Warnings tied to settlements and roads can grow if seasons pass unattended."
-                .to_owned(),
+            title: ctx.data.text("ui.advisor_issues_title"),
+            detail: ctx.data.text("ui.advisor_issues"),
         }
     }
 }
@@ -417,7 +429,7 @@ fn realm_subtitle(ctx: &UiContext<'_>) -> String {
             return ambition.name.clone();
         }
     }
-    "Frontier charter under the crown".to_owned()
+    ctx.data.text("ui.frontier_charter")
 }
 
 #[derive(Debug, Clone, Copy)]

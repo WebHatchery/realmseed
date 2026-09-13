@@ -254,6 +254,7 @@ impl Game {
         let pointer = Pointer::read(|point| virtual_ui.screen_to_ui(point));
         let actions = match self.screen {
             GameScreen::Title => ui::draw_title_menu(MenuContext {
+                data: &self.data,
                 title_texture: self.assets.get_texture("title_image"),
                 save_exists: self.save_exists,
                 fullscreen: self.fullscreen,
@@ -261,6 +262,7 @@ impl Game {
                 ui: &virtual_ui,
             }),
             GameScreen::Settings(_) => ui::draw_settings_page(MenuContext {
+                data: &self.data,
                 title_texture: self.assets.get_texture("title_image"),
                 save_exists: self.save_exists,
                 fullscreen: self.fullscreen,
@@ -298,6 +300,7 @@ impl Game {
                 let mut actions = ui::draw_game_ui(ctx, &mut self.hover_tooltip);
                 if paused {
                     actions.extend(ui::draw_pause_menu(PauseMenuContext {
+                        data: &self.data,
                         save_exists: self.save_exists,
                         pending_exit_warning: self.pending_exit_warning,
                         pointer,
@@ -347,8 +350,7 @@ impl Game {
                 self.screen = GameScreen::Playing;
                 self.pending_exit_warning = None;
                 self.last_save_at = None;
-                self.notifications
-                    .info("Started a fresh Realmseed campaign");
+                self.notifications.info(self.data.text("game.started"));
             }
             UiAction::ContinueGame => {
                 if self.load_game() {
@@ -425,7 +427,10 @@ impl Game {
             UiAction::SelectSite(site_id) => {
                 if self.session.select_site(&self.data, &site_id) {
                     if let Some(site) = self.data.site(&site_id) {
-                        self.notifications.info(format!("Selected {}", site.name));
+                        self.notifications.info(
+                            self.data
+                                .text_with("game.selected", &[("{site}", &site.name)]),
+                        );
                     }
                 }
             }
@@ -538,65 +543,79 @@ impl Game {
             }
             UiAction::AdvanceSeason => {
                 let report = self.session.advance_season(&self.data);
-                self.notifications.info(format!(
-                    "{} Year {}",
-                    self.session.clock.season.label(),
-                    self.session.clock.year
-                ));
+                let season = self.session.clock.season.label().to_owned();
+                let year = self.session.clock.year.to_string();
+                self.notifications.info(
+                    self.data
+                        .text_with("game.season", &[("{season}", &season), ("{year}", &year)]),
+                );
                 if report.food_shortages > 0 {
-                    self.notifications.warning(format!(
-                        "{} settlement food shortage reported",
-                        report.food_shortages
-                    ));
+                    let count = report.food_shortages.to_string();
+                    self.notifications.warning(
+                        self.data
+                            .text_with("game.food_shortage", &[("{count}", &count)]),
+                    );
                 }
                 if report.settlements_lost > 0 {
-                    self.notifications.danger(format!(
-                        "{} settlement lost to neglect",
-                        report.settlements_lost
-                    ));
+                    let count = report.settlements_lost.to_string();
+                    self.notifications.danger(
+                        self.data
+                            .text_with("game.settlement_lost", &[("{count}", &count)]),
+                    );
                 }
                 if report.road_warnings > 0 {
-                    self.notifications
-                        .warning(format!("{} road warning reported", report.road_warnings));
+                    let count = report.road_warnings.to_string();
+                    self.notifications.warning(
+                        self.data
+                            .text_with("game.road_warning", &[("{count}", &count)]),
+                    );
                 }
                 if report.isolated_settlements > 0 {
-                    self.notifications.warning(format!(
-                        "{} settlement isolated from the capital network",
-                        report.isolated_settlements
-                    ));
+                    let count = report.isolated_settlements.to_string();
+                    self.notifications
+                        .warning(self.data.text_with("game.isolated", &[("{count}", &count)]));
                 }
                 if report.unmanaged_strain > 0 {
-                    self.notifications
-                        .info(format!("Unmanaged strain: {}", report.unmanaged_strain));
+                    let count = report.unmanaged_strain.to_string();
+                    self.notifications.info(
+                        self.data
+                            .text_with("game.unmanaged_strain", &[("{count}", &count)]),
+                    );
                 }
                 if report.events_triggered > 0 {
-                    self.notifications
-                        .info(format!("{} event pending", report.events_triggered));
+                    let count = report.events_triggered.to_string();
+                    self.notifications.info(
+                        self.data
+                            .text_with("game.event_pending", &[("{count}", &count)]),
+                    );
                 }
                 if report.issues_escalated > 0 {
-                    self.notifications.warning(format!(
-                        "{} active issue escalated",
-                        report.issues_escalated
-                    ));
+                    let count = report.issues_escalated.to_string();
+                    self.notifications.warning(
+                        self.data
+                            .text_with("game.issue_escalated", &[("{count}", &count)]),
+                    );
                 }
                 if report.rival_actions > 0 {
-                    self.notifications.info("Rival faction acted");
+                    self.notifications.info(self.data.text("game.rival_acted"));
                 }
                 if report.independent_requests > 0 {
-                    self.notifications.warning(format!(
-                        "{} independent request logged",
-                        report.independent_requests
-                    ));
+                    let count = report.independent_requests.to_string();
+                    self.notifications.warning(
+                        self.data
+                            .text_with("game.independent_request", &[("{count}", &count)]),
+                    );
                 }
                 if report.wilderness_changes > 0 {
-                    self.notifications.warning(format!(
-                        "{} wilderness pressure band changed",
-                        report.wilderness_changes
-                    ));
+                    let count = report.wilderness_changes.to_string();
+                    self.notifications.warning(
+                        self.data
+                            .text_with("game.wilderness_changed", &[("{count}", &count)]),
+                    );
                 }
                 if report.campaign_finished {
                     self.notifications
-                        .success("The 20-year campaign is complete");
+                        .success(self.data.text("game.campaign_complete"));
                 }
             }
             UiAction::ToggleChronicle => {
@@ -640,13 +659,16 @@ impl Game {
             &self.data.config.version,
         ) {
             Ok(()) => {
-                self.notifications.success("Saved campaign");
+                self.notifications.success(self.data.text("game.saved"));
                 self.last_save_at = Some(get_time());
                 self.refresh_save_state();
                 true
             }
             Err(err) => {
-                self.notifications.danger(format!("Save failed: {}", err));
+                self.notifications.danger(
+                    self.data
+                        .text_with("game.save_failed", &[("{error}", &err)]),
+                );
                 false
             }
         }
@@ -663,13 +685,16 @@ impl Game {
         match loaded {
             Ok(save) => {
                 self.session = GameSession::from_save(save, &self.data);
-                self.notifications.success("Loaded campaign");
+                self.notifications.success(self.data.text("game.loaded"));
                 self.last_save_at = Some(get_time());
                 self.refresh_save_state();
                 true
             }
             Err(err) => {
-                self.notifications.warning(format!("Load failed: {}", err));
+                self.notifications.warning(
+                    self.data
+                        .text_with("game.load_failed", &[("{error}", &err)]),
+                );
                 false
             }
         }
@@ -678,11 +703,14 @@ impl Game {
     fn delete_save(&mut self) {
         match delete_slot(&self.data.config.game_name, &self.data.config.save_slot) {
             Ok(()) => {
-                self.notifications.info("Deleted campaign save");
+                self.notifications.info(self.data.text("game.deleted"));
                 self.last_save_at = None;
                 self.refresh_save_state();
             }
-            Err(err) => self.notifications.danger(format!("Delete failed: {}", err)),
+            Err(err) => self.notifications.danger(
+                self.data
+                    .text_with("game.delete_failed", &[("{error}", &err)]),
+            ),
         }
     }
 

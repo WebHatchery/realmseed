@@ -21,7 +21,7 @@ pub(super) fn draw_endgame_summary(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
     let rect = super::centered_modal_rect(ctx, 868.0, 520.0);
     draw_surface_with_title(
         rect,
-        Some("20-Year Chronicle Summary"),
+        Some(&ctx.data.text("ui.endgame_title")),
         &SurfaceStyle::new(Color::new(0.075, 0.070, 0.055, 0.99))
             .with_border(1.0, Color::new(0.64, 0.55, 0.34, 0.85))
             .with_header(48.0, Color::new(0.10, 0.095, 0.075, 1.0))
@@ -45,16 +45,19 @@ pub(super) fn draw_endgame_summary(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
         4.0,
         dark::TEXT,
     );
+    let details = ctx.data.text_with(
+        "state.summary_details",
+        &[
+            ("{identity}", &summary.strongest_identity),
+            ("{largest}", &summary.largest_settlement),
+            ("{worst}", &summary.worst_year.to_string()),
+            ("{golden}", &summary.golden_year.to_string()),
+            ("{event}", &summary.defining_event),
+            ("{arcs}", &summary.arcs.join(", ")),
+        ],
+    );
     draw_text_block(
-        &format!(
-            "Strongest identity: {}\nLargest settlement: {}\nWorst year: {}\nGolden year: {}\nDefining event: {}\nGrouped arcs: {}",
-            summary.strongest_identity,
-            summary.largest_settlement,
-            summary.worst_year,
-            summary.golden_year,
-            summary.defining_event,
-            summary.arcs.join(", ")
-        ),
+        &details,
         content.x,
         content.y + 286.0,
         content.w,
@@ -67,7 +70,7 @@ pub(super) fn draw_endgame_summary(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
     let button_w = (content.w - 14.0) * 0.5;
     if virtual_button(
         Rect::new(content.x, button_y, button_w, 38.0),
-        "Restart Campaign",
+        &ctx.data.text("ui.restart_campaign"),
         true,
         ButtonTone::Primary,
         ctx.pointer,
@@ -76,7 +79,7 @@ pub(super) fn draw_endgame_summary(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
     }
     if virtual_button(
         Rect::new(content.x + button_w + 14.0, button_y, button_w, 38.0),
-        "Return to Title",
+        &ctx.data.text("ui.return_title"),
         true,
         ButtonTone::Secondary,
         ctx.pointer,

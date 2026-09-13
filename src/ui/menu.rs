@@ -1,6 +1,7 @@
 //! Title, pause, and settings menu rendering.
 
 use super::{style, virtual_button, ExitWarningTarget, MenuContext, PauseMenuContext, UiAction};
+use crate::data::GameData;
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::RectExt;
@@ -13,7 +14,7 @@ pub(super) fn draw_title_menu(ctx: MenuContext<'_>) -> Vec<UiAction> {
     draw_title_vignette(screen);
 
     let menu = menu_rect(screen);
-    draw_menu_buttons(menu, ctx.pointer, ctx.save_exists, &mut actions);
+    draw_menu_buttons(ctx.data, menu, ctx.pointer, ctx.save_exists, &mut actions);
 
     actions
 }
@@ -38,7 +39,7 @@ pub(super) fn draw_settings_page(ctx: MenuContext<'_>) -> Vec<UiAction> {
         screen.h - 156.0,
     );
     draw_text_centered_in_box_ex(
-        "Settings",
+        &ctx.data.text("ui.settings"),
         content.x,
         content.y,
         content.w,
@@ -49,13 +50,13 @@ pub(super) fn draw_settings_page(ctx: MenuContext<'_>) -> Vec<UiAction> {
 
     let toggle_rect = Rect::new(content.x + 80.0, content.y + 122.0, content.w - 160.0, 48.0);
     let toggle_text = if ctx.fullscreen {
-        "Fullscreen: On"
+        ctx.data.text("ui.fullscreen_on")
     } else {
-        "Fullscreen: Off"
+        ctx.data.text("ui.fullscreen_off")
     };
     if virtual_button(
         toggle_rect,
-        toggle_text,
+        &toggle_text,
         true,
         ButtonTone::Primary,
         ctx.pointer,
@@ -69,7 +70,13 @@ pub(super) fn draw_settings_page(ctx: MenuContext<'_>) -> Vec<UiAction> {
         content.w - 260.0,
         44.0,
     );
-    if virtual_button(back_rect, "Back", true, ButtonTone::Secondary, ctx.pointer) {
+    if virtual_button(
+        back_rect,
+        &ctx.data.text("ui.back"),
+        true,
+        ButtonTone::Secondary,
+        ctx.pointer,
+    ) {
         actions.push(UiAction::CloseSettings);
     }
 
@@ -91,7 +98,7 @@ pub(super) fn draw_pause_menu(ctx: PauseMenuContext<'_>) -> Vec<UiAction> {
     let menu = pause_menu_rect(screen);
     style::draw_panel(menu);
     draw_text_centered_in_box_ex(
-        "Paused",
+        &ctx.data.text("ui.paused"),
         menu.x,
         menu.y + 20.0,
         menu.w,
@@ -101,11 +108,17 @@ pub(super) fn draw_pause_menu(ctx: PauseMenuContext<'_>) -> Vec<UiAction> {
     style::draw_divider(menu.x + 28.0, menu.y + 76.0, menu.w - 56.0);
 
     if ctx.pending_exit_warning.is_none() {
-        draw_pause_buttons(menu.inset(30.0), ctx.pointer, ctx.save_exists, &mut actions);
+        draw_pause_buttons(
+            ctx.data,
+            menu.inset(30.0),
+            ctx.pointer,
+            ctx.save_exists,
+            &mut actions,
+        );
     }
 
     if let Some(target) = ctx.pending_exit_warning {
-        draw_exit_warning(screen, ctx.pointer, target, &mut actions);
+        draw_exit_warning(ctx.data, screen, ctx.pointer, target, &mut actions);
     }
 
     actions
@@ -178,13 +191,19 @@ fn menu_metrics(screen: Rect) -> (f32, f32) {
     }
 }
 
-fn draw_menu_buttons(rect: Rect, pointer: Pointer, save_exists: bool, actions: &mut Vec<UiAction>) {
+fn draw_menu_buttons(
+    data: &GameData,
+    rect: Rect,
+    pointer: Pointer,
+    save_exists: bool,
+    actions: &mut Vec<UiAction>,
+) {
     let button_h = if rect.h < 170.0 { 31.0 } else { 42.0 };
     let gap = if rect.h < 170.0 { 5.0 } else { 10.0 };
     let mut y = rect.y;
     if virtual_button(
         Rect::new(rect.x, y, rect.w, button_h),
-        "New Game",
+        &data.text("ui.new_game"),
         true,
         ButtonTone::Primary,
         pointer,
@@ -195,7 +214,7 @@ fn draw_menu_buttons(rect: Rect, pointer: Pointer, save_exists: bool, actions: &
 
     if virtual_button(
         Rect::new(rect.x, y, rect.w, button_h),
-        "Continue",
+        &data.text("ui.continue"),
         save_exists,
         ButtonTone::Secondary,
         pointer,
@@ -206,7 +225,7 @@ fn draw_menu_buttons(rect: Rect, pointer: Pointer, save_exists: bool, actions: &
 
     if virtual_button(
         Rect::new(rect.x, y, rect.w, button_h),
-        "Settings",
+        &data.text("ui.settings"),
         true,
         ButtonTone::Secondary,
         pointer,
@@ -217,7 +236,7 @@ fn draw_menu_buttons(rect: Rect, pointer: Pointer, save_exists: bool, actions: &
 
     if virtual_button(
         Rect::new(rect.x, y, rect.w, button_h),
-        "Exit Game",
+        &data.text("ui.exit"),
         true,
         ButtonTone::Danger,
         pointer,
@@ -239,6 +258,7 @@ fn pause_menu_rect(screen: Rect) -> Rect {
 }
 
 fn draw_pause_buttons(
+    data: &GameData,
     rect: Rect,
     pointer: Pointer,
     save_exists: bool,
@@ -250,32 +270,47 @@ fn draw_pause_buttons(
 
     let buttons = [
         (
-            "Resume",
+            data.text("ui.resume"),
             true,
             ButtonTone::Secondary,
             UiAction::ClosePauseMenu,
         ),
-        ("Save", true, ButtonTone::Primary, UiAction::Save),
-        ("Load", save_exists, ButtonTone::Secondary, UiAction::Load),
         (
-            "Settings",
+            data.text("ui.save"),
+            true,
+            ButtonTone::Primary,
+            UiAction::Save,
+        ),
+        (
+            data.text("ui.load"),
+            save_exists,
+            ButtonTone::Secondary,
+            UiAction::Load,
+        ),
+        (
+            data.text("ui.settings"),
             true,
             ButtonTone::Secondary,
             UiAction::OpenSettings,
         ),
         (
-            "Title",
+            data.text("ui.title"),
             true,
             ButtonTone::Secondary,
             UiAction::ReturnToTitle,
         ),
-        ("Exit Game", true, ButtonTone::Danger, UiAction::ExitGame),
+        (
+            data.text("ui.exit"),
+            true,
+            ButtonTone::Danger,
+            UiAction::ExitGame,
+        ),
     ];
 
     for (label, enabled, tone, action) in buttons {
         if virtual_button(
             Rect::new(rect.x, y, rect.w, button_h),
-            label,
+            &label,
             enabled,
             tone,
             pointer,
@@ -287,6 +322,7 @@ fn draw_pause_buttons(
 }
 
 fn draw_exit_warning(
+    data: &GameData,
     screen: Rect,
     pointer: Pointer,
     target: ExitWarningTarget,
@@ -310,7 +346,7 @@ fn draw_exit_warning(
     style::draw_panel(rect);
 
     draw_text_centered_in_box_ex(
-        "Recent Save Needed",
+        &data.text("ui.recent_save_needed"),
         rect.x + 22.0,
         rect.y + 20.0,
         rect.w - 44.0,
@@ -320,15 +356,11 @@ fn draw_exit_warning(
     style::draw_divider(rect.x + 28.0, rect.y + 72.0, rect.w - 56.0);
 
     let body = match target {
-        ExitWarningTarget::Title => {
-            "This campaign has not been saved in the last minute. Save before returning to the title screen?"
-        }
-        ExitWarningTarget::ExitGame => {
-            "This campaign has not been saved in the last minute. Save before exiting the game?"
-        }
+        ExitWarningTarget::Title => data.text("ui.save_warning_title"),
+        ExitWarningTarget::ExitGame => data.text("ui.save_warning_exit"),
     };
     draw_text_block(
-        body,
+        &body,
         rect.x + 34.0,
         rect.y + 98.0,
         rect.w - 68.0,
@@ -342,7 +374,7 @@ fn draw_exit_warning(
     let y = rect.bottom() - 62.0;
     if virtual_button(
         Rect::new(rect.x + 24.0, y, button_w, 40.0),
-        "Save First",
+        &data.text("ui.save_first"),
         true,
         ButtonTone::Primary,
         pointer,
@@ -350,12 +382,12 @@ fn draw_exit_warning(
         actions.push(UiAction::SaveAndConfirmPendingExit);
     }
     let anyway_label = match target {
-        ExitWarningTarget::Title => "Title Anyway",
-        ExitWarningTarget::ExitGame => "Exit Anyway",
+        ExitWarningTarget::Title => data.text("ui.title_anyway"),
+        ExitWarningTarget::ExitGame => data.text("ui.exit_anyway"),
     };
     if virtual_button(
         Rect::new(rect.x + 34.0 + button_w, y, button_w, 40.0),
-        anyway_label,
+        &anyway_label,
         true,
         ButtonTone::Danger,
         pointer,
@@ -364,7 +396,7 @@ fn draw_exit_warning(
     }
     if virtual_button(
         Rect::new(rect.x + 44.0 + button_w * 2.0, y, button_w, 40.0),
-        "Cancel",
+        &data.text("ui.cancel"),
         true,
         ButtonTone::Secondary,
         pointer,

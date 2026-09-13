@@ -41,9 +41,9 @@ pub struct CampaignAdvanceReport {
 }
 
 impl GameSession {
-    pub fn guidance_text(&self) -> String {
+    pub fn guidance_text(&self, data: &GameData) -> String {
         if self.known_site_count() <= 8 {
-            return "Guidance - scouting: inspect an adjacent question marker before committing actions.".to_owned();
+            return data.text("state.guidance.scouting");
         }
         if self
             .settlements
@@ -52,14 +52,13 @@ impl GameSession {
             .count()
             < 2
         {
-            return "Guidance - founding: choose a known settlement site and found the first frontier camp.".to_owned();
+            return data.text("state.guidance.founding");
         }
         if !self.routes.iter().any(|route| route.level.is_built()) {
-            return "Guidance - roads: build a path so new settlements can reach the capital network."
-                .to_owned();
+            return data.text("state.guidance.roads");
         }
         if self.pending_event.is_some() || !self.active_issues.is_empty() {
-            return "Guidance - first crisis: resolve warnings by reading causes and choosing a response.".to_owned();
+            return data.text("state.guidance.crisis");
         }
         if self
             .rival_faction
@@ -67,48 +66,46 @@ impl GameSession {
             .iter()
             .any(|entry| entry.action == "Independent Request")
         {
-            return "Guidance - independent request: aid, trade, or protection changes trust and autonomy.".to_owned();
+            return data.text("state.guidance.independent_request");
         }
         if self.rival_faction.action_log.is_empty() {
-            return "Guidance - rival pressure: advance seasons and watch the faction log with F."
-                .to_owned();
+            return data.text("state.guidance.rival");
         }
         if self.rival_faction.action_log.len() == 1 {
-            return "Guidance - first rival action: the log explains target, reason, and result."
-                .to_owned();
+            return data.text("state.guidance.rival_action");
         }
         if self.selected_ambition_id.is_none() {
-            return "Guidance - ambition: open Faction Pressure with F and declare a realm ambition."
-                .to_owned();
+            return data.text("state.guidance.ambition");
         }
         if self
             .independent_settlements
             .iter()
             .all(|independent| !independent.trade_relationship)
         {
-            return "Guidance - independents: select an independent settlement and open trade or integration."
-                .to_owned();
+            return data.text("state.guidance.independents");
         }
-        "Guidance: build projects, unlock institutions, and shape the realm's final legacy."
-            .to_owned()
+        data.text("state.guidance.default")
     }
 
     pub fn ambition_objective_text(&self, data: &GameData, ambition_id: &str) -> String {
         let progress = self.ambition_progress(data, ambition_id);
         match ambition_id {
-            "breadbasket" => format!(
-                "Objective: keep food reserves high, answer hunger events, and finish granary projects. Progress {}.",
-                progress
+            "breadbasket" => data.text_with(
+                "state.objective.breadbasket",
+                &[("{progress}", &progress.to_string())],
             ),
-            "roadbound" => format!(
-                "Objective: connect settlements, upgrade roads, and reduce isolation. Progress {}.",
-                progress
+            "roadbound" => data.text_with(
+                "state.objective.roadbound",
+                &[("{progress}", &progress.to_string())],
             ),
-            "civic" => format!(
-                "Objective: sustain loyalty/stability, settle disputes, and integrate independents. Progress {}.",
-                progress
+            "civic" => data.text_with(
+                "state.objective.civic",
+                &[("{progress}", &progress.to_string())],
             ),
-            _ => format!("Objective progress {}.", progress),
+            _ => data.text_with(
+                "state.objective.default",
+                &[("{progress}", &progress.to_string())],
+            ),
         }
     }
 
@@ -127,7 +124,7 @@ impl GameSession {
         let ambition = data
             .campaign_balance
             .ambition(ambition_id)
-            .ok_or_else(|| "Unknown ambition.".to_owned())?;
+            .ok_or_else(|| data.text("state.unknown_ambition"))?;
         self.selected_ambition_id = Some(ambition.id.clone());
         self.add_chronicle_entry(
             data,
@@ -166,7 +163,7 @@ impl GameSession {
 
     pub fn project_status(&self, data: &GameData, project_id: &str) -> SettlementActionStatus {
         let Some(project) = data.campaign_balance.project(project_id) else {
-            return SettlementActionStatus::disabled("Unknown project.");
+            return SettlementActionStatus::disabled(data.text("state.unknown_project"));
         };
         let target_id = self.project_target_id(data, project);
         if self
@@ -174,23 +171,27 @@ impl GameSession {
             .iter()
             .any(|completed| completed.id == project.id && completed.target_id == target_id)
         {
-            return SettlementActionStatus::disabled("Project already completed here.");
+            return SettlementActionStatus::disabled(data.text("state.project_complete"));
         }
         if project.action_cost > self.council_actions_remaining {
-            return SettlementActionStatus::disabled("Not enough actions remaining.");
+            return SettlementActionStatus::disabled(data.text("state.not_enough_actions"));
         }
         let Some(source) = self.project_source_settlement(data, project) else {
-            return SettlementActionStatus::disabled("Select a valid settlement or region.");
+            return SettlementActionStatus::disabled(data.text("state.valid_project_target"));
         };
         if let Some(reason) = source.stored.deficit_text(project.cost) {
             return SettlementActionStatus::disabled(reason);
         }
 
-        SettlementActionStatus::enabled(format!(
-            "Costs {} and {} action. {}",
-            project.cost.cost_text(),
-            project.action_cost,
-            project.description
+        let cost = project.cost.cost_text();
+        let actions = project.action_cost.to_string();
+        SettlementActionStatus::enabled(data.text_with(
+            "state.project_cost",
+            &[
+                ("{cost}", &cost),
+                ("{actions}", &actions),
+                ("{description}", &project.description),
+            ],
         ))
     }
 
@@ -206,7 +207,7 @@ impl GameSession {
         let project = data
             .campaign_balance
             .project(project_id)
-            .ok_or_else(|| "Unknown project.".to_owned())?
+            .ok_or_else(|| data.text("state.unknown_project"))?
             .clone();
         let target_id = self.project_target_id(data, &project);
         let source_site_id = if project.scope == "settlement" {
@@ -218,7 +219,7 @@ impl GameSession {
             .settlements
             .iter_mut()
             .find(|settlement| settlement.location_id == source_site_id)
-            .ok_or_else(|| "Project source settlement is unavailable.".to_owned())?;
+            .ok_or_else(|| data.text("state.project_source_unavailable"))?;
         source.stored.subtract(project.cost);
         self.council_actions_remaining -= project.action_cost;
         self.apply_project_effect(data, &project, &target_id);
@@ -234,7 +235,7 @@ impl GameSession {
             Some(&self.selected_site_id.clone()),
         );
 
-        Ok(format!("Completed {}", project.name))
+        Ok(data.text_with("state.project_completed", &[("{name}", &project.name)]))
     }
 
     pub fn institution_status(
@@ -243,14 +244,14 @@ impl GameSession {
         institution_id: &str,
     ) -> SettlementActionStatus {
         let Some(institution) = data.campaign_balance.institution(institution_id) else {
-            return SettlementActionStatus::disabled("Unknown institution.");
+            return SettlementActionStatus::disabled(data.text("state.unknown_institution"));
         };
         if self
             .active_institutions
             .iter()
             .any(|active| active.id == institution.id)
         {
-            return SettlementActionStatus::disabled("Institution already active.");
+            return SettlementActionStatus::disabled(data.text("state.institution_active"));
         }
         let unlocked = match institution.id.as_str() {
             "road_wardens" => {
@@ -274,7 +275,7 @@ impl GameSession {
             _ => false,
         };
         if !unlocked {
-            return SettlementActionStatus::disabled("Unlock requirement not met.");
+            return SettlementActionStatus::disabled(data.text("state.unlock_requirement"));
         }
 
         SettlementActionStatus::enabled(institution.description.clone())
@@ -292,7 +293,7 @@ impl GameSession {
         let institution = data
             .campaign_balance
             .institution(institution_id)
-            .ok_or_else(|| "Unknown institution.".to_owned())?;
+            .ok_or_else(|| data.text("state.unknown_institution"))?;
         self.active_institutions.push(ActiveInstitutionState {
             id: institution.id.clone(),
             unlocked_year: self.clock.year,
@@ -304,7 +305,10 @@ impl GameSession {
             Some(&self.selected_site_id.clone()),
         );
 
-        Ok(format!("Unlocked {}", institution.name))
+        Ok(data.text_with(
+            "state.institution_unlocked",
+            &[("{name}", &institution.name)],
+        ))
     }
 
     pub fn advance_campaign_systems(
@@ -313,7 +317,7 @@ impl GameSession {
         report: &SeasonAdvanceReport,
     ) -> CampaignAdvanceReport {
         self.apply_institution_effects();
-        self.record_last_season_summary(report);
+        self.record_last_season_summary(data, report);
         if self.endgame_summary.is_none() && self.clock.turn >= data.campaign_balance.campaign_turns
         {
             self.endgame_summary = Some(self.build_endgame_summary(data));
@@ -399,27 +403,32 @@ impl GameSession {
             .any(|institution| institution.id == institution_id)
     }
 
-    fn record_last_season_summary(&mut self, report: &SeasonAdvanceReport) {
+    fn record_last_season_summary(&mut self, data: &GameData, report: &SeasonAdvanceReport) {
         let mut rows = vec![SeasonSummaryRow {
-            label: "Production".to_owned(),
-            detail: format!(
-                "+{} food, +{} timber, +{} stone, +{} wealth; consumed {} food; population {:+}.",
-                report.produced.food,
-                report.produced.timber,
-                report.produced.stone,
-                report.produced.wealth,
-                report.food_consumed,
-                report.population_delta
+            label: data.text("state.summary.production_label"),
+            detail: data.text_with(
+                "state.summary.production",
+                &[
+                    ("{food}", &report.produced.food.to_string()),
+                    ("{timber}", &report.produced.timber.to_string()),
+                    ("{stone}", &report.produced.stone.to_string()),
+                    ("{wealth}", &report.produced.wealth.to_string()),
+                    ("{consumed}", &report.food_consumed.to_string()),
+                    ("{population}", &report.population_delta.to_string()),
+                ],
             ),
             site_id: None,
             tag: "player_progress".to_owned(),
         }];
         if report.food_shortages > 0 || report.settlements_lost > 0 {
             rows.push(SeasonSummaryRow {
-                label: "Warnings".to_owned(),
-                detail: format!(
-                    "{} food shortages; {} settlements lost.",
-                    report.food_shortages, report.settlements_lost
+                label: data.text("state.summary.warnings_label"),
+                detail: data.text_with(
+                    "state.summary.warnings",
+                    &[
+                        ("{shortages}", &report.food_shortages.to_string()),
+                        ("{lost}", &report.settlements_lost.to_string()),
+                    ],
                 ),
                 site_id: report
                     .first_food_shortage_site_id
@@ -429,28 +438,39 @@ impl GameSession {
             });
         }
         rows.push(SeasonSummaryRow {
-            label: "Roads".to_owned(),
-            detail: format!(
-                "{} road warnings; {} isolated settlements; unmanaged strain {}.",
-                report.road_warnings, report.isolated_settlements, report.unmanaged_strain
+            label: data.text("state.summary.roads_label"),
+            detail: data.text_with(
+                "state.summary.roads",
+                &[
+                    ("{warnings}", &report.road_warnings.to_string()),
+                    ("{isolated}", &report.isolated_settlements.to_string()),
+                    ("{strain}", &report.unmanaged_strain.to_string()),
+                ],
             ),
             site_id: None,
             tag: "road".to_owned(),
         });
         rows.push(SeasonSummaryRow {
-            label: "Issues".to_owned(),
-            detail: format!(
-                "{} events triggered; {} issue follow-ups.",
-                report.events_triggered, report.issues_escalated
+            label: data.text("state.summary.issues_label"),
+            detail: data.text_with(
+                "state.summary.issues",
+                &[
+                    ("{events}", &report.events_triggered.to_string()),
+                    ("{followups}", &report.issues_escalated.to_string()),
+                ],
             ),
             site_id: None,
             tag: "crisis".to_owned(),
         });
         rows.push(SeasonSummaryRow {
-            label: "World Pressure".to_owned(),
-            detail: format!(
-                "{} rival actions; {} independent requests; {} wilderness changes.",
-                report.rival_actions, report.independent_requests, report.wilderness_changes
+            label: data.text("state.summary.pressure_label"),
+            detail: data.text_with(
+                "state.summary.pressure",
+                &[
+                    ("{rival}", &report.rival_actions.to_string()),
+                    ("{requests}", &report.independent_requests.to_string()),
+                    ("{wilderness}", &report.wilderness_changes.to_string()),
+                ],
             ),
             site_id: None,
             tag: "faction".to_owned(),
@@ -516,7 +536,7 @@ impl GameSession {
             .iter()
             .max_by_key(|settlement| settlement.population)
             .map(|settlement| settlement.name.clone())
-            .unwrap_or_else(|| "Charter Hall".to_owned());
+            .unwrap_or_else(|| data.text("state.charter_hall"));
         let strongest_identity = strongest_identity(self, data);
         let (worst_year, golden_year) = chronicle_years(self);
         let defining_event = self
@@ -525,25 +545,33 @@ impl GameSession {
             .rev()
             .find(|entry| entry.importance == "major")
             .map(|entry| entry.title.clone())
-            .unwrap_or_else(|| "The Charter Is Raised".to_owned());
-        let arcs = build_arc_labels(self);
+            .unwrap_or_else(|| data.text("state.defining_event"));
+        let arcs = build_arc_labels(self, data);
         let ambition = self
             .selected_ambition_id
             .as_deref()
             .and_then(|id| data.campaign_balance.ambition(id))
             .map(|ambition| ambition.name.clone())
-            .unwrap_or_else(|| "No declared ambition".to_owned());
-        let summary_text = format!(
-            "After 20 years, the realm ended as a {} with {} legacy points. Its strongest identity was {}. Largest settlement: {}. Worst year: Year {}; golden year: Year {}. Defining event: {}. Ambition: {}. Arcs: {}.",
-            ending_band,
-            legacy_score,
-            strongest_identity,
-            largest_settlement,
-            worst_year,
-            golden_year,
-            defining_event,
-            ambition,
-            arcs.join(" / ")
+            .unwrap_or_else(|| data.text("state.no_ambition"));
+        let years = (data.campaign_balance.campaign_turns / 4).to_string();
+        let score = legacy_score.to_string();
+        let worst = worst_year.to_string();
+        let golden = golden_year.to_string();
+        let arc_text = arcs.join(" / ");
+        let summary_text = data.text_with(
+            "state.summary",
+            &[
+                ("{years}", &years),
+                ("{ending}", &ending_band),
+                ("{score}", &score),
+                ("{identity}", &strongest_identity),
+                ("{largest}", &largest_settlement),
+                ("{worst}", &worst),
+                ("{golden}", &golden),
+                ("{event}", &defining_event),
+                ("{ambition}", &ambition),
+                ("{arcs}", &arc_text),
+            ],
         );
 
         EndgameSummary {
@@ -612,15 +640,15 @@ fn strongest_identity(session: &GameSession, data: &GameData) -> String {
         .sum::<i32>();
     let scoring = &data.campaign_balance.scoring;
     if roads as i32 >= scoring.identity_road_minimum {
-        "Roadbound Realm".to_owned()
+        data.text("state.identity.roadbound")
     } else if wealth > scoring.identity_wealth_minimum {
-        "Merchant Realm".to_owned()
+        data.text("state.identity.merchant")
     } else if food > scoring.identity_food_minimum {
-        "Breadbasket Realm".to_owned()
+        data.text("state.identity.breadbasket")
     } else if average_loyalty_stability(session) > scoring.identity_civic_minimum {
-        "Civic Realm".to_owned()
+        data.text("state.identity.civic")
     } else {
-        "Frontier Realm".to_owned()
+        data.text("state.identity.frontier")
     }
 }
 
@@ -647,7 +675,7 @@ fn chronicle_years(session: &GameSession) -> (u32, u32) {
     (worst, golden)
 }
 
-fn build_arc_labels(session: &GameSession) -> Vec<String> {
+fn build_arc_labels(session: &GameSession, data: &GameData) -> Vec<String> {
     let mut arcs = Vec::new();
     let mut site_mentions: HashMap<String, usize> = HashMap::new();
     for entry in &session.chronicle {
@@ -662,7 +690,7 @@ fn build_arc_labels(session: &GameSession) -> Vec<String> {
         .any(|entry| entry.tag == "settlement" || entry.tag == "road")
         && site_mentions.values().any(|mentions| *mentions >= 2)
     {
-        arcs.push("Settlement Rise".to_owned());
+        arcs.push(data.text("state.arc.settlement"));
     }
     if !session.completed_projects.is_empty()
         || session
@@ -670,7 +698,7 @@ fn build_arc_labels(session: &GameSession) -> Vec<String> {
             .iter()
             .any(|entry| entry.tag == "ambition" || entry.tag == "project")
     {
-        arcs.push("Ambition and Projects".to_owned());
+        arcs.push(data.text("state.arc.projects"));
     }
     if !session.active_institutions.is_empty()
         || session
@@ -678,14 +706,14 @@ fn build_arc_labels(session: &GameSession) -> Vec<String> {
             .iter()
             .any(|entry| entry.tag == "institution")
     {
-        arcs.push("Institutions".to_owned());
+        arcs.push(data.text("state.arc.institutions"));
     }
     if session
         .chronicle
         .iter()
         .any(|entry| entry.tag == "crisis" || entry.tag == "wilderness")
     {
-        arcs.push("Frontier Trial".to_owned());
+        arcs.push(data.text("state.arc.trial"));
     }
     if session
         .independent_settlements
@@ -696,12 +724,12 @@ fn build_arc_labels(session: &GameSession) -> Vec<String> {
             .iter()
             .any(|entry| entry.tag == "independent")
     {
-        arcs.push("Integration".to_owned());
+        arcs.push(data.text("state.arc.integration"));
     }
     if !session.rival_faction.action_log.is_empty()
         || session.chronicle.iter().any(|entry| entry.tag == "faction")
     {
-        arcs.push("Frontier Rivalry".to_owned());
+        arcs.push(data.text("state.arc.rivalry"));
     }
     arcs.dedup();
     arcs.truncate(4);

@@ -140,7 +140,7 @@ impl GameSession {
                 autonomy: balance.starting_autonomy,
                 integration_progress: 0,
                 rival_pressure: balance.starting_rival_pressure,
-                local_need: "road access".to_owned(),
+                local_need: data.text("faction.need.road"),
                 trade_relationship: false,
                 protection_relationship: false,
                 integration_state: IntegrationState::Independent,
@@ -167,56 +167,52 @@ impl GameSession {
 
     pub fn independent_trade_status(&self, data: &GameData) -> SettlementActionStatus {
         let Some(independent) = self.selected_independent() else {
-            return SettlementActionStatus::disabled("No independent settlement selected.");
+            return SettlementActionStatus::disabled(data.text("faction.no_independent"));
         };
         if independent.trade_relationship {
-            return SettlementActionStatus::disabled("Trade is already open.");
+            return SettlementActionStatus::disabled(data.text("faction.trade_open"));
         }
         let balance = &data.faction_balance.independent_interactions;
         if independent.trust < balance.trade_min_trust {
-            return SettlementActionStatus::disabled(format!(
-                "Needs trust {}+ for trade.",
-                balance.trade_min_trust
-            ));
+            let trust = balance.trade_min_trust.to_string();
+            return SettlementActionStatus::disabled(
+                data.text_with("faction.trade_need", &[("{trust}", &trust)]),
+            );
         }
 
-        SettlementActionStatus::enabled(format!(
-            "Open trade: +{} trust, starts a trade relationship.",
-            balance.trade_trust_delta
-        ))
+        let trust = balance.trade_trust_delta.to_string();
+        SettlementActionStatus::enabled(
+            data.text_with("faction.trade_action", &[("{trust}", &trust)]),
+        )
     }
 
     pub fn integration_status(&self, data: &GameData) -> SettlementActionStatus {
         let balance = &data.faction_balance.independent_interactions;
         let Some(independent) = self.selected_independent() else {
-            return SettlementActionStatus::disabled("No independent settlement selected.");
+            return SettlementActionStatus::disabled(data.text("faction.no_independent"));
         };
         if independent.integration_state == IntegrationState::Integrated {
-            return SettlementActionStatus::disabled("Already integrated.");
+            return SettlementActionStatus::disabled(data.text("faction.integrated"));
         }
         if independent.integration_state == IntegrationState::Resistant {
-            return SettlementActionStatus::disabled(
-                "Resistant; improve trust or reduce pressure.",
-            );
+            return SettlementActionStatus::disabled(data.text("faction.resistant"));
         }
         if independent.trust < balance.integration_min_trust {
-            return SettlementActionStatus::disabled(format!(
-                "Needs trust {}+.",
-                balance.integration_min_trust
-            ));
+            let trust = balance.integration_min_trust.to_string();
+            return SettlementActionStatus::disabled(
+                data.text_with("faction.integration_need", &[("{trust}", &trust)]),
+            );
         }
         if independent.autonomy >= balance.integration_max_autonomy
             || independent.rival_pressure >= balance.integration_max_rival_pressure
         {
-            return SettlementActionStatus::disabled(
-                "Autonomy or rival pressure is too high for integration.",
-            );
+            return SettlementActionStatus::disabled(data.text("faction.integration_blocked"));
         }
 
-        SettlementActionStatus::enabled(format!(
-            "Begin integration: +{} progress, autonomy falls.",
-            balance.integration_progress_delta
-        ))
+        let progress = balance.integration_progress_delta.to_string();
+        SettlementActionStatus::enabled(
+            data.text_with("faction.integration_action", &[("{progress}", &progress)]),
+        )
     }
 
     pub fn open_trade_with_selected_independent(
@@ -231,7 +227,7 @@ impl GameSession {
             .independent_settlements
             .iter_mut()
             .find(|state| state.site_id == self.selected_site_id)
-            .ok_or_else(|| "No independent settlement selected.".to_owned())?;
+            .ok_or_else(|| data.text("faction.no_independent"))?;
         independent.trade_relationship = true;
         independent.integration_state = IntegrationState::Trading;
         independent.trust = (independent.trust
@@ -240,9 +236,9 @@ impl GameSession {
                 .independent_interactions
                 .trade_trust_delta)
             .clamp(0, 100);
-        independent.local_need = "market access".to_owned();
+        independent.local_need = data.text("faction.need.market");
 
-        Ok("Opened independent trade relationship.".to_owned())
+        Ok(data.text("faction.trade_started"))
     }
 
     pub fn begin_selected_integration(&mut self, data: &GameData) -> Result<String, String> {
@@ -255,7 +251,7 @@ impl GameSession {
             .independent_settlements
             .iter_mut()
             .find(|state| state.site_id == selected_site_id)
-            .ok_or_else(|| "No independent settlement selected.".to_owned())?;
+            .ok_or_else(|| data.text("faction.no_independent"))?;
         independent.integration_state = IntegrationState::Integrating;
         let balance = &data.faction_balance.independent_interactions;
         independent.integration_progress =
@@ -273,7 +269,7 @@ impl GameSession {
             );
         }
 
-        Ok("Began independent settlement integration.".to_owned())
+        Ok(data.text("faction.integration_started"))
     }
 
     pub fn advance_faction_systems(&mut self, data: &GameData) -> FactionAdvanceReport {
@@ -424,12 +420,7 @@ impl GameSession {
                         && self.settlement_at_site(&site.id).is_none()
                         && !self.rival_controls_site(&site.id)
                 })
-                .map(|site| {
-                    (
-                        site.id.clone(),
-                        "open known settlement site near the contested frontier".to_owned(),
-                    )
-                }),
+                .map(|site| (site.id.clone(), data.text("faction.reason.expand"))),
             FactionGoal::Raid | FactionGoal::Influence | FactionGoal::Confront => self
                 .settlements
                 .iter()
@@ -438,26 +429,18 @@ impl GameSession {
                 .map(|settlement| {
                     (
                         settlement.location_id.clone(),
-                        "low loyalty, isolation, or weak defence made this target attractive"
-                            .to_owned(),
+                        data.text("faction.reason.target"),
                     )
                 }),
-            FactionGoal::Trade => self.independent_settlements.first().map(|state| {
-                (
-                    state.site_id.clone(),
-                    "independent trade could increase rival influence".to_owned(),
-                )
-            }),
+            FactionGoal::Trade => self
+                .independent_settlements
+                .first()
+                .map(|state| (state.site_id.clone(), data.text("faction.reason.trade"))),
             FactionGoal::Fortify | FactionGoal::Recover | FactionGoal::Appease => self
                 .rival_faction
                 .controlled_locations
                 .first()
-                .map(|site_id| {
-                    (
-                        site_id.clone(),
-                        "current clan holdings need attention".to_owned(),
-                    )
-                }),
+                .map(|site_id| (site_id.clone(), data.text("faction.reason.holding"))),
         }
     }
 
@@ -478,7 +461,7 @@ impl GameSession {
                 self.rival_faction.border_pressure = (self.rival_faction.border_pressure
                     + balance.expand_border_pressure_delta)
                     .clamp(0, 100);
-                "claimed a frontier site".to_owned()
+                data.text("faction.action.expand")
             }
             FactionGoal::Raid => self.resolve_rival_raid(data, target_site_id),
             FactionGoal::Influence => {
@@ -494,7 +477,7 @@ impl GameSession {
                         (settlement.loyalty + balance.influence_loyalty_delta).clamp(0, 100);
                     add_unique_issue(&mut settlement.active_issue_ids, "rival_influence");
                 }
-                "supported separatist voices".to_owned()
+                data.text("faction.action.influence")
             }
             FactionGoal::Trade => {
                 if let Some(independent) = self
@@ -508,13 +491,13 @@ impl GameSession {
                     independent.trust =
                         (independent.trust + balance.trade_trust_delta).clamp(0, 100);
                 }
-                "sent merchants to an independent settlement".to_owned()
+                data.text("faction.action.trade")
             }
             FactionGoal::Fortify => {
                 self.rival_faction.confidence = (self.rival_faction.confidence
                     + balance.fortify_confidence_delta)
                     .clamp(0, 100);
-                "fortified a border holding".to_owned()
+                data.text("faction.action.fortify")
             }
             FactionGoal::Recover => {
                 self.rival_faction.recent_losses =
@@ -522,22 +505,22 @@ impl GameSession {
                 self.rival_faction.confidence = (self.rival_faction.confidence
                     + balance.recover_confidence_delta)
                     .clamp(0, 100);
-                "recovered from recent losses".to_owned()
+                data.text("faction.action.recover")
             }
             FactionGoal::Confront => {
                 self.rival_faction.hostility =
                     (self.rival_faction.hostility + balance.confront_hostility_delta).clamp(0, 100);
                 if self.close_route_near_target(data, target_site_id) {
                     self.add_chronicle_entry(data, "rival_close_pass", Some(target_site_id));
-                    "issued a border demand and closed a pass".to_owned()
+                    data.text("faction.action.confront_pass")
                 } else {
-                    "issued a border demand".to_owned()
+                    data.text("faction.action.confront")
                 }
             }
             FactionGoal::Appease => {
                 self.rival_faction.hostility =
                     (self.rival_faction.hostility + balance.appease_hostility_delta).clamp(0, 100);
-                "sent a cautious truce feeler".to_owned()
+                data.text("faction.action.appease")
             }
         }
     }
@@ -560,7 +543,7 @@ impl GameSession {
             .iter_mut()
             .find(|settlement| settlement.location_id == target_site_id)
         else {
-            return "found no legal raid target".to_owned();
+            return data.text("faction.action.no_target");
         };
         let attack =
             self.rival_faction.confidence + self.rival_faction.hostility / raid.hostility_divisor;
@@ -584,16 +567,16 @@ impl GameSession {
                     "rival_road_raid",
                 );
                 self.add_chronicle_entry(data, "rival_road_attack", Some(target_site_id));
-                "raided successfully and damaged a supply road".to_owned()
+                data.text("faction.action.raid_road")
             } else {
-                "raided successfully after reading weak supply".to_owned()
+                data.text("faction.action.raid")
             }
         } else {
             settlement.defence = (settlement.defence + raid.resistance_defence_delta).clamp(0, 100);
             self.rival_faction.recent_losses += raid.resistance_recent_losses_delta;
             self.rival_faction.fear =
                 (self.rival_faction.fear + raid.resistance_fear_delta).clamp(0, 100);
-            "tested the border but met resistance".to_owned()
+            data.text("faction.action.raid_resisted")
         }
     }
 
@@ -614,18 +597,18 @@ impl GameSession {
                     (independent.trust + balance.seasonal_trade_trust_delta).clamp(0, 100);
             }
             if independent.rival_pressure > balance.request_pressure_threshold
-                && independent.local_need != "aid requested"
+                && independent.local_need != data.text("faction.need.aid")
             {
-                independent.local_need = "aid requested".to_owned();
+                independent.local_need = data.text("faction.need.aid");
                 independent.autonomy =
                     (independent.autonomy + balance.request_autonomy_delta).clamp(0, 100);
                 requests.push(independent.site_id.clone());
             }
             if independent.rival_pressure > balance.protection_pressure_threshold
                 && !independent.protection_relationship
-                && independent.local_need != "protection"
+                && independent.local_need != data.text("faction.need.protection")
             {
-                independent.local_need = "protection".to_owned();
+                independent.local_need = data.text("faction.need.protection");
                 protection_requests.push(independent.site_id.clone());
             }
             if independent.integration_state == IntegrationState::Integrating
@@ -649,10 +632,10 @@ impl GameSession {
             self.rival_faction.action_log.push(FactionActionLogEntry {
                 year: self.clock.year,
                 season: self.clock.season,
-                action: "Independent Request".to_owned(),
+                action: data.text("faction.log.request"),
                 target_site_id: Some(site_id.clone()),
-                reason: "rival pressure and local need crossed the request threshold".to_owned(),
-                result: "the settlement asked the charter for aid or trade".to_owned(),
+                reason: data.text("faction.reason.request"),
+                result: data.text("faction.result.request"),
             });
         }
         for site_id in &protection_requests {
