@@ -84,3 +84,22 @@ fn famine_can_collapse_neglected_settlement() {
         .iter()
         .any(|entry| entry.title.contains("Abandoned")));
 }
+
+#[test]
+fn seasonal_flow_report_matches_the_applied_economy() {
+    let data = test_data();
+    let mut session = GameSession::new(&data);
+
+    let report = session.advance_settlement_economy(&data);
+    let flow = &session.last_season_flow;
+
+    assert!(flow.has_report);
+    assert_eq!(flow.produced, report.produced);
+    assert_eq!(flow.food_consumed, report.food_consumed);
+    assert_eq!(flow.population_delta, report.population_delta);
+    assert_eq!(
+        flow.produced.food - flow.food_consumed,
+        report.produced.food - report.food_consumed,
+        "the UI's net food flow must use production and consumption from the same report"
+    );
+}

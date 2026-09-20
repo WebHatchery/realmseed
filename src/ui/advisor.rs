@@ -1,7 +1,6 @@
 //! Realm overview and council guidance surfaces.
 
 use super::{section_label, style, UiAction, UiContext};
-use crate::data::GameData;
 use crate::state::{AdvisorPriority, SettlementStatus};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
@@ -14,8 +13,16 @@ struct Recommendation {
     detail: String,
 }
 
-pub(super) fn draw_realm_overview(ctx: &UiContext<'_>) {
-    let rect = super::left_panel_rect(ctx);
+pub(super) fn draw_realm_summary_overlay(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
+    let screen = super::screen_rect(ctx);
+    draw_rectangle(
+        screen.x,
+        screen.y,
+        screen.w,
+        screen.h,
+        Color::new(0.004, 0.010, 0.012, 0.72),
+    );
+    let rect = super::centered_modal_rect(ctx, 720.0, 520.0);
     style::draw_panel(rect);
 
     let content = rect.inset(17.0);
@@ -24,6 +31,15 @@ pub(super) fn draw_realm_overview(ctx: &UiContext<'_>) {
         content.x,
         content.y + 16.0,
     );
+    if super::virtual_button(
+        Rect::new(content.right() - 82.0, content.y, 82.0, 32.0),
+        &ctx.data.text("ui.close"),
+        true,
+        ButtonTone::Secondary,
+        ctx.pointer,
+    ) {
+        actions.push(UiAction::ToggleRealmSummary);
+    }
     draw_realm_crest(content.x + 38.0, content.y + 68.0);
     draw_text_block(
         &realm_subtitle(ctx),
@@ -78,7 +94,7 @@ pub(super) fn draw_realm_overview(ctx: &UiContext<'_>) {
         Color::new(0.86, 0.33, 0.22, 1.0),
     );
 
-    y += 42.0;
+    y += 30.0;
     style::draw_divider(content.x, y, content.w);
     y += 22.0;
     let active_settlements = ctx
@@ -122,12 +138,11 @@ pub(super) fn draw_realm_overview(ctx: &UiContext<'_>) {
         ),
     );
 
-    y += 38.0;
+    y += 26.0;
     style::draw_divider(content.x, y, content.w);
     y += 26.0;
     let recommendation = recommendation_for(ctx);
     section_label(&ctx.data.text("ui.advisor_counsel"), content.x, y);
-    let button_y = rect.bottom() - 64.0;
     draw_text_block(
         &recommendation.title,
         content.x,
@@ -138,21 +153,16 @@ pub(super) fn draw_realm_overview(ctx: &UiContext<'_>) {
         2.0,
         style::TEXT_BRIGHT,
     );
-    let detail_y = y + 42.0;
-    let detail_h = (button_y - detail_y - 6.0).clamp(0.0, 50.0);
-    if detail_h > 12.0 {
-        draw_text_block(
-            &recommendation.detail,
-            content.x,
-            detail_y,
-            content.w,
-            detail_h,
-            12.5,
-            2.0,
-            style::TEXT_DIM,
-        );
-    }
-    draw_compass_watermark(rect.center() + vec2(0.0, rect.h * 0.39));
+    draw_text_block(
+        &recommendation.detail,
+        content.x,
+        y + 42.0,
+        content.w,
+        42.0,
+        12.5,
+        2.0,
+        style::TEXT_DIM,
+    );
 }
 
 pub(super) fn draw_council_footer(
@@ -164,104 +174,126 @@ pub(super) fn draw_council_footer(
     style::draw_panel(rect);
 
     let recommendation = recommendation_for(ctx);
-    let fallback_guidance = ctx.session.guidance_text(ctx.data);
     let content = rect.inset(16.0);
-    let left_w = content.w * 0.38;
-    let center_w = content.w * 0.32;
-    let action_w = content.w - left_w - center_w - 36.0;
-    let left = Rect::new(content.x, content.y, left_w, content.h);
-    let center = Rect::new(left.right() + 18.0, content.y, center_w, content.h);
-    let right = Rect::new(center.right() + 18.0, content.y, action_w, content.h);
+    let advance_w = if ctx.ui.logical_width < 1040.0 {
+        190.0
+    } else {
+        226.0
+    };
+    let utility_w = (content.w * 0.47).min(content.w - advance_w - 190.0);
+    let decision_w = (content.w - utility_w - advance_w - 24.0).max(140.0);
+    let utility = Rect::new(content.x, content.y, utility_w, content.h);
+    let decision = Rect::new(utility.right() + 12.0, content.y, decision_w, content.h);
+    let advance = Rect::new(decision.right() + 12.0, content.y, advance_w, content.h);
 
-    style::draw_icon(
-        style::IconKind::Compass,
-        vec2(left.x + 28.0, left.y + 32.0),
-        52.0,
-        style::GOLD,
-    );
+    draw_quick_actions(ctx, utility, input_enabled, actions);
+    style::draw_vertical_divider(decision.x - 6.0, decision.y + 3.0, decision.h - 6.0);
     draw_ui_text_ex(
-        &ctx.data.text("ui.council_guidance"),
-        left.x + 70.0,
-        left.y + 26.0,
-        TextStyle::new(14.5, style::GOLD).params(),
+        &recommendation.title,
+        decision.x,
+        decision.y + 18.0,
+        TextStyle::new(13.5, style::TEXT_BRIGHT).params(),
     );
-    let latest = ctx
-        .session
-        .last_season_rows
-        .first()
-        .map(|row| row.detail.as_str())
-        .unwrap_or(fallback_guidance.as_str());
-    draw_text_block(
-        &format!(
-            "{} - {}\nLast season: {}",
-            recommendation.title, recommendation.detail, latest
-        ),
-        left.x + 70.0,
-        left.y + 36.0,
-        left.w - 74.0,
-        left.h - 36.0,
-        13.0,
-        3.0,
-        style::TEXT_DIM,
-    );
-
-    style::draw_vertical_divider(center.x - 9.0, center.y + 4.0, center.h - 8.0);
-    draw_ui_text_ex(
-        &ctx.data.text("ui.season_log"),
-        center.x,
-        center.y + 26.0,
-        TextStyle::new(14.5, style::GOLD).params(),
-    );
-    draw_log_lines(ctx, center.x, center.y + 44.0, center.w);
-
-    draw_quick_actions(ctx.data, right, input_enabled, ctx.pointer, actions);
-    draw_ui_text_ex(
-        &ctx.data.text_with(
+    let detail = if ctx.session.pending_event.is_some() {
+        ctx.data.text("ui.resolve_event_first")
+    } else {
+        ctx.data.text_with(
             "ui.actions_remaining",
             &[(
                 "{count}",
                 &ctx.session.council_actions_remaining.to_string(),
             )],
-        ),
-        right.x + right.w * 0.5 - 58.0,
-        right.y + 66.0,
-        TextStyle::new(12.5, style::TEXT_DIM).params(),
+        )
+    };
+    draw_text_block(
+        &detail,
+        decision.x,
+        decision.y + 25.0,
+        decision.w,
+        decision.h - 25.0,
+        11.5,
+        2.0,
+        style::TEXT_DIM,
     );
+
+    let advance_enabled = input_enabled && ctx.session.pending_event.is_none();
+    let advance_tone = if matches!(
+        ctx.session.advisor_priority(ctx.data),
+        AdvisorPriority::AdvanceSeason
+    ) || ctx.session.council_actions_remaining == 0
+    {
+        ButtonTone::Primary
+    } else {
+        ButtonTone::Secondary
+    };
+    if super::virtual_icon_button(
+        Rect::new(advance.x, advance.y + 2.0, advance.w, 42.0),
+        &ctx.data.text("ui.advance_season"),
+        style::IconKind::Compass,
+        advance_enabled,
+        advance_tone,
+        ctx.pointer,
+    ) {
+        actions.push(UiAction::AdvanceSeason);
+    }
 }
 
 fn draw_quick_actions(
-    data: &GameData,
+    ctx: &UiContext<'_>,
     rect: Rect,
     input_enabled: bool,
-    pointer: Pointer,
     actions: &mut Vec<UiAction>,
 ) {
-    let gap = 6.0;
+    let gap = 5.0;
     let button_w = (rect.w - gap * 3.0) / 4.0;
     let controls = [
-        (data.text("ui.pause"), UiAction::OpenPauseMenu),
-        (data.text("ui.chronicle"), UiAction::ToggleChronicle),
-        (data.text("ui.factions"), UiAction::ToggleFactionPanel),
-        (data.text("ui.advance"), UiAction::AdvanceSeason),
+        (
+            ctx.data.text("ui.pause"),
+            style::IconKind::Actions,
+            UiAction::OpenPauseMenu,
+        ),
+        (
+            ctx.data.text("ui.realm_summary"),
+            style::IconKind::Crown,
+            UiAction::ToggleRealmSummary,
+        ),
+        (
+            ctx.data.text("ui.chronicle"),
+            style::IconKind::Compass,
+            UiAction::ToggleChronicle,
+        ),
+        (
+            ctx.data.text("ui.factions"),
+            style::IconKind::Danger,
+            UiAction::ToggleFactionPanel,
+        ),
     ];
-    for (index, (label, action)) in controls.into_iter().enumerate() {
+    for (index, (label, icon, action)) in controls.into_iter().enumerate() {
         let button = Rect::new(
             rect.x + index as f32 * (button_w + gap),
-            rect.y + 8.0,
+            rect.y + 2.0,
             button_w,
             42.0,
         );
-        if super::virtual_button(
-            button,
-            &label,
-            input_enabled,
-            if matches!(action, UiAction::AdvanceSeason) {
-                ButtonTone::Primary
-            } else {
-                ButtonTone::Secondary
-            },
-            pointer,
-        ) {
+        let activated = if ctx.ui.logical_width < 1040.0 {
+            super::virtual_button(
+                button,
+                &label,
+                input_enabled,
+                ButtonTone::Secondary,
+                ctx.pointer,
+            )
+        } else {
+            super::virtual_icon_button(
+                button,
+                &label,
+                icon,
+                input_enabled,
+                ButtonTone::Secondary,
+                ctx.pointer,
+            )
+        };
+        if activated {
             actions.push(action);
         }
     }
@@ -289,47 +321,6 @@ fn draw_fact_row(x: f32, y: f32, icon: style::IconKind, text: &str) {
         y,
         TextStyle::new(13.0, style::TEXT).params(),
     );
-}
-
-fn draw_compass_watermark(center: Vec2) {
-    draw_circle_lines(
-        center.x,
-        center.y,
-        33.0,
-        1.0,
-        Color::new(0.74, 0.58, 0.32, 0.18),
-    );
-    style::draw_icon(
-        style::IconKind::Compass,
-        center,
-        70.0,
-        Color::new(0.74, 0.58, 0.32, 0.18),
-    );
-}
-
-fn draw_log_lines(ctx: &UiContext<'_>, x: f32, y: f32, width: f32) {
-    let mut line_y = y;
-    if ctx.session.last_season_rows.is_empty() {
-        draw_text_block(
-            &ctx.session.last_season_summary,
-            x,
-            line_y,
-            width,
-            38.0,
-            12.5,
-            2.0,
-            style::TEXT_DIM,
-        );
-        return;
-    }
-    for row in ctx.session.last_season_rows.iter().take(2) {
-        let detail = ctx.data.text_with(
-            "ui.advisor_log_line",
-            &[("{label}", &row.label), ("{detail}", &row.detail)],
-        );
-        draw_text_block(&detail, x, line_y, width, 24.0, 12.0, 1.0, style::TEXT_DIM);
-        line_y += 22.0;
-    }
 }
 
 fn recommendation_for(ctx: &UiContext<'_>) -> Recommendation {

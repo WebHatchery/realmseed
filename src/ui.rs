@@ -29,7 +29,11 @@ const COMPACT_MARGIN: f32 = 12.0;
 const GAP: f32 = 10.0;
 const COMPACT_GAP: f32 = 8.0;
 const HEADER_HEIGHT: f32 = 64.0;
-const FOOTER_HEIGHT: f32 = 92.0;
+const COMPACT_HEADER_HEIGHT: f32 = 56.0;
+const FOOTER_HEIGHT: f32 = 78.0;
+const COMPACT_FOOTER_HEIGHT: f32 = 70.0;
+const MIN_PLAY_WIDTH: f32 = 800.0;
+const MIN_PLAY_HEIGHT: f32 = 560.0;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UiAction {
@@ -60,6 +64,7 @@ pub enum UiAction {
     OpenIndependentTrade,
     BeginIndependentIntegration,
     ToggleFactionPanel,
+    ToggleRealmSummary,
     SetMapOverlay(MapOverlay),
     ZoomMapIn,
     ZoomMapOut,
@@ -99,6 +104,7 @@ pub struct UiContext<'a> {
     pub map_overlay: MapOverlay,
     pub show_chronicle: bool,
     pub show_factions: bool,
+    pub show_realm_summary: bool,
     pub input_blocked: bool,
     pub touch_claimed: bool,
     pub pointer: Pointer,
@@ -154,15 +160,22 @@ pub fn draw_pause_menu(ctx: PauseMenuContext<'_>) -> Vec<UiAction> {
 
 pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAction> {
     let mut actions = Vec::new();
+    if !supports_gameplay_viewport(&ctx) {
+        draw_viewport_message(&ctx);
+        return actions;
+    }
     let event_open = ctx.session.pending_event.is_some();
     let endgame_open = ctx.session.endgame_summary.is_some();
-    let modal_open =
-        ctx.input_blocked || ctx.show_chronicle || ctx.show_factions || event_open || endgame_open;
+    let modal_open = ctx.input_blocked
+        || ctx.show_chronicle
+        || ctx.show_factions
+        || ctx.show_realm_summary
+        || event_open
+        || endgame_open;
     let input_enabled = !modal_open && !ctx.touch_claimed;
 
     draw_header(&ctx);
     map::draw_map_panel(&ctx, tooltip, input_enabled, &mut actions);
-    advisor::draw_realm_overview(&ctx);
     panel::draw_side_panel(&ctx, tooltip, input_enabled, &mut actions);
     advisor::draw_council_footer(&ctx, input_enabled, &mut actions);
     // The close strategic projection intentionally extends beyond its viewport
@@ -178,6 +191,8 @@ pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAct
         faction::draw_faction_overlay(&ctx, &mut actions);
     } else if ctx.show_chronicle {
         panel::draw_chronicle_overlay(&ctx, &mut actions);
+    } else if ctx.show_realm_summary {
+        advisor::draw_realm_summary_overlay(&ctx, &mut actions);
     }
 
     actions
@@ -212,16 +227,16 @@ fn draw_header(ctx: &UiContext<'_>) {
         TextStyle::new(20.0, style::TEXT_BRIGHT).params(),
     );
     draw_ui_text_ex(
-        &ctx.data.text("ui.clear_skies"),
+        &ctx.data.text("ui.realm_stores"),
         clock_x,
         rect.y + 48.0,
-        TextStyle::new(12.5, style::TEXT_DIM).params(),
+        TextStyle::new(11.5, style::TEXT_DIM).params(),
     );
 
     let totals = realm_totals(ctx);
     let flows = realm_flows(ctx);
-    let positive_rate = ctx.data.text("ui.per_turn");
-    let negative_rate = ctx.data.text("ui.per_turn_negative");
+    let positive_rate = ctx.data.text("ui.last_season_positive");
+    let negative_rate = ctx.data.text("ui.last_season_negative");
     let population: i32 = ctx
         .session
         .settlements
@@ -272,16 +287,9 @@ fn draw_header(ctx: &UiContext<'_>) {
             style::GOLD,
         ),
     ];
-    let badge_gap = if ctx.ui.logical_width < 1040.0 {
-        5.0
-    } else {
-        9.0
-    };
-    let title_reserve = if ctx.ui.logical_width < 1040.0 {
-        242.0
-    } else {
-        288.0
-    };
+    let compact = ctx.ui.logical_width < 960.0;
+    let badge_gap = if compact { 5.0 } else { 9.0 };
+    let title_reserve = if compact { 242.0 } else { 288.0 };
     let badge_w = ((rect.w - title_reserve - badge_gap * (badges.len() - 1) as f32 - 18.0)
         / badges.len() as f32)
         .clamp(78.0, 132.0);
@@ -303,8 +311,10 @@ fn draw_header(ctx: &UiContext<'_>) {
             icon: *icon,
             color: *color,
             show_rate: index != 5,
+            has_rate: index != 5 && ctx.session.last_season_flow.has_report,
             positive_rate: &positive_rate,
             negative_rate: &negative_rate,
+            compact,
         });
     }
 }
@@ -331,8 +341,10 @@ struct ResourceReadout<'a> {
     icon: style::IconKind,
     color: Color,
     show_rate: bool,
+    has_rate: bool,
     positive_rate: &'a str,
     negative_rate: &'a str,
+    compact: bool,
 }
 
 fn draw_resource_readout(readout: ResourceReadout<'_>) {
@@ -344,19 +356,26 @@ fn draw_resource_readout(readout: ResourceReadout<'_>) {
         icon,
         color,
         show_rate,
+        has_rate,
         positive_rate,
         negative_rate,
+        compact,
     } = readout;
     style::draw_vertical_divider(rect.x - 5.0, rect.y + 1.0, rect.h - 2.0);
-    let icon_center = vec2(rect.x + 16.0, rect.y + 21.0);
-    style::draw_icon(icon, icon_center, 27.0, color);
+    let value_size = if compact { 12.5 } else { 15.5 };
+    let rate_size = if compact { 10.5 } else { 12.0 };
+    let icon_size = if compact { 21.0 } else { 27.0 };
+    let icon_x = if compact { 13.0 } else { 16.0 };
+    let text_x = if compact { 28.0 } else { 34.0 };
+    let icon_center = vec2(rect.x + icon_x, rect.y + 21.0);
+    style::draw_icon(icon, icon_center, icon_size, color);
     draw_ui_text_ex(
         &format!("{} {}", label, value),
-        rect.x + 34.0,
-        rect.y + 18.0,
-        TextStyle::new(15.5, style::TEXT_BRIGHT).params(),
+        rect.x + text_x,
+        rect.y + if compact { 17.0 } else { 18.0 },
+        TextStyle::new(value_size, style::TEXT_BRIGHT).params(),
     );
-    if !show_rate {
+    if !show_rate || !has_rate {
         return;
     }
     let rate_text = if rate >= 0 {
@@ -366,9 +385,9 @@ fn draw_resource_readout(readout: ResourceReadout<'_>) {
     };
     draw_ui_text_ex(
         &rate_text,
-        rect.x + 34.0,
-        rect.y + 39.0,
-        TextStyle::new(12.0, style::TEXT_DIM).params(),
+        rect.x + text_x,
+        rect.y + if compact { 36.0 } else { 39.0 },
+        TextStyle::new(rate_size, style::TEXT_DIM).params(),
     );
 }
 
@@ -381,32 +400,17 @@ fn realm_totals(ctx: &UiContext<'_>) -> ResourceStock {
 }
 
 fn realm_flows(ctx: &UiContext<'_>) -> ResourceStock {
-    let mut totals = ResourceStock::default();
-    for settlement in &ctx.session.settlements {
-        if !settlement.is_active() {
-            continue;
-        }
-        let Some(focus) = settlement.focus(ctx.data) else {
-            continue;
-        };
-        let tier_modifier = ctx
-            .data
-            .settlement_balance
-            .tier(settlement.tier)
-            .map(|tier| tier.production_modifier)
-            .unwrap_or(1.0);
-        totals.add(focus.output.scaled(tier_modifier / 10.0));
+    let flow = &ctx.session.last_season_flow;
+    ResourceStock {
+        food: flow.produced.food - flow.food_consumed,
+        timber: flow.produced.timber,
+        stone: flow.produced.stone,
+        wealth: flow.produced.wealth,
     }
-    totals
 }
 
 fn population_flow(ctx: &UiContext<'_>) -> i32 {
-    ctx.session
-        .settlements
-        .iter()
-        .filter(|settlement| settlement.is_active())
-        .map(|settlement| (settlement.population as f32 * 0.03).round() as i32)
-        .sum()
+    ctx.session.last_season_flow.population_delta
 }
 
 pub(super) fn section_label(text: &str, x: f32, y: f32) {
@@ -511,16 +515,25 @@ pub(super) fn screen_rect(ctx: &UiContext<'_>) -> Rect {
 }
 
 pub(super) fn header_rect(ctx: &UiContext<'_>) -> Rect {
-    Rect::new(0.0, 0.0, ctx.ui.logical_width, HEADER_HEIGHT)
+    Rect::new(
+        0.0,
+        0.0,
+        ctx.ui.logical_width,
+        if ctx.ui.logical_width < 960.0 {
+            COMPACT_HEADER_HEIGHT
+        } else {
+            HEADER_HEIGHT
+        },
+    )
 }
 
 pub(super) fn footer_rect(ctx: &UiContext<'_>) -> Rect {
     let margin = layout_margin(ctx);
     Rect::new(
         margin,
-        ctx.ui.logical_height - margin - FOOTER_HEIGHT,
+        ctx.ui.logical_height - margin - footer_height(ctx),
         ctx.ui.logical_width - margin * 2.0,
-        FOOTER_HEIGHT,
+        footer_height(ctx),
     )
 }
 
@@ -529,26 +542,15 @@ pub(super) fn main_area_rect(ctx: &UiContext<'_>) -> Rect {
     let header = header_rect(ctx);
     let footer = footer_rect(ctx);
     let y = header.bottom();
-    let h = (footer.y - y).max(260.0);
+    let h = (footer.y - y).max(0.0);
     Rect::new(margin, y, ctx.ui.logical_width - margin * 2.0, h)
-}
-
-pub(super) fn left_panel_rect(ctx: &UiContext<'_>) -> Rect {
-    let main = main_area_rect(ctx);
-    Rect::new(main.x, main.y + 18.0, left_panel_width(ctx), main.h - 30.0)
 }
 
 pub(super) fn map_panel_rect(ctx: &UiContext<'_>) -> Rect {
     let main = main_area_rect(ctx);
     let gap = layout_gap(ctx);
-    let left = left_panel_rect(ctx);
     let side = side_panel_width(ctx);
-    Rect::new(
-        left.right() + gap,
-        main.y,
-        main.w - left.w - side - gap * 2.0,
-        main.h,
-    )
+    Rect::new(main.x, main.y, (main.w - side - gap).max(0.0), main.h)
 }
 
 pub(super) fn side_panel_rect(ctx: &UiContext<'_>) -> Rect {
@@ -587,16 +589,60 @@ fn layout_gap(ctx: &UiContext<'_>) -> f32 {
 
 fn side_panel_width(ctx: &UiContext<'_>) -> f32 {
     if ctx.ui.logical_width < 1040.0 {
-        (ctx.ui.logical_width * 0.31).clamp(286.0, 320.0)
+        (ctx.ui.logical_width * 0.40).clamp(320.0, 360.0)
     } else {
         (ctx.ui.logical_width * 0.29).clamp(320.0, 354.0)
     }
 }
 
-fn left_panel_width(ctx: &UiContext<'_>) -> f32 {
+fn footer_height(ctx: &UiContext<'_>) -> f32 {
     if ctx.ui.logical_width < 1040.0 {
-        (ctx.ui.logical_width * 0.22).clamp(184.0, 214.0)
+        COMPACT_FOOTER_HEIGHT
     } else {
-        (ctx.ui.logical_width * 0.19).clamp(220.0, 246.0)
+        FOOTER_HEIGHT
     }
+}
+
+pub(super) fn supports_gameplay_viewport(ctx: &UiContext<'_>) -> bool {
+    ctx.ui.logical_width >= MIN_PLAY_WIDTH && ctx.ui.logical_height >= MIN_PLAY_HEIGHT
+}
+
+fn draw_viewport_message(ctx: &UiContext<'_>) {
+    let screen = screen_rect(ctx);
+    draw_rectangle(
+        screen.x,
+        screen.y,
+        screen.w,
+        screen.h,
+        Color::new(0.006, 0.014, 0.016, 0.98),
+    );
+    let panel = centered_modal_rect(ctx, 660.0, 280.0);
+    style::draw_panel(panel);
+    draw_text_centered_in_box_ex(
+        &ctx.data.text("ui.viewport_title"),
+        panel.x + 24.0,
+        panel.y + 28.0,
+        panel.w - 48.0,
+        42.0,
+        TextStyle::new(25.0, style::TEXT_BRIGHT),
+    );
+    style::draw_divider(panel.x + 30.0, panel.y + 84.0, panel.w - 60.0);
+    draw_text_block(
+        &ctx.data.text("ui.viewport_message"),
+        panel.x + 36.0,
+        panel.y + 108.0,
+        panel.w - 72.0,
+        92.0,
+        17.0,
+        4.0,
+        style::TEXT,
+    );
+    draw_text_centered_in_box_ex(
+        &ctx.data.text("ui.viewport_minimum"),
+        panel.x + 30.0,
+        panel.bottom() - 54.0,
+        panel.w - 60.0,
+        28.0,
+        TextStyle::new(14.0, style::GOLD),
+    );
 }

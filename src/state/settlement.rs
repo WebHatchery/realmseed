@@ -142,6 +142,18 @@ pub struct SeasonAdvanceReport {
     pub first_lost_site_id: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct LastSeasonFlow {
+    #[serde(default)]
+    pub has_report: bool,
+    #[serde(default)]
+    pub produced: ResourceStock,
+    #[serde(default)]
+    pub food_consumed: i32,
+    #[serde(default)]
+    pub population_delta: i32,
+}
+
 #[derive(Debug, Clone, Default)]
 struct SettlementSeasonOutcome {
     started_famine: bool,
@@ -498,6 +510,13 @@ impl GameSession {
         for (template_id, site_id) in chronicle_events {
             self.add_chronicle_entry(data, template_id, Some(&site_id));
         }
+
+        self.last_season_flow = LastSeasonFlow {
+            has_report: true,
+            produced: report.produced,
+            food_consumed: report.food_consumed,
+            population_delta: report.population_delta,
+        };
 
         report
     }

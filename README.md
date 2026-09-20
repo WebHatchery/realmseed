@@ -77,6 +77,28 @@ it becomes the basis for the final legacy summary.
 - Open the persistent `Pause` button to reach `Save`, `Load`, and the title
   screen. Keyboard shortcuts `S` and `L` remain available during play.
 
+## Screen Brief And Supported Viewports
+
+Normal play is an exploration and triage decision: choose which frontier site
+or settlement deserves the next council action. The illustrated map is the
+dominant focus; the selected-site inspector is the supporting decision area;
+quiet utilities stay in the footer. The primary action is contextual to the
+selected site, while `Advance Season` is separated as the season transition
+and shows the remaining action budget beside it.
+
+The Realm summary is available from the footer when realm-wide stability,
+loyalty, supply, or danger needs review. Detailed seasonal results belong in
+the Chronicle and report surfaces rather than permanently shrinking the map.
+Event choices and campaign planning use focused overlays so their costs,
+risks, and consequences can be compared before committing.
+
+The normal baseline is 1280×720. The minimum supported play area is landscape
+800×560; the compact layout keeps the map as the main surface and places the
+selected-site panel at its right edge. Smaller windows and portrait canvases
+show a readable orientation/size message instead of rendering overlapping
+controls. Touch targets use visible spacing and labels; mouse and keyboard
+shortcuts remain supplementary.
+
 ## Current Prototype
 
 The current build focuses on a complete 20-year prototype campaign:

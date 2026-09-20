@@ -63,6 +63,12 @@ history to merge. Keep this tracked `TODO.md` filename (the project-root
   **Verify:** Compare fresh, unknown-site, developed-settlement, and isolated
   settlement captures at 1280×720 and the minimum established in UI-02. Tap
   through selection, expanded details, Realm summary, and return to map.
+  **Progress (2026-09-20):** Implemented the map-first composition, dismissible
+  Realm summary, compact selected-site panel, and quiet footer utilities. The
+  current fresh-campaign evidence is in `ui_gameplay.png`,
+  `ui_minimum.png`, and `ui_realm_summary.png`. Unknown, developed, and
+  isolated selections plus live tap verification remain pending because the
+  native-app UI bridge is unavailable in this environment.
 
 - [ ] **UI-02 — Establish a usable minimum viewport and reflow before shrinking.**
   **Depends on:** UI-01 composition brief; implement alongside its layout.
@@ -96,6 +102,11 @@ history to merge. Keep this tracked `TODO.md` filename (the project-root
   844×390, and 390×844; 100% and 200% display scaling. Record which sizes
   support play versus a size/orientation message. Tap New Game, inspect,
   change focus, zoom, Pause, Settings/Back, Save/Load, and exit-warning Cancel.
+  **Progress (2026-09-20):** Declared 1280×720 as the baseline and
+  800×560 as the minimum landscape play area. Captures cover 1280×720,
+  800×600, 844×390, and 390×844; the two smaller canvases show the readable
+  size/orientation message. The 800×600 pause and blocking-event captures are
+  also clean. Browser/DPI/touch interaction checks remain pending.
 
 - [ ] **UI-03 — Separate seasonal decisions from navigation and make primary emphasis contextual.**
   **Depends on:** UI-01/02.
@@ -121,6 +132,11 @@ history to merge. Keep this tracked `TODO.md` filename (the project-root
   **Verify:** Normal/minimum sizes with 2, 1, and 0 actions, an unknown site,
   unaffordable action, and blocking event. Complete a season using taps only,
   then open/close Chronicle, Factions, and Pause without spending an action.
+  **Progress (2026-09-20):** Separated Pause, Realm, Chronicle, and Factions
+  from the contextual decision summary and gave `Advance Season` its own
+  labeled action area with blocking-event feedback. Fresh and blocking-event
+  captures are saved at normal and minimum sizes. The required 2/1/0-action
+  and tap-only interaction matrix remains pending.
 
 - [ ] **UI-04 — Show truthful resource flow, population change, and site status.**
   **Depends on:** UI-01 decides the readouts' permanent homes; do before polish.
@@ -150,6 +166,13 @@ history to merge. Keep this tracked `TODO.md` filename (the project-root
   non-default focus/tier, famine, and lost settlement. Compare displayed
   results to the state report after advancing. Add focused integration
   regression coverage in `tests/` for shared forecast/report queries.
+  **Progress (2026-09-20):** Header deltas now come from the state-owned
+  `LastSeasonFlow` report and are labeled `last season`; initial play shows no
+  invented rate. Focus output is explicitly labeled as base output, lost
+  settlements no longer show `Active`, and the season-report capture shows a
+  negative food delta truthfully. Added a regression case in
+  `tests/settlement.rs`. Multiple-settlement, famine, lost-settlement, and
+  interactive comparison evidence remain pending.
 
 - [ ] **UI-05 — Make action costs, effects, and blocking reasons inspectable by tap.**
   **Depends on:** UI-01/02 contextual inspector and action layout.

@@ -34,6 +34,7 @@ pub struct Game {
     save_slots: Vec<String>,
     show_chronicle: bool,
     show_factions: bool,
+    show_realm_summary: bool,
     capture_sprite_showcase: bool,
     map_overlay: MapOverlay,
     screen: GameScreen,
@@ -116,6 +117,7 @@ impl Game {
             save_slots: Vec::new(),
             show_chronicle: false,
             show_factions: false,
+            show_realm_summary: false,
             capture_sprite_showcase: false,
             map_overlay: MapOverlay::Realm,
             screen: GameScreen::Title,
@@ -132,6 +134,9 @@ impl Game {
     /// Seed a specific scene for the screenshot harness.
     pub fn begin_capture_scene(&mut self, scene: &str) {
         self.capture_sprite_showcase = scene == "sprite_showcase";
+        self.show_chronicle = false;
+        self.show_factions = false;
+        self.show_realm_summary = false;
         match scene {
             "title" | "menu" => {
                 self.screen = GameScreen::Title;
@@ -159,6 +164,16 @@ impl Game {
                         state.knowledge = SiteKnowledge::Known;
                     }
                 }
+                self.screen = GameScreen::Playing;
+            }
+            "realm_summary" => {
+                self.session = GameSession::new(&self.data);
+                self.show_realm_summary = true;
+                self.screen = GameScreen::Playing;
+            }
+            "season_report" => {
+                self.session = GameSession::new(&self.data);
+                self.session.advance_season(&self.data);
                 self.screen = GameScreen::Playing;
             }
             _ => {
@@ -195,7 +210,8 @@ impl Game {
                 let modal_open = self.session.pending_event.is_some()
                     || self.session.endgame_summary.is_some()
                     || self.show_chronicle
-                    || self.show_factions;
+                    || self.show_factions
+                    || self.show_realm_summary;
                 if input.escape_pressed && self.session.pending_event.is_none() {
                     if self.session.endgame_summary.is_some() {
                         // The completed campaign keeps its visible recovery controls.
@@ -203,6 +219,8 @@ impl Game {
                         self.events.push(UiAction::ToggleFactionPanel);
                     } else if self.show_chronicle {
                         self.events.push(UiAction::ToggleChronicle);
+                    } else if self.show_realm_summary {
+                        self.events.push(UiAction::ToggleRealmSummary);
                     } else {
                         self.events.push(UiAction::OpenPauseMenu);
                     }
@@ -298,6 +316,7 @@ impl Game {
                     map_overlay: self.map_overlay,
                     show_chronicle: self.show_chronicle,
                     show_factions: self.show_factions,
+                    show_realm_summary: self.show_realm_summary,
                     input_blocked: paused,
                     touch_claimed: self.touch_claimed,
                     pointer,
@@ -354,6 +373,7 @@ impl Game {
                 self.session = GameSession::new(&self.data);
                 self.show_chronicle = false;
                 self.show_factions = false;
+                self.show_realm_summary = false;
                 self.screen = GameScreen::Playing;
                 self.pending_exit_warning = None;
                 self.last_save_at = None;
@@ -364,6 +384,7 @@ impl Game {
                     self.screen = GameScreen::Playing;
                     self.show_chronicle = false;
                     self.show_factions = false;
+                    self.show_realm_summary = false;
                     self.pending_exit_warning = None;
                 }
             }
@@ -435,18 +456,28 @@ impl Game {
                 self.show_chronicle = !self.show_chronicle;
                 if self.show_chronicle {
                     self.show_factions = false;
+                    self.show_realm_summary = false;
                 }
             }
             UiAction::ToggleFactionPanel => {
                 self.show_factions = !self.show_factions;
                 if self.show_factions {
                     self.show_chronicle = false;
+                    self.show_realm_summary = false;
+                }
+            }
+            UiAction::ToggleRealmSummary => {
+                self.show_realm_summary = !self.show_realm_summary;
+                if self.show_realm_summary {
+                    self.show_chronicle = false;
+                    self.show_factions = false;
                 }
             }
             UiAction::EndgameNewGame => self.apply_action(UiAction::NewGame),
             UiAction::EndgameReturnToTitle => {
                 self.show_chronicle = false;
                 self.show_factions = false;
+                self.show_realm_summary = false;
                 self.pending_exit_warning = None;
                 self.screen = GameScreen::Title;
             }

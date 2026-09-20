@@ -150,7 +150,7 @@ fn focus_summary(ctx: &UiContext<'_>, settlement: &SettlementRuntimeState) -> St
     };
     let output = resource_output_text(ctx.data, focus.output);
     ctx.data.text_with(
-        "ui.focus_summary",
+        "ui.base_focus_summary",
         &[
             ("{name}", &focus.name),
             ("{output}", &output),

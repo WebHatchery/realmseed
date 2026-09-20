@@ -165,6 +165,8 @@ pub struct SaveData {
     #[serde(default)]
     pub last_season_rows: Vec<SeasonSummaryRow>,
     #[serde(default)]
+    pub last_season_flow: LastSeasonFlow,
+    #[serde(default)]
     pub endgame_summary: Option<EndgameSummary>,
     #[serde(default)]
     pub unmanaged_strain: i32,
@@ -198,6 +200,7 @@ pub struct GameSession {
     pub active_institutions: Vec<ActiveInstitutionState>,
     pub last_season_summary: String,
     pub last_season_rows: Vec<SeasonSummaryRow>,
+    pub last_season_flow: LastSeasonFlow,
     pub endgame_summary: Option<EndgameSummary>,
     pub unmanaged_strain: i32,
     pub unmanaged_strain_seasons: i32,
@@ -254,6 +257,7 @@ impl GameSession {
             active_institutions: Vec::new(),
             last_season_summary: data.text("state.no_season_summary"),
             last_season_rows: Vec::new(),
+            last_season_flow: LastSeasonFlow::default(),
             endgame_summary: None,
             unmanaged_strain: 0,
             unmanaged_strain_seasons: 0,
@@ -287,6 +291,7 @@ impl GameSession {
             active_institutions: save.active_institutions,
             last_season_summary: save.last_season_summary,
             last_season_rows: save.last_season_rows,
+            last_season_flow: save.last_season_flow,
             endgame_summary: save.endgame_summary,
             unmanaged_strain: save.unmanaged_strain,
             unmanaged_strain_seasons: save.unmanaged_strain_seasons,
@@ -320,6 +325,7 @@ impl GameSession {
             active_institutions: self.active_institutions.clone(),
             last_season_summary: self.last_season_summary.clone(),
             last_season_rows: self.last_season_rows.clone(),
+            last_season_flow: self.last_season_flow.clone(),
             endgame_summary: self.endgame_summary.clone(),
             unmanaged_strain: self.unmanaged_strain,
             unmanaged_strain_seasons: self.unmanaged_strain_seasons,

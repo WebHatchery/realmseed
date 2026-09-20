@@ -121,14 +121,20 @@ fn draw_overlay_tabs(
         } else {
             ButtonTone::Secondary
         };
-        if virtual_icon_button(
-            rect,
-            &overlay_label(ctx, *overlay),
-            overlay_icon(*overlay),
-            input_enabled,
-            tone,
-            pointer,
-        ) {
+        let label = overlay_label(ctx, *overlay);
+        let activated = if tab_w < 100.0 {
+            virtual_button(rect, &label, input_enabled, tone, pointer)
+        } else {
+            virtual_icon_button(
+                rect,
+                &label,
+                overlay_icon(*overlay),
+                input_enabled,
+                tone,
+                pointer,
+            )
+        };
+        if activated {
             actions.push(UiAction::SetMapOverlay(*overlay));
         }
     }

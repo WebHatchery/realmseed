@@ -54,14 +54,13 @@ pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> 
         style::TEXT_BRIGHT,
     );
 
-    let active =
-        knowledge == SiteKnowledge::Known && ctx.session.settlement_at_site(&site.id).is_some();
+    let settlement = ctx.session.settlement_at_site(&site.id);
+    let active = knowledge == SiteKnowledge::Known
+        && settlement.is_some_and(|settlement| settlement.is_active());
     let status = if knowledge == SiteKnowledge::Known {
-        if ctx.session.settlement_at_site(&site.id).is_some() {
-            ctx.data.text("ui.active")
-        } else {
-            ctx.data.text("ui.known")
-        }
+        settlement
+            .map(|settlement| settlement_status_label(ctx, settlement.status))
+            .unwrap_or_else(|| ctx.data.text("ui.known"))
     } else {
         ctx.data.text("ui.rumor_status")
     };
@@ -94,8 +93,12 @@ pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> 
         TextStyle::new(13.0, style::GOLD).params(),
     );
 
-    if ctx.session.settlement_at_site(&site.id).is_some() {
-        return y + 58.0;
+    if settlement.is_some() {
+        return y + if ctx.ui.logical_width < 1040.0 {
+            48.0
+        } else {
+            58.0
+        };
     }
 
     let known_text = if knowledge == SiteKnowledge::Known {
