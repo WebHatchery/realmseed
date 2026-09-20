@@ -242,47 +242,16 @@ fn draw_campaign_controls(
     style::draw_divider(rect.x, y + 2.0, rect.w);
     y += if compact { 16.0 } else { 22.0 };
 
-    if ctx.session.last_season_rows.is_empty() {
-        draw_text_block(
-            &ctx.session.last_season_summary,
-            rect.x,
-            y - 8.0,
-            rect.w,
-            34.0,
-            12.0,
-            2.0,
-            style::TEXT_DIM,
-        );
-        y += if compact { 24.0 } else { 34.0 };
-    } else {
-        let row_limit = if compact { 1 } else { 2 };
-        for row in ctx.session.last_season_rows.iter().take(row_limit) {
-            let label = format!("{}: {}", row.label, row.detail);
-            if let Some(site_id) = &row.site_id {
-                if virtual_button(
-                    Rect::new(rect.x, y - 14.0, rect.w, 22.0),
-                    &label,
-                    input_enabled,
-                    ButtonTone::Secondary,
-                    pointer,
-                ) {
-                    actions.push(UiAction::SelectSite(site_id.clone()));
-                }
-            } else {
-                draw_text_block(
-                    &label,
-                    rect.x,
-                    y - 18.0,
-                    rect.w,
-                    22.0,
-                    11.0,
-                    1.0,
-                    style::TEXT_DIM,
-                );
-            }
-            y += if compact { 22.0 } else { 24.0 };
-        }
+    if virtual_button(
+        Rect::new(rect.x, y - 12.0, rect.w, 30.0),
+        &ctx.data.text("ui.season_report"),
+        input_enabled,
+        ButtonTone::Secondary,
+        pointer,
+    ) {
+        actions.push(UiAction::ToggleSeasonReport);
     }
+    y += if compact { 32.0 } else { 36.0 };
 
     let project_w = (rect.w - 12.0) / 3.0;
     for (index, project) in ctx.data.campaign_balance.projects.iter().enumerate() {

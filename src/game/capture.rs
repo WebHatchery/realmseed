@@ -1,12 +1,14 @@
 //! Deterministic scene setup for visual verification captures.
 
 use super::{Game, GameScreen};
-use crate::state::{GameSession, SiteKnowledge};
+use crate::state::{ChronicleEntry, GameSession, Season, SiteKnowledge};
 use crate::ui::ActionReview;
 
 pub(super) fn begin_capture_scene(game: &mut Game, scene: &str) {
     game.capture_sprite_showcase = scene == "sprite_showcase";
     game.show_chronicle = false;
+    game.show_season_report = false;
+    game.chronicle_page = 0;
     game.show_factions = false;
     game.show_realm_summary = false;
     game.show_frontier_details = false;
@@ -48,6 +50,39 @@ pub(super) fn begin_capture_scene(game: &mut Game, scene: &str) {
         "season_report" => {
             game.session = GameSession::new(&game.data);
             game.session.advance_season(&game.data);
+            game.screen = GameScreen::Playing;
+        }
+        "report" => {
+            game.session = GameSession::new(&game.data);
+            game.session.advance_season(&game.data);
+            game.session.pending_event = None;
+            game.show_season_report = true;
+            game.screen = GameScreen::Playing;
+        }
+        "chronicle_dense" => {
+            game.session = GameSession::new(&game.data);
+            for index in 0..12 {
+                game.session.chronicle.push(ChronicleEntry {
+                    year: 1 + (index / 4) as u32,
+                    season: match index % 4 {
+                        0 => Season::Spring,
+                        1 => Season::Summer,
+                        2 => Season::Autumn,
+                        _ => Season::Winter,
+                    },
+                    title: format!("Frontier memory {}", index + 1),
+                    body: "A recorded decision remains available from the full chronicle."
+                        .to_owned(),
+                    site_id: (index % 3 == 0).then(|| "charter_hall".to_owned()),
+                    importance: "major".to_owned(),
+                    tag: if index % 3 == 0 {
+                        "crisis".to_owned()
+                    } else {
+                        "memory".to_owned()
+                    },
+                });
+            }
+            game.show_chronicle = true;
             game.screen = GameScreen::Playing;
         }
         "action_review" => {

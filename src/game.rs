@@ -23,6 +23,7 @@ use macroquad_toolkit::prelude::{
 use macroquad_toolkit::ui::HoverTooltip;
 
 mod capture;
+mod notifications;
 
 pub struct Game {
     data: GameData,
@@ -35,6 +36,8 @@ pub struct Game {
     save_exists: bool,
     save_slots: Vec<String>,
     show_chronicle: bool,
+    show_season_report: bool,
+    chronicle_page: usize,
     show_factions: bool,
     show_realm_summary: bool,
     show_frontier_details: bool,
@@ -62,13 +65,6 @@ enum GameScreen {
 enum SettingsReturn {
     Title,
     PauseMenu,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum NotificationTone {
-    Info,
-    Warning,
-    Danger,
 }
 
 const SAVE_WARNING_WINDOW_SECS: f64 = 60.0;
@@ -121,6 +117,8 @@ impl Game {
             save_exists: false,
             save_slots: Vec::new(),
             show_chronicle: false,
+            show_season_report: false,
+            chronicle_page: 0,
             show_factions: false,
             show_realm_summary: false,
             show_frontier_details: false,
@@ -169,6 +167,7 @@ impl Game {
                 let modal_open = self.session.pending_event.is_some()
                     || self.session.endgame_summary.is_some()
                     || self.show_chronicle
+                    || self.show_season_report
                     || self.show_factions
                     || self.show_realm_summary
                     || self.show_frontier_details
@@ -182,6 +181,8 @@ impl Game {
                         self.events.push(UiAction::ToggleFactionPanel);
                     } else if self.show_chronicle {
                         self.events.push(UiAction::ToggleChronicle);
+                    } else if self.show_season_report {
+                        self.events.push(UiAction::ToggleSeasonReport);
                     } else if self.show_realm_summary {
                         self.events.push(UiAction::ToggleRealmSummary);
                     } else if self.show_frontier_details {
@@ -280,6 +281,8 @@ impl Game {
                     sprite_showcase: self.capture_sprite_showcase,
                     map_overlay: self.map_overlay,
                     show_chronicle: self.show_chronicle,
+                    show_season_report: self.show_season_report,
+                    chronicle_page: self.chronicle_page,
                     show_factions: self.show_factions,
                     show_realm_summary: self.show_realm_summary,
                     show_frontier_details: self.show_frontier_details,
@@ -340,6 +343,8 @@ impl Game {
             UiAction::NewGame => {
                 self.session = GameSession::new(&self.data);
                 self.show_chronicle = false;
+                self.show_season_report = false;
+                self.chronicle_page = 0;
                 self.show_factions = false;
                 self.show_realm_summary = false;
                 self.show_frontier_details = false;
@@ -353,6 +358,8 @@ impl Game {
                 if self.load_game() {
                     self.screen = GameScreen::Playing;
                     self.show_chronicle = false;
+                    self.show_season_report = false;
+                    self.chronicle_page = 0;
                     self.show_factions = false;
                     self.show_realm_summary = false;
                     self.show_frontier_details = false;
@@ -419,6 +426,7 @@ impl Game {
                 if self.load_game() && matches!(self.screen, GameScreen::PauseMenu) {
                     self.pending_exit_warning = None;
                     self.show_chronicle = false;
+                    self.show_season_report = false;
                     self.show_factions = false;
                     self.show_frontier_details = false;
                     self.action_review = None;
@@ -431,13 +439,33 @@ impl Game {
                 self.show_frontier_details = false;
                 self.show_chronicle = !self.show_chronicle;
                 if self.show_chronicle {
+                    self.show_season_report = false;
+                    self.chronicle_page = 0;
                     self.show_factions = false;
                     self.show_realm_summary = false;
                 }
             }
+            UiAction::ToggleSeasonReport => {
+                self.action_review = None;
+                self.show_season_report = !self.show_season_report;
+                if self.show_season_report {
+                    self.show_chronicle = false;
+                    self.show_factions = false;
+                    self.show_realm_summary = false;
+                    self.show_frontier_details = false;
+                }
+            }
+            UiAction::ChroniclePrevious => {
+                self.chronicle_page = self.chronicle_page.saturating_sub(1);
+            }
+            UiAction::ChronicleNext => {
+                let page_count = self.session.chronicle.len().div_ceil(5).max(1);
+                self.chronicle_page = (self.chronicle_page + 1).min(page_count - 1);
+            }
             UiAction::ToggleFactionPanel => {
                 self.action_review = None;
                 self.show_frontier_details = false;
+                self.show_season_report = false;
                 self.show_factions = !self.show_factions;
                 if self.show_factions {
                     self.show_chronicle = false;
@@ -447,6 +475,7 @@ impl Game {
             UiAction::ToggleRealmSummary => {
                 self.action_review = None;
                 self.show_frontier_details = false;
+                self.show_season_report = false;
                 self.show_realm_summary = !self.show_realm_summary;
                 if self.show_realm_summary {
                     self.show_chronicle = false;
@@ -458,6 +487,7 @@ impl Game {
                 self.show_frontier_details = !self.show_frontier_details;
                 if self.show_frontier_details {
                     self.show_chronicle = false;
+                    self.show_season_report = false;
                     self.show_factions = false;
                     self.show_realm_summary = false;
                 }
@@ -479,6 +509,7 @@ impl Game {
             UiAction::EndgameNewGame => self.apply_action(UiAction::NewGame),
             UiAction::EndgameReturnToTitle => {
                 self.show_chronicle = false;
+                self.show_season_report = false;
                 self.show_factions = false;
                 self.show_realm_summary = false;
                 self.show_frontier_details = false;
@@ -557,80 +588,10 @@ impl Game {
 
     fn advance_season(&mut self) {
         let report = self.session.advance_season(&self.data);
-        let season = self.session.clock.season.label().to_owned();
-        let year = self.session.clock.year.to_string();
-        self.notifications.info(
-            self.data
-                .text_with("game.season", &[("{season}", &season), ("{year}", &year)]),
-        );
-        self.notify_season_counts(&report);
+        notifications::notify_season_result(self, &report);
         if report.campaign_finished {
             self.notifications
                 .success(self.data.text("game.campaign_complete"));
-        }
-    }
-
-    fn notify_season_counts(&mut self, report: &crate::state::SeasonAdvanceReport) {
-        self.notify_count(
-            report.food_shortages as i64,
-            "game.food_shortage",
-            NotificationTone::Warning,
-        );
-        self.notify_count(
-            report.settlements_lost as i64,
-            "game.settlement_lost",
-            NotificationTone::Danger,
-        );
-        self.notify_count(
-            report.road_warnings as i64,
-            "game.road_warning",
-            NotificationTone::Warning,
-        );
-        self.notify_count(
-            report.isolated_settlements as i64,
-            "game.isolated",
-            NotificationTone::Warning,
-        );
-        self.notify_count(
-            report.unmanaged_strain as i64,
-            "game.unmanaged_strain",
-            NotificationTone::Info,
-        );
-        self.notify_count(
-            report.events_triggered as i64,
-            "game.event_pending",
-            NotificationTone::Info,
-        );
-        self.notify_count(
-            report.issues_escalated as i64,
-            "game.issue_escalated",
-            NotificationTone::Warning,
-        );
-        if report.rival_actions > 0 {
-            self.notifications.info(self.data.text("game.rival_acted"));
-        }
-        self.notify_count(
-            report.independent_requests as i64,
-            "game.independent_request",
-            NotificationTone::Warning,
-        );
-        self.notify_count(
-            report.wilderness_changes as i64,
-            "game.wilderness_changed",
-            NotificationTone::Warning,
-        );
-    }
-
-    fn notify_count(&mut self, count: i64, text_id: &str, tone: NotificationTone) {
-        if count == 0 {
-            return;
-        }
-        let count = count.to_string();
-        let message = self.data.text_with(text_id, &[("{count}", &count)]);
-        match tone {
-            NotificationTone::Info => self.notifications.info(message),
-            NotificationTone::Warning => self.notifications.warning(message),
-            NotificationTone::Danger => self.notifications.danger(message),
         }
     }
 

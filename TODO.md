@@ -274,6 +274,16 @@ history to merge. Keep this tracked `TODO.md` filename (the project-root
   routine changes together; wait for feedback to expire and recover the
   result by tap. Browse 9+ Chronicle entries and an 80-turn history, tap a
   report location, and confirm the overlay closes or reveals its destination.
+  **Progress (2026-09-20):** Consolidated season feedback into one prioritized
+  notification, putting settlement loss and escalating crises before routine
+  world changes. Added a visible Season Report utility with all state-owned
+  report rows and site-return links, removed duplicated season rows from the
+  Factions overlay, and paged Chronicle history at five entries per page.
+  Normal/minimum report and 12-entry Chronicle captures are saved as
+  `ui_season_report.png`, `ui_minimum_season_report.png`,
+  `ui_chronicle_dense.png`, and `ui_minimum_chronicle_dense.png`.
+  Loss-plus-shortage replay, notification expiry recovery, 80-turn history,
+  and live touch paging/site return remain pending.
 
 - [ ] **UI-08 — Give campaign planning its own focus and disclose systems when relevant.**
   **Depends on:** UI-02/05/07.

@@ -245,27 +245,53 @@ fn draw_quick_actions(
     actions: &mut Vec<UiAction>,
 ) {
     let gap = 5.0;
-    let button_w = (rect.w - gap * 3.0) / 4.0;
+    let compact = ctx.ui.logical_width < 1040.0;
+    let button_w = (rect.w - gap * 4.0) / 5.0;
     let controls = [
         (
-            ctx.data.text("ui.pause"),
+            if compact {
+                ctx.data.text("ui.pause_short")
+            } else {
+                ctx.data.text("ui.pause")
+            },
             style::IconKind::Actions,
             UiAction::OpenPauseMenu,
         ),
         (
-            ctx.data.text("ui.realm_summary"),
+            if compact {
+                ctx.data.text("ui.realm_summary_short")
+            } else {
+                ctx.data.text("ui.realm_summary")
+            },
             style::IconKind::Crown,
             UiAction::ToggleRealmSummary,
         ),
         (
-            ctx.data.text("ui.chronicle"),
+            if compact {
+                ctx.data.text("ui.chronicle_short")
+            } else {
+                ctx.data.text("ui.chronicle")
+            },
             style::IconKind::Compass,
             UiAction::ToggleChronicle,
         ),
         (
-            ctx.data.text("ui.factions"),
+            if compact {
+                ctx.data.text("ui.factions_short")
+            } else {
+                ctx.data.text("ui.factions")
+            },
             style::IconKind::Danger,
             UiAction::ToggleFactionPanel,
+        ),
+        (
+            if compact {
+                ctx.data.text("ui.report_short")
+            } else {
+                ctx.data.text("ui.report")
+            },
+            style::IconKind::Compass,
+            UiAction::ToggleSeasonReport,
         ),
     ];
     for (index, (label, icon, action)) in controls.into_iter().enumerate() {
@@ -275,7 +301,7 @@ fn draw_quick_actions(
             button_w,
             42.0,
         );
-        let activated = if ctx.ui.logical_width < 1040.0 {
+        let activated = if compact {
             super::virtual_button(
                 button,
                 &label,

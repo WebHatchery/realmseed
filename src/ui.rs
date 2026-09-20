@@ -15,6 +15,7 @@ mod map_terrain;
 mod menu;
 mod panel;
 mod routes;
+mod season_report;
 mod style;
 
 use crate::data::{GameData, ResourceStock};
@@ -80,6 +81,9 @@ pub enum UiAction {
     ActivateInstitution(String),
     AdvanceSeason,
     ToggleChronicle,
+    ToggleSeasonReport,
+    ChroniclePrevious,
+    ChronicleNext,
     EndgameNewGame,
     EndgameReturnToTitle,
 }
@@ -129,6 +133,8 @@ pub struct UiContext<'a> {
     pub sprite_showcase: bool,
     pub map_overlay: MapOverlay,
     pub show_chronicle: bool,
+    pub show_season_report: bool,
+    pub chronicle_page: usize,
     pub show_factions: bool,
     pub show_realm_summary: bool,
     pub show_frontier_details: bool,
@@ -197,6 +203,7 @@ pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAct
     let endgame_open = ctx.session.endgame_summary.is_some();
     let modal_open = ctx.input_blocked
         || ctx.show_chronicle
+        || ctx.show_season_report
         || ctx.show_factions
         || ctx.show_realm_summary
         || ctx.show_frontier_details
@@ -222,6 +229,8 @@ pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAct
         faction::draw_faction_overlay(&ctx, &mut actions);
     } else if ctx.show_chronicle {
         panel::draw_chronicle_overlay(&ctx, &mut actions);
+    } else if ctx.show_season_report {
+        season_report::draw_season_report(&ctx, &mut actions);
     } else if ctx.show_realm_summary {
         advisor::draw_realm_summary_overlay(&ctx, &mut actions);
     } else if ctx.show_frontier_details {

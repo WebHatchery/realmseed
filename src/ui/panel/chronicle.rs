@@ -1,6 +1,6 @@
 //! Chronicle overlay listing recent realm history entries.
 
-use crate::ui::{virtual_button, UiAction, UiContext};
+use crate::ui::{style, virtual_button, UiAction, UiContext};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
@@ -26,7 +26,7 @@ pub(in crate::ui) fn draw_chronicle_overlay(ctx: &UiContext<'_>, actions: &mut V
     if virtual_button(
         Rect::new(rect.right() - 96.0, rect.y + 10.0, 76.0, 30.0),
         &ctx.data.text("ui.close"),
-        true,
+        ctx.action_review.is_none(),
         ButtonTone::Secondary,
         ctx.pointer,
     ) {
@@ -34,8 +34,42 @@ pub(in crate::ui) fn draw_chronicle_overlay(ctx: &UiContext<'_>, actions: &mut V
     }
 
     let content = rect.inset(24.0);
+    let entries_per_page = 5;
+    let total_pages = ctx
+        .session
+        .chronicle
+        .len()
+        .div_ceil(entries_per_page)
+        .max(1);
+    let page = ctx.chronicle_page.min(total_pages - 1);
     let mut y = content.y + 48.0;
-    for entry in ctx.session.chronicle.iter().rev().take(8) {
+    for entry in ctx
+        .session
+        .chronicle
+        .iter()
+        .rev()
+        .skip(page * entries_per_page)
+        .take(entries_per_page)
+    {
+        let row_rect = Rect::new(content.x, y - 8.0, content.w, 62.0);
+        if entry.site_id.is_some()
+            && ctx.action_review.is_none()
+            && ctx.pointer.released_on(touch_area(row_rect))
+        {
+            if let Some(site_id) = &entry.site_id {
+                actions.push(UiAction::SelectSite(site_id.clone()));
+                actions.push(UiAction::ToggleChronicle);
+            }
+        }
+        if entry.site_id.is_some() && ctx.pointer.hovering_over(row_rect) {
+            draw_rectangle(
+                row_rect.x,
+                row_rect.y,
+                row_rect.w,
+                row_rect.h,
+                Color::new(0.95, 0.82, 0.50, 0.07),
+            );
+        }
         let season = entry.season.label().to_owned();
         let year = entry.year.to_string();
         let title = ctx.data.text_with(
@@ -57,12 +91,20 @@ pub(in crate::ui) fn draw_chronicle_overlay(ctx: &UiContext<'_>, actions: &mut V
             &entry.body,
             content.x + 14.0,
             y + 10.0,
-            content.w - 28.0,
+            content.w - if entry.site_id.is_some() { 164.0 } else { 28.0 },
             44.0,
             15.0,
             3.0,
             dark::TEXT_DIM,
         );
+        if entry.site_id.is_some() {
+            draw_ui_text_ex(
+                &ctx.data.text("ui.report_site_hint"),
+                content.right() - 136.0,
+                y + 31.0,
+                TextStyle::new(12.0, style::GOLD).params(),
+            );
+        }
         y += 70.0;
     }
 
@@ -76,5 +118,47 @@ pub(in crate::ui) fn draw_chronicle_overlay(ctx: &UiContext<'_>, actions: &mut V
             18.0,
             dark::TEXT_DIM,
         );
+    }
+
+    let page_label = ctx.data.text_with(
+        "ui.page_of",
+        &[
+            ("{page}", &(page + 1).to_string()),
+            ("{pages}", &total_pages.to_string()),
+        ],
+    );
+    draw_ui_text_ex(
+        &page_label,
+        content.x,
+        content.bottom() - 10.0,
+        TextStyle::new(13.0, dark::TEXT_DIM).params(),
+    );
+    if virtual_button(
+        Rect::new(
+            content.right() - 230.0,
+            content.bottom() - 34.0,
+            104.0,
+            30.0,
+        ),
+        &ctx.data.text("ui.previous"),
+        ctx.action_review.is_none() && page > 0,
+        ButtonTone::Secondary,
+        ctx.pointer,
+    ) {
+        actions.push(UiAction::ChroniclePrevious);
+    }
+    if virtual_button(
+        Rect::new(
+            content.right() - 114.0,
+            content.bottom() - 34.0,
+            114.0,
+            30.0,
+        ),
+        &ctx.data.text("ui.next"),
+        ctx.action_review.is_none() && page + 1 < total_pages,
+        ButtonTone::Secondary,
+        ctx.pointer,
+    ) {
+        actions.push(UiAction::ChronicleNext);
     }
 }
