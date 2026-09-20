@@ -268,12 +268,12 @@ fn draw_quick_actions(
         ),
         (
             if compact {
-                ctx.data.text("ui.chronicle_short")
+                ctx.data.text("ui.reports_short")
             } else {
-                ctx.data.text("ui.chronicle")
+                ctx.data.text("ui.reports")
             },
             style::IconKind::Compass,
-            UiAction::ToggleChronicle,
+            UiAction::ToggleSeasonReport,
         ),
         (
             if compact {
@@ -285,13 +285,9 @@ fn draw_quick_actions(
             UiAction::ToggleFactionPanel,
         ),
         (
-            if compact {
-                ctx.data.text("ui.report_short")
-            } else {
-                ctx.data.text("ui.report")
-            },
+            ctx.data.text("ui.help_short"),
             style::IconKind::Compass,
-            UiAction::ToggleSeasonReport,
+            UiAction::ToggleHelp,
         ),
     ];
     for (index, (label, icon, action)) in controls.into_iter().enumerate() {

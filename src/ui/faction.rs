@@ -1,6 +1,8 @@
 //! Faction, independent settlement, and wilderness pressure overlay.
 
-use super::{inspectable_button, style, virtual_button, ActionReview, UiAction, UiContext};
+use super::{
+    inspectable_button, style, virtual_button, ActionReview, FactionView, UiAction, UiContext,
+};
 use crate::data::FactionGoal;
 use crate::state::{IntegrationState, WildernessPressureState};
 use macroquad::prelude::*;
@@ -35,7 +37,10 @@ pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
         content.y + 17.0,
     );
     draw_ui_text_ex(
-        &ctx.data.text("ui.faction_pressure"),
+        &ctx.data.text(match ctx.faction_view {
+            FactionView::Pressure => "ui.faction_pressure",
+            FactionView::Campaign => "ui.campaign",
+        }),
         content.x + 68.0,
         content.y + 48.0,
         TextStyle::new(25.0, style::TEXT_BRIGHT).params(),
@@ -51,28 +56,65 @@ pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
     }
     style::draw_divider(content.x, content.y + 76.0, content.w);
 
-    let column_gap = 24.0;
-    let column_w = (content.w - column_gap) * 0.5;
-    let right_x = content.x + column_w + column_gap;
-    let body_y = content.y + 102.0;
+    let tab_y = content.y + 86.0;
+    let tab_w = (content.w - 8.0) * 0.5;
+    if faction_tab(
+        ctx,
+        Rect::new(content.x, tab_y, tab_w, 30.0),
+        &ctx.data.text("ui.pressure_view"),
+        FactionView::Pressure,
+    ) {
+        actions.push(UiAction::SetFactionView(FactionView::Pressure));
+    }
+    if faction_tab(
+        ctx,
+        Rect::new(content.x + tab_w + 8.0, tab_y, tab_w, 30.0),
+        &ctx.data.text("ui.campaign_view"),
+        FactionView::Campaign,
+    ) {
+        actions.push(UiAction::SetFactionView(FactionView::Campaign));
+    }
+
+    let body_y = tab_y + 44.0;
     let body_h = content.bottom() - body_y;
-    draw_rival(ctx, Rect::new(content.x, body_y, column_w, body_h * 0.58));
-    draw_campaign_controls(
-        ctx,
+    match ctx.faction_view {
+        FactionView::Campaign => draw_campaign_controls(
+            ctx,
+            ctx.pointer,
+            input_enabled,
+            actions,
+            Rect::new(content.x, body_y, content.w, body_h),
+        ),
+        FactionView::Pressure => {
+            let column_gap = 24.0;
+            let column_w = (content.w - column_gap) * 0.5;
+            let right_x = content.x + column_w + column_gap;
+            draw_rival(ctx, Rect::new(content.x, body_y, column_w, body_h * 0.58));
+            style::draw_vertical_divider(right_x - column_gap * 0.5, body_y, body_h - 10.0);
+            draw_independents(
+                ctx,
+                Rect::new(right_x, body_y, column_w, (body_h * 0.42).max(178.0)),
+            );
+            draw_wilderness(
+                ctx,
+                Rect::new(right_x, body_y + body_h * 0.50, column_w, body_h * 0.44),
+            );
+        }
+    }
+}
+
+fn faction_tab(ctx: &UiContext<'_>, rect: Rect, label: &str, view: FactionView) -> bool {
+    virtual_button(
+        rect,
+        label,
+        ctx.action_review.is_none(),
+        if ctx.faction_view == view {
+            ButtonTone::Primary
+        } else {
+            ButtonTone::Secondary
+        },
         ctx.pointer,
-        input_enabled,
-        actions,
-        Rect::new(content.x, body_y + body_h * 0.64, column_w, body_h * 0.32),
-    );
-    style::draw_vertical_divider(right_x - column_gap * 0.5, body_y, body_h - 10.0);
-    draw_independents(
-        ctx,
-        Rect::new(right_x, body_y, column_w, (body_h * 0.42).max(178.0)),
-    );
-    draw_wilderness(
-        ctx,
-        Rect::new(right_x, body_y + body_h * 0.50, column_w, body_h * 0.44),
-    );
+    )
 }
 
 fn draw_rival(ctx: &UiContext<'_>, rect: Rect) {

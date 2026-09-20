@@ -98,6 +98,21 @@ pub(super) fn draw_season_report(ctx: &UiContext<'_>, actions: &mut Vec<UiAction
         }
         y += 62.0;
     }
+    if super::virtual_button(
+        Rect::new(
+            content.right() - 238.0,
+            content.bottom() - 34.0,
+            112.0,
+            30.0,
+        ),
+        &ctx.data.text("ui.chronicle"),
+        ctx.action_review.is_none(),
+        ButtonTone::Secondary,
+        ctx.pointer,
+    ) {
+        actions.push(UiAction::ToggleSeasonReport);
+        actions.push(UiAction::ToggleChronicle);
+    }
 }
 
 fn report_color(tag: &str) -> Color {

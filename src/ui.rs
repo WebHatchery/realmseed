@@ -7,6 +7,7 @@ mod endgame;
 mod event;
 mod faction;
 mod frontier_details;
+mod help;
 mod map;
 mod map_site_shapes;
 mod map_site_sprites;
@@ -67,6 +68,7 @@ pub enum UiAction {
     OpenIndependentTrade,
     BeginIndependentIntegration,
     ToggleFactionPanel,
+    SetFactionView(FactionView),
     ToggleRealmSummary,
     ToggleFrontierDetails,
     SetFrontierDetailsTab(FrontierDetailsTab),
@@ -82,6 +84,7 @@ pub enum UiAction {
     AdvanceSeason,
     ToggleChronicle,
     ToggleSeasonReport,
+    ToggleHelp,
     ChroniclePrevious,
     ChronicleNext,
     EndgameNewGame,
@@ -105,6 +108,12 @@ pub enum ActionReview {
 pub enum FrontierDetailsTab {
     Routes,
     Issues,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FactionView {
+    Pressure,
+    Campaign,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -134,8 +143,10 @@ pub struct UiContext<'a> {
     pub map_overlay: MapOverlay,
     pub show_chronicle: bool,
     pub show_season_report: bool,
+    pub show_help: bool,
     pub chronicle_page: usize,
     pub show_factions: bool,
+    pub faction_view: FactionView,
     pub show_realm_summary: bool,
     pub show_frontier_details: bool,
     pub frontier_details_tab: FrontierDetailsTab,
@@ -204,6 +215,7 @@ pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAct
     let modal_open = ctx.input_blocked
         || ctx.show_chronicle
         || ctx.show_season_report
+        || ctx.show_help
         || ctx.show_factions
         || ctx.show_realm_summary
         || ctx.show_frontier_details
@@ -231,6 +243,8 @@ pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAct
         panel::draw_chronicle_overlay(&ctx, &mut actions);
     } else if ctx.show_season_report {
         season_report::draw_season_report(&ctx, &mut actions);
+    } else if ctx.show_help {
+        help::draw_help_overlay(&ctx, &mut actions);
     } else if ctx.show_realm_summary {
         advisor::draw_realm_summary_overlay(&ctx, &mut actions);
     } else if ctx.show_frontier_details {

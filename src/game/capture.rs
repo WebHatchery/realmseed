@@ -2,14 +2,16 @@
 
 use super::{Game, GameScreen};
 use crate::state::{ChronicleEntry, GameSession, Season, SiteKnowledge};
-use crate::ui::ActionReview;
+use crate::ui::{ActionReview, FactionView};
 
 pub(super) fn begin_capture_scene(game: &mut Game, scene: &str) {
     game.capture_sprite_showcase = scene == "sprite_showcase";
     game.show_chronicle = false;
     game.show_season_report = false;
+    game.show_help = false;
     game.chronicle_page = 0;
     game.show_factions = false;
+    game.faction_view = FactionView::Pressure;
     game.show_realm_summary = false;
     game.show_frontier_details = false;
     game.action_review = None;
@@ -83,6 +85,23 @@ pub(super) fn begin_capture_scene(game: &mut Game, scene: &str) {
                 });
             }
             game.show_chronicle = true;
+            game.screen = GameScreen::Playing;
+        }
+        "faction_pressure" => {
+            game.session = GameSession::new(&game.data);
+            game.show_factions = true;
+            game.faction_view = FactionView::Pressure;
+            game.screen = GameScreen::Playing;
+        }
+        "campaign_view" => {
+            game.session = GameSession::new(&game.data);
+            game.show_factions = true;
+            game.faction_view = FactionView::Campaign;
+            game.screen = GameScreen::Playing;
+        }
+        "help" => {
+            game.session = GameSession::new(&game.data);
+            game.show_help = true;
             game.screen = GameScreen::Playing;
         }
         "action_review" => {

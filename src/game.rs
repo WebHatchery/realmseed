@@ -3,8 +3,8 @@
 use crate::data::GameData;
 use crate::state::{migrate_save_value, GameSession, SaveData};
 use crate::ui::{
-    self, ActionReview, ExitWarningTarget, FrontierDetailsTab, MapOverlay, MapSpriteTextures,
-    MenuContext, PauseMenuContext, UiAction, UiContext,
+    self, ActionReview, ExitWarningTarget, FactionView, FrontierDetailsTab, MapOverlay,
+    MapSpriteTextures, MenuContext, PauseMenuContext, UiAction, UiContext,
 };
 use macroquad::prelude::*;
 use macroquad_toolkit::assets::AssetManager;
@@ -37,8 +37,10 @@ pub struct Game {
     save_slots: Vec<String>,
     show_chronicle: bool,
     show_season_report: bool,
+    show_help: bool,
     chronicle_page: usize,
     show_factions: bool,
+    faction_view: FactionView,
     show_realm_summary: bool,
     show_frontier_details: bool,
     frontier_details_tab: FrontierDetailsTab,
@@ -118,8 +120,10 @@ impl Game {
             save_slots: Vec::new(),
             show_chronicle: false,
             show_season_report: false,
+            show_help: false,
             chronicle_page: 0,
             show_factions: false,
+            faction_view: FactionView::Pressure,
             show_realm_summary: false,
             show_frontier_details: false,
             frontier_details_tab: FrontierDetailsTab::Routes,
@@ -168,6 +172,7 @@ impl Game {
                     || self.session.endgame_summary.is_some()
                     || self.show_chronicle
                     || self.show_season_report
+                    || self.show_help
                     || self.show_factions
                     || self.show_realm_summary
                     || self.show_frontier_details
@@ -183,6 +188,8 @@ impl Game {
                         self.events.push(UiAction::ToggleChronicle);
                     } else if self.show_season_report {
                         self.events.push(UiAction::ToggleSeasonReport);
+                    } else if self.show_help {
+                        self.events.push(UiAction::ToggleHelp);
                     } else if self.show_realm_summary {
                         self.events.push(UiAction::ToggleRealmSummary);
                     } else if self.show_frontier_details {
@@ -282,8 +289,10 @@ impl Game {
                     map_overlay: self.map_overlay,
                     show_chronicle: self.show_chronicle,
                     show_season_report: self.show_season_report,
+                    show_help: self.show_help,
                     chronicle_page: self.chronicle_page,
                     show_factions: self.show_factions,
+                    faction_view: self.faction_view,
                     show_realm_summary: self.show_realm_summary,
                     show_frontier_details: self.show_frontier_details,
                     frontier_details_tab: self.frontier_details_tab,
@@ -344,6 +353,7 @@ impl Game {
                 self.session = GameSession::new(&self.data);
                 self.show_chronicle = false;
                 self.show_season_report = false;
+                self.show_help = false;
                 self.chronicle_page = 0;
                 self.show_factions = false;
                 self.show_realm_summary = false;
@@ -359,6 +369,7 @@ impl Game {
                     self.screen = GameScreen::Playing;
                     self.show_chronicle = false;
                     self.show_season_report = false;
+                    self.show_help = false;
                     self.chronicle_page = 0;
                     self.show_factions = false;
                     self.show_realm_summary = false;
@@ -449,7 +460,19 @@ impl Game {
                 self.action_review = None;
                 self.show_season_report = !self.show_season_report;
                 if self.show_season_report {
+                    self.show_help = false;
                     self.show_chronicle = false;
+                    self.show_factions = false;
+                    self.show_realm_summary = false;
+                    self.show_frontier_details = false;
+                }
+            }
+            UiAction::ToggleHelp => {
+                self.action_review = None;
+                self.show_help = !self.show_help;
+                if self.show_help {
+                    self.show_chronicle = false;
+                    self.show_season_report = false;
                     self.show_factions = false;
                     self.show_realm_summary = false;
                     self.show_frontier_details = false;
@@ -466,16 +489,22 @@ impl Game {
                 self.action_review = None;
                 self.show_frontier_details = false;
                 self.show_season_report = false;
+                self.show_help = false;
                 self.show_factions = !self.show_factions;
                 if self.show_factions {
+                    self.faction_view = FactionView::Pressure;
                     self.show_chronicle = false;
                     self.show_realm_summary = false;
                 }
+            }
+            UiAction::SetFactionView(view) => {
+                self.faction_view = view;
             }
             UiAction::ToggleRealmSummary => {
                 self.action_review = None;
                 self.show_frontier_details = false;
                 self.show_season_report = false;
+                self.show_help = false;
                 self.show_realm_summary = !self.show_realm_summary;
                 if self.show_realm_summary {
                     self.show_chronicle = false;

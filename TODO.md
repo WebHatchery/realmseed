@@ -314,6 +314,14 @@ history to merge. Keep this tracked `TODO.md` filename (the project-root
   switches, compare ambitions, inspect locked content, activate an eligible
   institution, and close. Do not infer unlock rules from GDD examples alone;
   reconcile with implemented balance/state rules.
+  **Progress (2026-09-20):** Split the existing overlay into Pressure and
+  Campaign Planning views so rival/independent/wilderness inspection no longer
+  competes with ambition, Season Report, project, and institution controls.
+  Existing locked project/institution controls remain inspectable through
+  UI-05. Normal/minimum captures are saved as `ui_faction_pressure.png`,
+  `ui_campaign_view.png`, `ui_minimum_faction_pressure.png`, and
+  `ui_minimum_campaign_view.png`. Opening/late-campaign data, ambition
+  comparison behavior, and live touch switching remain pending.
 
 - [ ] **UI-09 — Teach the opening once and provide visible, reopenable help.**
   **Depends on:** UI-01/03/05 control names and locations.
@@ -338,6 +346,14 @@ history to merge. Keep this tracked `TODO.md` filename (the project-root
   **Verify:** Fresh opening at normal/minimum sizes by taps only; complete and
   dismiss each supported prompt, reopen Help, load a campaign, and verify
   completed prompts do not repeatedly cover gameplay or hide urgent warnings.
+  **Progress (2026-09-20):** Added a visible Help & Controls overlay with the
+  current guidance, map gesture/zoom instructions, decision-review behavior,
+  and the Reports, Chronicle, Factions, and Routes & Supply destinations. The
+  Reports footer control now groups the season report and Chronicle so the
+  minimum-width utility row stays touch-readable. Normal/minimum captures are
+  saved as `ui_help.png` and `ui_minimum_help.png`. Live prompt dismissal,
+  reopen behavior, load-state coverage, and tap-only verification remain
+  pending.
 
 ### Further inspection — reproduce before declaring additional defects
 
