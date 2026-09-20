@@ -9,6 +9,7 @@ pub(super) fn begin_capture_scene(game: &mut Game, scene: &str) {
     game.show_chronicle = false;
     game.show_factions = false;
     game.show_realm_summary = false;
+    game.show_frontier_details = false;
     game.action_review = None;
     match scene {
         "title" | "menu" => {
@@ -64,6 +65,35 @@ pub(super) fn begin_capture_scene(game: &mut Game, scene: &str) {
             game.session = GameSession::new(&game.data);
             game.session.select_site(&game.data, "charter_hall");
             game.action_review = Some(ActionReview::UpgradeSettlement);
+            game.screen = GameScreen::Playing;
+        }
+        "frontier_routes" => {
+            game.session = GameSession::new(&game.data);
+            let known_sites = [
+                "lowmeadow",
+                "redfield",
+                "willowbend",
+                "greenford",
+                "redford_crossing",
+            ];
+            for state in &mut game.session.site_states {
+                if known_sites.contains(&state.site_id.as_str()) {
+                    state.knowledge = SiteKnowledge::Known;
+                }
+            }
+            game.session.refresh_route_knowledge();
+            game.session.select_site(&game.data, "charter_hall");
+            game.show_frontier_details = true;
+            game.frontier_details_tab = crate::ui::FrontierDetailsTab::Routes;
+            game.screen = GameScreen::Playing;
+        }
+        "frontier_issues" => {
+            game.session = GameSession::new(&game.data);
+            game.session.select_site(&game.data, "charter_hall");
+            let _ = game.session.force_next_event(&game.data);
+            game.session.pending_event = None;
+            game.show_frontier_details = true;
+            game.frontier_details_tab = crate::ui::FrontierDetailsTab::Issues;
             game.screen = GameScreen::Playing;
         }
         _ => {

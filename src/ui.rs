@@ -6,6 +6,7 @@ mod advisor;
 mod endgame;
 mod event;
 mod faction;
+mod frontier_details;
 mod map;
 mod map_site_shapes;
 mod map_site_sprites;
@@ -66,6 +67,8 @@ pub enum UiAction {
     BeginIndependentIntegration,
     ToggleFactionPanel,
     ToggleRealmSummary,
+    ToggleFrontierDetails,
+    SetFrontierDetailsTab(FrontierDetailsTab),
     OpenActionReview(ActionReview),
     ConfirmActionReview,
     CancelActionReview,
@@ -92,6 +95,12 @@ pub enum ActionReview {
     BeginIndependentIntegration,
     CompleteProject(String),
     ActivateInstitution(String),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FrontierDetailsTab {
+    Routes,
+    Issues,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -122,6 +131,8 @@ pub struct UiContext<'a> {
     pub show_chronicle: bool,
     pub show_factions: bool,
     pub show_realm_summary: bool,
+    pub show_frontier_details: bool,
+    pub frontier_details_tab: FrontierDetailsTab,
     pub action_review: Option<&'a ActionReview>,
     pub input_blocked: bool,
     pub touch_claimed: bool,
@@ -188,6 +199,7 @@ pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAct
         || ctx.show_chronicle
         || ctx.show_factions
         || ctx.show_realm_summary
+        || ctx.show_frontier_details
         || ctx.action_review.is_some()
         || event_open
         || endgame_open;
@@ -212,6 +224,8 @@ pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAct
         panel::draw_chronicle_overlay(&ctx, &mut actions);
     } else if ctx.show_realm_summary {
         advisor::draw_realm_summary_overlay(&ctx, &mut actions);
+    } else if ctx.show_frontier_details {
+        frontier_details::draw_frontier_details(&ctx, &mut actions);
     }
     if ctx.action_review.is_some() {
         action_review::draw_action_review(&ctx, &mut actions);

@@ -235,6 +235,17 @@ history to merge. Keep this tracked `TODO.md` filename (the project-root
   **Verify:** Normal/minimum sizes with 3+ known links, damaged/blocked route,
   disconnected settlement, multiple issues, and no issues. Tap each route,
   scroll the list, inspect the last issue, return, and confirm one valid fix.
+  **Progress (2026-09-20):** Added a visible Routes & Supply disclosure and a
+  Frontier Details view with Routes/Issues tabs. Compact play keeps the inline
+  supply summary readable; the full view lists all five known Charter Hall
+  links in the capture matrix and exposes Wardens through the same action
+  review. Active issues show state, severity, age, trigger cause, and pending
+  event status. Current normal/minimum evidence is in
+  `ui_frontier_routes.png`, `ui_frontier_issues.png`,
+  `ui_minimum_frontier_routes.png`, and `ui_minimum_frontier_issues.png`.
+  Damaged/blocked-route, multi-issue, scroll, and live touch verification
+  remain pending because those states and the native-app UI bridge were not
+  available for interaction testing.
 
 - [ ] **UI-07 — Replace repeated season prose with prioritized feedback and retrievable history.**
   **Depends on:** UI-01/03; coordinate issue links with UI-06.

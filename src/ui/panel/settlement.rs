@@ -4,7 +4,8 @@ use super::readouts::{draw_focus_card, draw_metric_grid, draw_store_grid, focus_
 use crate::data::ActiveIssueState;
 use crate::state::SettlementRuntimeState;
 use crate::ui::{
-    inspectable_button, style, virtual_icon_button, ActionReview, UiAction, UiContext,
+    inspectable_button, style, virtual_button, virtual_icon_button, ActionReview,
+    FrontierDetailsTab, UiAction, UiContext,
 };
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
@@ -88,15 +89,22 @@ pub(super) fn draw_existing_settlement(
     let stores_grid_y = y + 60.0;
     crate::ui::section_label(&ctx.data.text("ui.stores"), content.x, stores_label_y);
     if active_issue_count > 0 {
-        draw_badge(
-            Rect::new(content.right() - 84.0, stores_label_y - 13.0, 84.0, 22.0),
+        let issues_rect = Rect::new(content.right() - 112.0, stores_label_y - 16.0, 112.0, 28.0);
+        if virtual_button(
+            issues_rect,
             &ctx.data.text_with(
                 "ui.active_issues_count",
                 &[("{count}", &active_issue_count.to_string())],
             ),
-            Color::new(0.34, 0.14, 0.12, 1.0),
-            style::TEXT,
-        );
+            interaction.input_enabled,
+            ButtonTone::Danger,
+            interaction.pointer,
+        ) {
+            interaction
+                .actions
+                .push(UiAction::SetFrontierDetailsTab(FrontierDetailsTab::Issues));
+            interaction.actions.push(UiAction::ToggleFrontierDetails);
+        }
     }
     draw_store_grid(
         ctx.data,
@@ -200,19 +208,19 @@ fn focus_layout_fits(
         .session
         .routes_for_site(&settlement.location_id)
         .filter(|route| route.known)
-        .take(2)
         .count();
-    let route_bottom = route_y + route_section_height(route_count);
+    let route_bottom = route_y + route_section_height(route_count, ctx.ui.logical_width < 1040.0);
 
     route_bottom <= content.bottom() + 16.0
 }
 
-fn route_section_height(route_count: usize) -> f32 {
-    if route_count == 0 {
-        48.0
-    } else {
-        46.0 + route_count as f32 * 24.0 + 2.0
+fn route_section_height(route_count: usize, compact: bool) -> f32 {
+    if compact {
+        return 46.0;
     }
+    let shown_routes = route_count.min(2);
+    let disclosure = if route_count > 2 { 22.0 } else { 0.0 };
+    58.0 + shown_routes as f32 * 24.0 + disclosure + 2.0
 }
 
 fn active_issue_count(ctx: &UiContext<'_>, settlement: &SettlementRuntimeState) -> usize {

@@ -1,6 +1,6 @@
 //! Compact route and supply controls for the selected-site panel.
 
-use super::{inspectable_button, style, ActionReview, UiAction, UiContext};
+use super::{inspectable_button, style, virtual_button, ActionReview, UiAction, UiContext};
 use crate::data::RouteLevel;
 use crate::state::{RouteCondition, RouteRuntimeState};
 use macroquad::prelude::*;
@@ -25,11 +25,32 @@ pub(super) fn draw_route_section(
     }
 
     style::draw_divider(content.x, y - 6.0, content.w);
-    super::section_label(&ctx.data.text("ui.routes_supply"), content.x, y + 10.0);
+    if virtual_button(
+        Rect::new(content.x, y, content.w, 24.0),
+        &ctx.data.text("ui.routes_supply"),
+        input_enabled,
+        ButtonTone::Secondary,
+        pointer,
+    ) {
+        actions.push(UiAction::ToggleFrontierDetails);
+    }
+    if ctx.ui.logical_width < 1040.0 {
+        draw_text_block(
+            &ctx.session.settlement_supply_summary(ctx.data, &site.id),
+            content.x,
+            y + 27.0,
+            content.w,
+            14.0,
+            10.0,
+            1.0,
+            style::TEXT_DIM,
+        );
+        return y + 42.0;
+    }
     draw_text_block(
         &ctx.session.settlement_supply_summary(ctx.data, &site.id),
         content.x,
-        y + 20.0,
+        y + 32.0,
         content.w - 118.0,
         22.0,
         12.0,
@@ -37,13 +58,13 @@ pub(super) fn draw_route_section(
         style::TEXT_DIM,
     );
 
-    let mut next_y = y + 46.0;
-    for route in ctx
+    let known_routes: Vec<&RouteRuntimeState> = ctx
         .session
         .routes_for_site(&site.id)
         .filter(|route| route.known)
-        .take(2)
-    {
+        .collect();
+    let mut next_y = y + 58.0;
+    for route in known_routes.iter().take(2) {
         draw_route_row(
             ctx,
             RouteRowContext {
@@ -59,12 +80,25 @@ pub(super) fn draw_route_section(
         );
         next_y += 24.0;
     }
+    if known_routes.len() > 2 {
+        draw_text_block(
+            &ctx.data.text("ui.more_routes"),
+            content.x,
+            next_y + 2.0,
+            content.w,
+            20.0,
+            12.0,
+            1.0,
+            style::TEXT_DIM,
+        );
+        next_y += 22.0;
+    }
 
     let project_status = ctx
         .session
         .regional_project_status(ctx.data, &site.region_id);
     let project_w = 132.0;
-    let project_rect = Rect::new(content.right() - project_w, y + 2.0, project_w, 25.0);
+    let project_rect = Rect::new(content.right() - project_w, y + 30.0, project_w, 25.0);
     if inspectable_button(
         project_rect,
         &ctx.data.text("ui.wardens"),

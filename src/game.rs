@@ -3,8 +3,8 @@
 use crate::data::GameData;
 use crate::state::{migrate_save_value, GameSession, SaveData};
 use crate::ui::{
-    self, ActionReview, ExitWarningTarget, MapOverlay, MapSpriteTextures, MenuContext,
-    PauseMenuContext, UiAction, UiContext,
+    self, ActionReview, ExitWarningTarget, FrontierDetailsTab, MapOverlay, MapSpriteTextures,
+    MenuContext, PauseMenuContext, UiAction, UiContext,
 };
 use macroquad::prelude::*;
 use macroquad_toolkit::assets::AssetManager;
@@ -37,6 +37,8 @@ pub struct Game {
     show_chronicle: bool,
     show_factions: bool,
     show_realm_summary: bool,
+    show_frontier_details: bool,
+    frontier_details_tab: FrontierDetailsTab,
     action_review: Option<ActionReview>,
     capture_sprite_showcase: bool,
     map_overlay: MapOverlay,
@@ -121,6 +123,8 @@ impl Game {
             show_chronicle: false,
             show_factions: false,
             show_realm_summary: false,
+            show_frontier_details: false,
+            frontier_details_tab: FrontierDetailsTab::Routes,
             action_review: None,
             capture_sprite_showcase: false,
             map_overlay: MapOverlay::Realm,
@@ -167,6 +171,7 @@ impl Game {
                     || self.show_chronicle
                     || self.show_factions
                     || self.show_realm_summary
+                    || self.show_frontier_details
                     || self.action_review.is_some();
                 if input.escape_pressed && self.action_review.is_some() {
                     self.events.push(UiAction::CancelActionReview);
@@ -179,6 +184,8 @@ impl Game {
                         self.events.push(UiAction::ToggleChronicle);
                     } else if self.show_realm_summary {
                         self.events.push(UiAction::ToggleRealmSummary);
+                    } else if self.show_frontier_details {
+                        self.events.push(UiAction::ToggleFrontierDetails);
                     } else {
                         self.events.push(UiAction::OpenPauseMenu);
                     }
@@ -275,6 +282,8 @@ impl Game {
                     show_chronicle: self.show_chronicle,
                     show_factions: self.show_factions,
                     show_realm_summary: self.show_realm_summary,
+                    show_frontier_details: self.show_frontier_details,
+                    frontier_details_tab: self.frontier_details_tab,
                     action_review: self.action_review.as_ref(),
                     input_blocked: paused,
                     touch_claimed: self.touch_claimed,
@@ -333,6 +342,7 @@ impl Game {
                 self.show_chronicle = false;
                 self.show_factions = false;
                 self.show_realm_summary = false;
+                self.show_frontier_details = false;
                 self.action_review = None;
                 self.screen = GameScreen::Playing;
                 self.pending_exit_warning = None;
@@ -345,6 +355,7 @@ impl Game {
                     self.show_chronicle = false;
                     self.show_factions = false;
                     self.show_realm_summary = false;
+                    self.show_frontier_details = false;
                     self.action_review = None;
                     self.pending_exit_warning = None;
                 }
@@ -409,6 +420,7 @@ impl Game {
                     self.pending_exit_warning = None;
                     self.show_chronicle = false;
                     self.show_factions = false;
+                    self.show_frontier_details = false;
                     self.action_review = None;
                     self.screen = GameScreen::Playing;
                 }
@@ -416,6 +428,7 @@ impl Game {
             UiAction::DeleteSave => self.delete_save(),
             UiAction::ToggleChronicle => {
                 self.action_review = None;
+                self.show_frontier_details = false;
                 self.show_chronicle = !self.show_chronicle;
                 if self.show_chronicle {
                     self.show_factions = false;
@@ -424,6 +437,7 @@ impl Game {
             }
             UiAction::ToggleFactionPanel => {
                 self.action_review = None;
+                self.show_frontier_details = false;
                 self.show_factions = !self.show_factions;
                 if self.show_factions {
                     self.show_chronicle = false;
@@ -432,11 +446,24 @@ impl Game {
             }
             UiAction::ToggleRealmSummary => {
                 self.action_review = None;
+                self.show_frontier_details = false;
                 self.show_realm_summary = !self.show_realm_summary;
                 if self.show_realm_summary {
                     self.show_chronicle = false;
                     self.show_factions = false;
                 }
+            }
+            UiAction::ToggleFrontierDetails => {
+                self.action_review = None;
+                self.show_frontier_details = !self.show_frontier_details;
+                if self.show_frontier_details {
+                    self.show_chronicle = false;
+                    self.show_factions = false;
+                    self.show_realm_summary = false;
+                }
+            }
+            UiAction::SetFrontierDetailsTab(tab) => {
+                self.frontier_details_tab = tab;
             }
             UiAction::OpenActionReview(review) => {
                 self.action_review = Some(review);
@@ -454,6 +481,7 @@ impl Game {
                 self.show_chronicle = false;
                 self.show_factions = false;
                 self.show_realm_summary = false;
+                self.show_frontier_details = false;
                 self.action_review = None;
                 self.pending_exit_warning = None;
                 self.screen = GameScreen::Title;
