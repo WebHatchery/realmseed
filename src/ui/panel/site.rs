@@ -2,7 +2,9 @@
 
 use crate::data::SiteCategory;
 use crate::state::{SettlementStatus, SiteKnowledge};
-use crate::ui::{style, virtual_icon_button, UiAction, UiContext};
+use crate::ui::{
+    inspectable_button, style, virtual_icon_button, ActionReview, UiAction, UiContext,
+};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
@@ -235,25 +237,29 @@ pub(super) fn draw_independent_actions(
     let trade_status = ctx.session.independent_trade_status(ctx.data);
     let integration_status = ctx.session.integration_status(ctx.data);
     let half = (content.w - 8.0) / 2.0;
-    if virtual_icon_button(
+    if inspectable_button(
         Rect::new(content.x, y + 20.0, half, 30.0),
         &ctx.data.text("ui.open_trade"),
-        style::IconKind::Wealth,
-        input_enabled && trade_status.enabled,
+        trade_status.enabled,
+        input_enabled,
         ButtonTone::Primary,
         pointer,
     ) {
-        actions.push(UiAction::OpenIndependentTrade);
+        actions.push(UiAction::OpenActionReview(
+            ActionReview::OpenIndependentTrade,
+        ));
     }
-    if virtual_icon_button(
+    if inspectable_button(
         Rect::new(content.x + half + 8.0, y + 20.0, half, 30.0),
         &ctx.data.text("ui.integrate"),
-        style::IconKind::Crown,
-        input_enabled && integration_status.enabled,
+        integration_status.enabled,
+        input_enabled,
         ButtonTone::Positive,
         pointer,
     ) {
-        actions.push(UiAction::BeginIndependentIntegration);
+        actions.push(UiAction::OpenActionReview(
+            ActionReview::BeginIndependentIntegration,
+        ));
     }
     draw_text_block(
         &ctx.data
@@ -278,15 +284,15 @@ pub(super) fn draw_found_camp_action(
     y: f32,
 ) -> f32 {
     let status = ctx.session.founding_status(ctx.data);
-    if virtual_icon_button(
+    if inspectable_button(
         Rect::new(content.x, y, content.w, 34.0),
         &ctx.data.text("ui.found_camp"),
-        style::IconKind::Castle,
-        input_enabled && status.enabled,
+        status.enabled,
+        input_enabled,
         ButtonTone::Positive,
         pointer,
     ) {
-        actions.push(UiAction::FoundCamp);
+        actions.push(UiAction::OpenActionReview(ActionReview::FoundCamp));
     }
     draw_text_block(
         &status.reason,

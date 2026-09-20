@@ -1,6 +1,6 @@
 //! Faction, independent settlement, and wilderness pressure overlay.
 
-use super::{style, virtual_button, UiAction, UiContext};
+use super::{inspectable_button, style, virtual_button, ActionReview, UiAction, UiContext};
 use crate::data::FactionGoal;
 use crate::state::{IntegrationState, WildernessPressureState};
 use macroquad::prelude::*;
@@ -21,6 +21,7 @@ pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
     let rect = super::centered_modal_rect(ctx, 984.0, 650.0);
     style::draw_panel(rect);
     let content = rect.inset(24.0);
+    let input_enabled = ctx.action_review.is_none();
 
     style::draw_framed_icon(
         style::IconKind::Danger,
@@ -42,7 +43,7 @@ pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
     if virtual_button(
         Rect::new(content.right() - 86.0, content.y + 14.0, 86.0, 32.0),
         &ctx.data.text("ui.close"),
-        true,
+        input_enabled,
         ButtonTone::Secondary,
         ctx.pointer,
     ) {
@@ -59,6 +60,7 @@ pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
     draw_campaign_controls(
         ctx,
         ctx.pointer,
+        input_enabled,
         actions,
         Rect::new(content.x, body_y + body_h * 0.64, column_w, body_h * 0.32),
     );
@@ -164,6 +166,7 @@ fn draw_rival(ctx: &UiContext<'_>, rect: Rect) {
 fn draw_campaign_controls(
     ctx: &UiContext<'_>,
     pointer: Pointer,
+    input_enabled: bool,
     actions: &mut Vec<UiAction>,
     rect: Rect,
 ) {
@@ -226,7 +229,7 @@ fn draw_campaign_controls(
                     28.0,
                 ),
                 &ambition.name.replace(" Charter", ""),
-                true,
+                input_enabled,
                 ButtonTone::Primary,
                 pointer,
             ) {
@@ -259,7 +262,7 @@ fn draw_campaign_controls(
                 if virtual_button(
                     Rect::new(rect.x, y - 14.0, rect.w, 22.0),
                     &label,
-                    true,
+                    input_enabled,
                     ButtonTone::Secondary,
                     pointer,
                 ) {
@@ -284,7 +287,7 @@ fn draw_campaign_controls(
     let project_w = (rect.w - 12.0) / 3.0;
     for (index, project) in ctx.data.campaign_balance.projects.iter().enumerate() {
         let status = ctx.session.project_status(ctx.data, &project.id);
-        if virtual_button(
+        if inspectable_button(
             Rect::new(
                 rect.x + index as f32 * (project_w + 6.0),
                 y,
@@ -293,10 +296,13 @@ fn draw_campaign_controls(
             ),
             &project.name,
             status.enabled,
+            input_enabled,
             ButtonTone::Secondary,
             pointer,
         ) {
-            actions.push(UiAction::CompleteProject(project.id.clone()));
+            actions.push(UiAction::OpenActionReview(ActionReview::CompleteProject(
+                project.id.clone(),
+            )));
         }
     }
     y += if compact { 30.0 } else { 34.0 };
@@ -304,7 +310,7 @@ fn draw_campaign_controls(
     let institution_w = (rect.w - 8.0) / 2.0;
     for (index, institution) in ctx.data.campaign_balance.institutions.iter().enumerate() {
         let status = ctx.session.institution_status(ctx.data, &institution.id);
-        if virtual_button(
+        if inspectable_button(
             Rect::new(
                 rect.x + index as f32 * (institution_w + 8.0),
                 y,
@@ -313,10 +319,13 @@ fn draw_campaign_controls(
             ),
             &institution.name,
             status.enabled,
+            input_enabled,
             ButtonTone::Positive,
             pointer,
         ) {
-            actions.push(UiAction::ActivateInstitution(institution.id.clone()));
+            actions.push(UiAction::OpenActionReview(
+                ActionReview::ActivateInstitution(institution.id.clone()),
+            ));
         }
     }
 }

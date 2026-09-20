@@ -202,6 +202,16 @@ history to merge. Keep this tracked `TODO.md` filename (the project-root
   upgrade, road, Wardens, trade/integration, project, and event choices. Cover
   no actions, resource shortage, unmet unlock, and enabled states without
   keyboard or hover. Preserve existing action-validation regression tests.
+  **Progress (2026-09-20):** Added a shared tap-accessible action review for
+  founding, upgrades, roads, Wardens, independent trade/integration, campaign
+  projects/institutions, and event choices. Reviews reuse state-owned status
+  text, keep blocked options inspectable, and require an explicit confirmation
+  before consequential actions execute; Escape and Cancel preserve state.
+  Enabled and blocked normal/minimum captures are saved as
+  `ui_action_review.png`, `ui_blocked_action_review.png`,
+  `ui_minimum_action_review.png`, and `ui_minimum_blocked_action_review.png`.
+  Live touch-only confirmation/cancellation across every action remains
+  pending because the native-app UI bridge is unavailable in this environment.
 
 - [ ] **UI-06 — Make every known route and active local problem reachable.**
   **Depends on:** UI-01/02/05.

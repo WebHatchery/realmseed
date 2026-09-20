@@ -1,6 +1,6 @@
 //! Compact route and supply controls for the selected-site panel.
 
-use super::{style, virtual_icon_button, UiAction, UiContext};
+use super::{inspectable_button, style, ActionReview, UiAction, UiContext};
 use crate::data::RouteLevel;
 use crate::state::{RouteCondition, RouteRuntimeState};
 use macroquad::prelude::*;
@@ -65,15 +65,17 @@ pub(super) fn draw_route_section(
         .regional_project_status(ctx.data, &site.region_id);
     let project_w = 132.0;
     let project_rect = Rect::new(content.right() - project_w, y + 2.0, project_w, 25.0);
-    if virtual_icon_button(
+    if inspectable_button(
         project_rect,
         &ctx.data.text("ui.wardens"),
-        style::IconKind::Road,
-        input_enabled && project_status.enabled,
+        project_status.enabled,
+        input_enabled,
         ButtonTone::Secondary,
         pointer,
     ) {
-        actions.push(UiAction::CompleteRegionalProject(site.region_id.clone()));
+        actions.push(UiAction::OpenActionReview(
+            ActionReview::CompleteRegionalProject(site.region_id.clone()),
+        ));
     }
     style::hover_tooltip(
         tooltip,
@@ -196,8 +198,10 @@ fn draw_route_row(
     );
 
     let status = ctx.session.route_action_status(ctx.data, &route.id);
-    if input_enabled && status.enabled && pointer.released_on(touch_area(row_rect)) {
-        actions.push(UiAction::BuildOrUpgradeRoute(route.id.clone()));
+    if input_enabled && pointer.released_on(touch_area(row_rect)) {
+        actions.push(UiAction::OpenActionReview(
+            ActionReview::BuildOrUpgradeRoute(route.id.clone()),
+        ));
     }
     let tooltip_id = format!("route_{}", route.id);
     let route_action = ctx.session.route_action_label(ctx.data, &route.id);

@@ -1,6 +1,6 @@
 //! Event modal rendering and choice intents.
 
-use super::{style, virtual_button, UiAction, UiContext};
+use super::{inspectable_button, style, virtual_button, ActionReview, UiAction, UiContext};
 use crate::state::fill_event_text;
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
@@ -96,14 +96,17 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>)
     for choice in &template.choices {
         let status = ctx.session.event_choice_status(ctx.data, choice);
         let button_w = (content.w * 0.32).clamp(220.0, 270.0);
-        if virtual_button(
+        if inspectable_button(
             Rect::new(content.x, y, button_w, 34.0),
             &choice.label,
             status.enabled,
+            ctx.action_review.is_none(),
             ButtonTone::Primary,
             ctx.pointer,
         ) {
-            actions.push(UiAction::ResolveEventChoice(choice.id.clone()));
+            actions.push(UiAction::OpenActionReview(
+                ActionReview::ResolveEventChoice(choice.id.clone()),
+            ));
         }
         draw_text_block(
             &choice.visible_consequence,
@@ -131,7 +134,7 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>)
                 32.0,
             ),
             &ctx.data.text("ui.defer"),
-            true,
+            ctx.action_review.is_none(),
             ButtonTone::Secondary,
             ctx.pointer,
         )

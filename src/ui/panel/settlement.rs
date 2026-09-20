@@ -3,7 +3,9 @@
 use super::readouts::{draw_focus_card, draw_metric_grid, draw_store_grid, focus_icon};
 use crate::data::ActiveIssueState;
 use crate::state::SettlementRuntimeState;
-use crate::ui::{style, virtual_icon_button, UiAction, UiContext};
+use crate::ui::{
+    inspectable_button, style, virtual_icon_button, ActionReview, UiAction, UiContext,
+};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::HoverTooltip;
@@ -129,17 +131,17 @@ pub(super) fn draw_existing_settlement(
     );
     let upgrade_rect = Rect::new(content.x, focus_grid_bottom + 9.0, content.w, 28.0);
     let upgrade_status = ctx.session.upgrade_status(ctx.data);
-    if virtual_icon_button(
+    if inspectable_button(
         upgrade_rect,
         &ctx.session.selected_upgrade_label(ctx.data),
-        style::IconKind::Castle,
-        interaction.input_enabled && upgrade_status.enabled,
+        upgrade_status.enabled,
+        interaction.input_enabled,
         ButtonTone::Positive,
         interaction.pointer,
     ) {
         interaction
             .actions
-            .push(UiAction::UpgradeSelectedSettlement);
+            .push(UiAction::OpenActionReview(ActionReview::UpgradeSettlement));
     }
     style::hover_tooltip(
         interaction.tooltip,

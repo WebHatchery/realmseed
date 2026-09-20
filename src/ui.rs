@@ -1,6 +1,7 @@
 //! Immediate-mode UI for the Realmseed map, site panel, and chronicle.
 
 use macroquad_toolkit::ui::draw_ui_text_ex;
+mod action_review;
 mod advisor;
 mod endgame;
 mod event;
@@ -65,6 +66,9 @@ pub enum UiAction {
     BeginIndependentIntegration,
     ToggleFactionPanel,
     ToggleRealmSummary,
+    OpenActionReview(ActionReview),
+    ConfirmActionReview,
+    CancelActionReview,
     SetMapOverlay(MapOverlay),
     ZoomMapIn,
     ZoomMapOut,
@@ -75,6 +79,19 @@ pub enum UiAction {
     ToggleChronicle,
     EndgameNewGame,
     EndgameReturnToTitle,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ActionReview {
+    FoundCamp,
+    UpgradeSettlement,
+    BuildOrUpgradeRoute(String),
+    CompleteRegionalProject(String),
+    ResolveEventChoice(String),
+    OpenIndependentTrade,
+    BeginIndependentIntegration,
+    CompleteProject(String),
+    ActivateInstitution(String),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -105,6 +122,7 @@ pub struct UiContext<'a> {
     pub show_chronicle: bool,
     pub show_factions: bool,
     pub show_realm_summary: bool,
+    pub action_review: Option<&'a ActionReview>,
     pub input_blocked: bool,
     pub touch_claimed: bool,
     pub pointer: Pointer,
@@ -170,6 +188,7 @@ pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAct
         || ctx.show_chronicle
         || ctx.show_factions
         || ctx.show_realm_summary
+        || ctx.action_review.is_some()
         || event_open
         || endgame_open;
     let input_enabled = !modal_open && !ctx.touch_claimed;
@@ -193,6 +212,9 @@ pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAct
         panel::draw_chronicle_overlay(&ctx, &mut actions);
     } else if ctx.show_realm_summary {
         advisor::draw_realm_summary_overlay(&ctx, &mut actions);
+    }
+    if ctx.action_review.is_some() {
+        action_review::draw_action_review(&ctx, &mut actions);
     }
 
     actions
@@ -438,6 +460,41 @@ pub(super) fn virtual_button(
         TextStyle::new(
             16.0,
             if enabled {
+                if matches!(tone, ButtonTone::Primary) {
+                    Color::new(0.86, 0.98, 1.0, 1.0)
+                } else {
+                    style::TEXT_BRIGHT
+                }
+            } else {
+                style::TEXT_DIM
+            },
+        ),
+    );
+    activated
+}
+
+pub(super) fn inspectable_button(
+    rect: Rect,
+    text: &str,
+    status_enabled: bool,
+    input_enabled: bool,
+    tone: ButtonTone,
+    pointer: Pointer,
+) -> bool {
+    let hit_rect = touch_area(rect);
+    let hovered = input_enabled && pointer.hovering_over(rect);
+    let pressed = input_enabled && pointer.pressing(hit_rect);
+    let activated = input_enabled && pointer.released_on(hit_rect);
+    style::draw_button_frame(rect, tone, status_enabled, hovered, pressed);
+    draw_text_centered_in_box_ex(
+        text,
+        rect.x + 8.0,
+        rect.y + if pressed { 2.0 } else { 0.0 },
+        rect.w - 16.0,
+        rect.h,
+        TextStyle::new(
+            16.0,
+            if status_enabled {
                 if matches!(tone, ButtonTone::Primary) {
                     Color::new(0.86, 0.98, 1.0, 1.0)
                 } else {
