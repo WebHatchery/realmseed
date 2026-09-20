@@ -386,6 +386,12 @@ history to merge. Keep this tracked `TODO.md` filename (the project-root
   capital cluster, map edges, discovered dense area, min/max zoom, resize,
   restart after panning. Exercise mouse drag, one-finger drag, pinch, +/−,
   release over a marker/control, and recenter. Record actual reproductions.
+  **Progress (2026-09-20):** Rechecked the recomposed map and compact control
+  ownership through deterministic normal/minimum captures while implementing
+  UI-01/03/05/06. No screenshot-only camera defect was promoted to a code
+  change. Native/browser canvases, DPI variants, gesture ownership, and
+  recenter/restart interaction remain unverified because the available desktop
+  bridge exposes no attachable native game window or touch surface.
 
 - [ ] **UI-11 — Complete current-build dense-state visual and touch verification.**
   **Depends on:** UI-01–10; capture a baseline before implementation where useful.
@@ -417,3 +423,9 @@ history to merge. Keep this tracked `TODO.md` filename (the project-root
   without parameters after meaningful game changes and report its result;
   this documentation-only audit does not require publishing. Keep `.rs`
   files within 800 physical lines and preserve useful tests in `tests/`.
+  **Progress (2026-09-20):** Current evidence now covers the recomposed normal
+  and minimum gameplay, action review, frontier details, reports/Chronicle,
+  faction pressure/campaign planning, and Help overlays. Crisis, long-play
+  dense event choices, endgame, settings/recovery, DPI variants, and live
+  touch behavior still need the supported-size interaction matrix before this
+  audit can be marked complete.
