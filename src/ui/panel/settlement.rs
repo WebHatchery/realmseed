@@ -132,6 +132,15 @@ pub(super) fn draw_existing_settlement(
         settlement,
         focus_layout,
     );
+    if !settlement.is_active()
+        || ctx
+            .data
+            .settlement_balance
+            .upgrade_from(settlement.tier)
+            .is_none()
+    {
+        return focus_grid_bottom + 10.0;
+    }
     let upgrade_rect = Rect::new(content.x, focus_grid_bottom + 9.0, content.w, 28.0);
     let upgrade_status = ctx.session.upgrade_status(ctx.data);
     if inspectable_button(

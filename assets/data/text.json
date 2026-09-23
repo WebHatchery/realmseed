@@ -329,7 +329,7 @@
     { "id": "ui.rumor_status", "text": "Rumor" },
     { "id": "ui.unclaimed", "text": "Unclaimed" },
     { "id": "ui.site_detail", "text": "Region: {region}\nType: {type}\nOwner: {owner}\nTraits: {traits}\n{description}" },
-    { "id": "ui.site_rumor_detail", "text": "Region: {region}\nKnown status: {status}\n{reason}" },
+    { "id": "ui.site_rumor_detail", "text": "Region: {region}" },
     { "id": "ui.independent_stats", "text": "Trust {trust}  Autonomy {autonomy}  Rival {rival}  {state}" },
     { "id": "ui.need", "text": "Need: {need}" },
     { "id": "ui.population", "text": "Population" },

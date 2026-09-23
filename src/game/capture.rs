@@ -15,6 +15,7 @@ pub(super) fn begin_capture_scene(game: &mut Game, scene: &str) {
     game.show_realm_summary = false;
     game.show_frontier_details = false;
     game.action_review = None;
+    let scene = scene.strip_prefix("minimum_").unwrap_or(scene);
     match scene {
         "title" | "menu" => {
             game.screen = GameScreen::Title;
@@ -59,6 +60,27 @@ pub(super) fn begin_capture_scene(game: &mut Game, scene: &str) {
             game.session.advance_season(&game.data);
             game.session.pending_event = None;
             game.show_season_report = true;
+            game.screen = GameScreen::Playing;
+        }
+        "chronicle_single" => {
+            game.session = GameSession::new(&game.data);
+            game.show_chronicle = true;
+            game.screen = GameScreen::Playing;
+        }
+        "lost_settlement" | "city_settlement" => {
+            game.session = GameSession::new(&game.data);
+            if let Some(settlement) = game.session.settlements.first_mut() {
+                if scene == "lost_settlement" {
+                    settlement.status = crate::state::SettlementStatus::Lost;
+                } else {
+                    settlement.tier = crate::data::SettlementTier::City;
+                }
+            }
+            game.screen = GameScreen::Playing;
+        }
+        "rumored_site" => {
+            game.session = GameSession::new(&game.data);
+            game.session.select_site(&game.data, "lowmeadow");
             game.screen = GameScreen::Playing;
         }
         "chronicle_dense" => {
@@ -115,7 +137,7 @@ pub(super) fn begin_capture_scene(game: &mut Game, scene: &str) {
             game.action_review = Some(ActionReview::FoundCamp);
             game.screen = GameScreen::Playing;
         }
-        "blocked_review" => {
+        "blocked_review" | "blocked_action_review" => {
             game.session = GameSession::new(&game.data);
             game.session.select_site(&game.data, "charter_hall");
             game.action_review = Some(ActionReview::UpgradeSettlement);

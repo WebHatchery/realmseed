@@ -37,45 +37,19 @@ pub(super) fn draw_action_review(ctx: &UiContext<'_>, actions: &mut Vec<UiAction
     );
     style::draw_divider(content.x, content.y + 76.0, content.w);
 
-    let status_text = if status.enabled {
-        ctx.data.text("ui.action_review_ready")
-    } else {
-        ctx.data
-            .text_with("ui.action_review_blocked", &[("{reason}", &status.reason)])
-    };
-    draw_ui_text_ex(
-        &status_text,
-        content.x,
-        content.y + 108.0,
-        TextStyle::new(
-            16.0,
-            if status.enabled {
-                style::GREEN
-            } else {
-                style::RED
-            },
-        )
-        .params(),
-    );
     draw_text_block(
         &status.reason,
         content.x,
-        content.y + 130.0,
+        content.y + 96.0,
         content.w,
-        64.0,
+        130.0,
         16.0,
         3.0,
-        style::TEXT,
-    );
-    draw_text_block(
-        &ctx.data.text("ui.action_review_hint"),
-        content.x,
-        content.y + 202.0,
-        content.w,
-        34.0,
-        13.0,
-        2.0,
-        style::TEXT_DIM,
+        if status.enabled {
+            style::TEXT
+        } else {
+            style::RED
+        },
     );
 
     let button_y = content.bottom() - 34.0;

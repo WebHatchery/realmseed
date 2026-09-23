@@ -120,6 +120,10 @@ pub(in crate::ui) fn draw_chronicle_overlay(ctx: &UiContext<'_>, actions: &mut V
         );
     }
 
+    if total_pages <= 1 {
+        return;
+    }
+
     let page_label = ctx.data.text_with(
         "ui.page_of",
         &[

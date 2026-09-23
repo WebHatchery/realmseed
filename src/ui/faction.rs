@@ -20,7 +20,11 @@ pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
         Color::new(0.004, 0.010, 0.012, 0.70),
     );
 
-    let rect = super::centered_modal_rect(ctx, 984.0, 650.0);
+    let height = match ctx.faction_view {
+        FactionView::Pressure => 650.0,
+        FactionView::Campaign => 380.0,
+    };
+    let rect = super::centered_modal_rect(ctx, 984.0, height);
     style::draw_panel(rect);
     let content = rect.inset(24.0);
     let input_enabled = ctx.action_review.is_none();
@@ -31,18 +35,13 @@ pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
         48.0,
         Color::new(0.13, 0.08, 0.05, 0.96),
     );
-    style::draw_panel_title(
-        &ctx.data.text("ui.frontier_pressure"),
-        content.x + 68.0,
-        content.y + 17.0,
-    );
     draw_ui_text_ex(
         &ctx.data.text(match ctx.faction_view {
             FactionView::Pressure => "ui.faction_pressure",
             FactionView::Campaign => "ui.campaign",
         }),
         content.x + 68.0,
-        content.y + 48.0,
+        content.y + 36.0,
         TextStyle::new(25.0, style::TEXT_BRIGHT).params(),
     );
     if virtual_button(
@@ -213,14 +212,13 @@ fn draw_campaign_controls(
     rect: Rect,
 ) {
     let compact = rect.h < 182.0;
-    draw_section_heading(ctx, "ui.campaign", rect.x, rect.y, rect.w);
     draw_ui_text_ex(
         &ctx.data.text("ui.ambition"),
         rect.x,
-        rect.y + 32.0,
+        rect.y + 14.0,
         TextStyle::new(15.0, style::GOLD).params(),
     );
-    let mut y = rect.y + if compact { 50.0 } else { 54.0 };
+    let mut y = rect.y + if compact { 32.0 } else { 36.0 };
     if let Some(ambition_id) = &ctx.session.selected_ambition_id {
         let name = ctx
             .data
@@ -283,17 +281,6 @@ fn draw_campaign_controls(
 
     style::draw_divider(rect.x, y + 2.0, rect.w);
     y += if compact { 16.0 } else { 22.0 };
-
-    if virtual_button(
-        Rect::new(rect.x, y - 12.0, rect.w, 30.0),
-        &ctx.data.text("ui.season_report"),
-        input_enabled,
-        ButtonTone::Secondary,
-        pointer,
-    ) {
-        actions.push(UiAction::ToggleSeasonReport);
-    }
-    y += if compact { 32.0 } else { 36.0 };
 
     let project_w = (rect.w - 12.0) / 3.0;
     for (index, project) in ctx.data.campaign_balance.projects.iter().enumerate() {

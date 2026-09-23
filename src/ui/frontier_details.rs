@@ -144,16 +144,6 @@ fn draw_routes(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>, body: Rect) {
             ActionReview::CompleteRegionalProject(site.region_id.clone()),
         ));
     }
-    draw_text_block(
-        &ctx.data.text("ui.route_details_hint"),
-        body.x,
-        body.y + 12.0,
-        body.w - 180.0,
-        28.0,
-        13.0,
-        2.0,
-        style::TEXT_DIM,
-    );
     let mut y = body.y + 42.0;
     for route in routes {
         draw_route_detail(ctx, actions, body, y, route, &site.id);
@@ -250,17 +240,7 @@ fn draw_issues(ctx: &UiContext<'_>, body: Rect) {
         );
         return;
     }
-    draw_text_block(
-        &ctx.data.text("ui.issue_details_hint"),
-        body.x,
-        body.y + 12.0,
-        body.w,
-        28.0,
-        13.0,
-        2.0,
-        style::TEXT_DIM,
-    );
-    let mut y = body.y + 42.0;
+    let mut y = body.y;
     for issue in issues {
         let row = Rect::new(body.x, y, body.w, 58.0);
         draw_surface(
@@ -282,12 +262,6 @@ fn draw_issues(ctx: &UiContext<'_>, body: Rect) {
                 ("{age}", &issue.age_seasons.to_string()),
                 ("{cause}", &trigger),
             ],
-        );
-        draw_ui_text_ex(
-            &ctx.data.text("ui.active_issue"),
-            row.x + 12.0,
-            row.y + 18.0,
-            TextStyle::new(14.0, style::RED).params(),
         );
         draw_text_block(
             &detail,

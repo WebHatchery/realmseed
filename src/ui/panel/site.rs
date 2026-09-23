@@ -49,7 +49,7 @@ pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> 
         &title,
         content.x + 58.0,
         y + 1.0,
-        content.w - 150.0,
+        content.w - 58.0,
         34.0,
         22.0,
         2.0,
@@ -57,25 +57,6 @@ pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> 
     );
 
     let settlement = ctx.session.settlement_at_site(&site.id);
-    let active = knowledge == SiteKnowledge::Known
-        && settlement.is_some_and(|settlement| settlement.is_active());
-    let status = if knowledge == SiteKnowledge::Known {
-        settlement
-            .map(|settlement| settlement_status_label(ctx, settlement.status))
-            .unwrap_or_else(|| ctx.data.text("ui.known"))
-    } else {
-        ctx.data.text("ui.rumor_status")
-    };
-    draw_badge(
-        Rect::new(content.right() - 86.0, y, 86.0, 27.0),
-        &status,
-        if active {
-            Color::new(0.10, 0.25, 0.09, 0.95)
-        } else {
-            Color::new(0.15, 0.16, 0.12, 0.95)
-        },
-        if active { style::GREEN } else { style::TEXT },
-    );
     let site_subtitle = ctx
         .session
         .settlement_at_site(&site.id)
@@ -121,19 +102,8 @@ pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> 
             ],
         )
     } else {
-        let scout_status = ctx.session.scout_status(ctx.data);
-        let known_status = match knowledge {
-            SiteKnowledge::Known => ctx.data.text("ui.known"),
-            SiteKnowledge::Unknown => ctx.data.text("ui.unknown"),
-        };
-        ctx.data.text_with(
-            "ui.site_rumor_detail",
-            &[
-                ("{region}", &region_name),
-                ("{status}", &known_status),
-                ("{reason}", &scout_status.reason),
-            ],
-        )
+        ctx.data
+            .text_with("ui.site_rumor_detail", &[("{region}", &region_name)])
     };
     draw_text_block(
         &known_text,

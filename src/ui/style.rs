@@ -13,7 +13,6 @@ pub(super) const PANEL_DARK: Color = Color::new(0.014, 0.026, 0.030, 0.96);
 pub(super) const GOLD: Color = Color::new(0.86, 0.68, 0.36, 1.0);
 pub(super) const GOLD_DIM: Color = Color::new(0.56, 0.43, 0.24, 0.78);
 pub(super) const CYAN: Color = Color::new(0.20, 0.82, 0.90, 1.0);
-pub(super) const GREEN: Color = Color::new(0.44, 0.75, 0.28, 1.0);
 pub(super) const RED: Color = Color::new(0.90, 0.24, 0.20, 1.0);
 pub(super) const TEXT: Color = Color::new(0.90, 0.86, 0.74, 1.0);
 pub(super) const TEXT_BRIGHT: Color = Color::new(0.98, 0.94, 0.84, 1.0);

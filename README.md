@@ -93,7 +93,11 @@ The Realm summary is available from the footer when realm-wide stability,
 loyalty, supply, or danger needs review. Detailed seasonal results belong in
 the Chronicle and report surfaces rather than permanently shrinking the map.
 Event choices and campaign planning use focused overlays so their costs,
-risks, and consequences can be compared before committing.
+risks, and consequences can be compared before committing. Campaign planning
+uses a shorter overlay with one title and its decision controls. Action review
+shows a reason once; Help carries the confirmation instructions. Chronicle
+paging appears only for multiple pages. Lost settlements and final-tier cities
+retain their status without presenting an impossible upgrade.
 
 The normal baseline is 1280×720. The minimum supported play area is landscape
 800×560; the compact layout keeps the map as the main surface and places the
