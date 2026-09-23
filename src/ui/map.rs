@@ -31,7 +31,18 @@ pub(super) fn draw_map_panel(
     draw_map_vignette(map_rect);
     draw_overlay_tabs(ctx, rect, ctx.pointer, input_enabled, actions);
     draw_map_controls(rect, ctx.pointer, input_enabled, actions);
-    draw_map_caption(ctx, rect);
+    if !ctx.guidance_dismissed {
+        draw_map_caption(ctx, rect);
+        if virtual_button(
+            Rect::new(rect.right() - 90.0, rect.bottom() - 39.0, 78.0, 30.0),
+            &ctx.data.text("ui.got_it"),
+            input_enabled,
+            ButtonTone::Secondary,
+            ctx.pointer,
+        ) {
+            actions.push(UiAction::DismissGuidance);
+        }
+    }
 
     if input_enabled && ctx.pointer.released {
         if let Some(site_id) = map_sites::picked_site_id(ctx, &view, ctx.pointer.position) {

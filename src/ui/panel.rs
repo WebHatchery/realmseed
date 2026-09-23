@@ -27,7 +27,7 @@ pub(super) fn draw_side_panel(
 
     let content = rect.inset(18.0);
     let mut y = content.y + 2.0;
-    y = site::draw_selected_site(ctx, content, y);
+    y = site::draw_selected_site(ctx, content, y, input_enabled, actions);
     y = draw_settlement_section(ctx, tooltip, input_enabled, actions, content, y + 2.0);
     routes::draw_route_section(ctx, input_enabled, actions, content, y + 4.0);
 }

@@ -165,12 +165,7 @@ impl GameSession {
         let Some(project) = data.campaign_balance.project(project_id) else {
             return SettlementActionStatus::disabled(data.text("state.unknown_project"));
         };
-        let target_id = self.project_target_id(data, project);
-        if self
-            .completed_projects
-            .iter()
-            .any(|completed| completed.id == project.id && completed.target_id == target_id)
-        {
+        if self.is_project_completed(data, project) {
             return SettlementActionStatus::disabled(data.text("state.project_complete"));
         }
         if project.action_cost > self.council_actions_remaining {
@@ -193,6 +188,13 @@ impl GameSession {
                 ("{description}", &project.description),
             ],
         ))
+    }
+
+    pub fn is_project_completed(&self, data: &GameData, project: &ProjectDef) -> bool {
+        let target_id = self.project_target_id(data, project);
+        self.completed_projects
+            .iter()
+            .any(|done| done.id == project.id && done.target_id == target_id)
     }
 
     pub fn complete_project(

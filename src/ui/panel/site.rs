@@ -3,13 +3,20 @@
 use crate::data::SiteCategory;
 use crate::state::{SettlementStatus, SiteKnowledge};
 use crate::ui::{
-    inspectable_button, style, virtual_icon_button, ActionReview, UiAction, UiContext,
+    inspectable_button, style, virtual_button, virtual_icon_button, ActionReview, ReadingView,
+    UiAction, UiContext,
 };
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
 
-pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> f32 {
+pub(super) fn draw_selected_site(
+    ctx: &UiContext<'_>,
+    content: Rect,
+    y: f32,
+    input_enabled: bool,
+    actions: &mut Vec<UiAction>,
+) -> f32 {
     let Some(site) = ctx.session.selected_site(ctx.data) else {
         draw_ui_text_ex(
             &ctx.data.text("ui.no_site"),
@@ -56,7 +63,6 @@ pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> 
         style::TEXT_BRIGHT,
     );
 
-    let settlement = ctx.session.settlement_at_site(&site.id);
     let site_subtitle = ctx
         .session
         .settlement_at_site(&site.id)
@@ -76,19 +82,37 @@ pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> 
         TextStyle::new(13.0, style::GOLD).params(),
     );
 
-    if settlement.is_some() {
-        return y + if ctx.ui.logical_width < 1040.0 {
-            48.0
-        } else {
-            58.0
-        };
+    if knowledge == SiteKnowledge::Known
+        && virtual_button(
+            Rect::new(content.right() - 76.0, y + 29.0, 76.0, 28.0),
+            &ctx.data.text("ui.details"),
+            input_enabled,
+            ButtonTone::Secondary,
+            ctx.pointer,
+        )
+    {
+        actions.push(UiAction::OpenReading(ReadingView::Site));
     }
 
     let known_text = if knowledge == SiteKnowledge::Known {
-        let owner = site
-            .owner
-            .clone()
-            .unwrap_or_else(|| ctx.data.text("ui.unclaimed"));
+        let owner = if ctx
+            .session
+            .rival_faction
+            .controlled_locations
+            .contains(&site.id)
+        {
+            ctx.session.rival_faction.name.clone()
+        } else if let Some(settlement) = ctx.session.settlement_at_site(&site.id) {
+            ctx.data.text(if settlement.is_active() {
+                "ui.charter_owner"
+            } else {
+                "ui.unclaimed"
+            })
+        } else {
+            site.owner
+                .clone()
+                .unwrap_or_else(|| ctx.data.text("ui.unclaimed"))
+        };
         let site_type = site.type_label();
         let traits = site.traits.join(", ");
         ctx.data.text_with(
@@ -98,7 +122,6 @@ pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> 
                 ("{type}", &site_type),
                 ("{owner}", &owner),
                 ("{traits}", &traits),
-                ("{description}", &site.description),
             ],
         )
     } else {
@@ -108,15 +131,15 @@ pub(super) fn draw_selected_site(ctx: &UiContext<'_>, content: Rect, y: f32) -> 
     draw_text_block(
         &known_text,
         content.x,
-        y + 70.0,
+        y + 58.0,
         content.w,
-        54.0,
-        15.0,
-        3.0,
+        44.0,
+        12.0,
+        2.0,
         style::TEXT_DIM,
     );
 
-    y + 130.0
+    y + 106.0
 }
 
 fn settlement_tier_label(ctx: &UiContext<'_>, tier: crate::data::SettlementTier) -> String {

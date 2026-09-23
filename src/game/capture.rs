@@ -10,6 +10,9 @@ pub(super) fn begin_capture_scene(game: &mut Game, scene: &str) {
     game.show_season_report = false;
     game.show_help = false;
     game.show_focus_choices = false;
+    game.reading = None;
+    game.reading_page = 0;
+    game.guidance_dismissed = false;
     game.chronicle_page = 0;
     game.show_factions = false;
     game.faction_view = FactionView::Pressure;
@@ -121,6 +124,60 @@ pub(super) fn begin_capture_scene(game: &mut Game, scene: &str) {
             game.show_factions = true;
             game.faction_view = FactionView::Campaign;
             game.screen = GameScreen::Playing;
+        }
+        "details" | "guidance_dismissed" | "ending" | "event" | "event_details" | "history"
+        | "completed" | "completed_campaign" => {
+            game.session = GameSession::new(&game.data);
+            game.screen = GameScreen::Playing;
+            match scene {
+                "details" => game.reading = Some(crate::ui::ReadingView::Site),
+                "guidance_dismissed" => game.guidance_dismissed = true,
+                "event" | "event_details" => {
+                    let _ = game.session.force_next_event(&game.data);
+                    if scene == "event_details" {
+                        game.reading = Some(crate::ui::ReadingView::Events);
+                    }
+                }
+                "ending" => {
+                    for _ in 0..game.data.campaign_balance.campaign_turns {
+                        game.session.pending_event = None;
+                        game.session.advance_season(&game.data);
+                    }
+                }
+                "history" => {
+                    game.session.advance_season(&game.data);
+                    game.session.pending_event = None;
+                    game.show_factions = true;
+                    game.reading = Some(crate::ui::ReadingView::History);
+                }
+                "completed" | "completed_campaign" => {
+                    game.session.settlements[0].stored = crate::data::ResourceStock {
+                        food: 1000,
+                        timber: 1000,
+                        stone: 1000,
+                        wealth: 1000,
+                    };
+                    let projects: Vec<_> = game
+                        .data
+                        .campaign_balance
+                        .projects
+                        .iter()
+                        .map(|p| p.id.clone())
+                        .collect();
+                    for id in projects {
+                        game.session.council_actions_remaining = 3;
+                        game.session
+                            .complete_project(&game.data, &id)
+                            .expect("capture project");
+                    }
+                    game.show_factions = true;
+                    game.faction_view = FactionView::Campaign;
+                    if scene == "completed" {
+                        game.reading = Some(crate::ui::ReadingView::Completed);
+                    }
+                }
+                _ => {}
+            }
         }
         "focus_choices" => {
             game.session = GameSession::new(&game.data);

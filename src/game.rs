@@ -40,6 +40,9 @@ pub struct Game {
     show_season_report: bool,
     show_help: bool,
     show_focus_choices: bool,
+    reading: Option<ui::ReadingView>,
+    reading_page: usize,
+    guidance_dismissed: bool,
     chronicle_page: usize,
     show_factions: bool,
     faction_view: FactionView,
@@ -124,6 +127,9 @@ impl Game {
             show_season_report: false,
             show_help: false,
             show_focus_choices: false,
+            reading: None,
+            reading_page: 0,
+            guidance_dismissed: false,
             chronicle_page: 0,
             show_factions: false,
             faction_view: FactionView::Pressure,
@@ -177,11 +183,14 @@ impl Game {
                     || self.show_season_report
                     || self.show_help
                     || self.show_focus_choices
+                    || self.reading.is_some()
                     || self.show_factions
                     || self.show_realm_summary
                     || self.show_frontier_details
                     || self.action_review.is_some();
-                if input.escape_pressed && self.show_focus_choices {
+                if input.escape_pressed && self.reading.is_some() {
+                    self.events.push(UiAction::CloseReading);
+                } else if input.escape_pressed && self.show_focus_choices {
                     self.events.push(UiAction::ToggleFocusChoices);
                 } else if input.escape_pressed && self.action_review.is_some() {
                     self.events.push(UiAction::CancelActionReview);
@@ -297,6 +306,9 @@ impl Game {
                     show_season_report: self.show_season_report,
                     show_help: self.show_help,
                     show_focus_choices: self.show_focus_choices,
+                    reading: self.reading,
+                    reading_page: self.reading_page,
+                    guidance_dismissed: self.guidance_dismissed,
                     chronicle_page: self.chronicle_page,
                     show_factions: self.show_factions,
                     faction_view: self.faction_view,

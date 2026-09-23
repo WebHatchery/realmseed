@@ -1,7 +1,8 @@
 //! Faction, independent settlement, and wilderness pressure overlay.
 
 use super::{
-    inspectable_button, style, virtual_button, ActionReview, FactionView, UiAction, UiContext,
+    inspectable_button, style, virtual_button, ActionReview, FactionView, ReadingView, UiAction,
+    UiContext,
 };
 use crate::data::FactionGoal;
 use crate::state::{IntegrationState, WildernessPressureState};
@@ -22,7 +23,7 @@ pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
 
     let height = match ctx.faction_view {
         FactionView::Pressure => 650.0,
-        FactionView::Campaign => 380.0,
+        FactionView::Campaign => 430.0,
     };
     let rect = super::centered_modal_rect(ctx, 984.0, height);
     style::draw_panel(rect);
@@ -88,7 +89,7 @@ pub(super) fn draw_faction_overlay(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
             let column_gap = 24.0;
             let column_w = (content.w - column_gap) * 0.5;
             let right_x = content.x + column_w + column_gap;
-            draw_rival(ctx, Rect::new(content.x, body_y, column_w, body_h * 0.58));
+            draw_rival(ctx, Rect::new(content.x, body_y, column_w, body_h), actions);
             style::draw_vertical_divider(right_x - column_gap * 0.5, body_y, body_h - 10.0);
             draw_independents(
                 ctx,
@@ -116,7 +117,7 @@ fn faction_tab(ctx: &UiContext<'_>, rect: Rect, label: &str, view: FactionView) 
     )
 }
 
-fn draw_rival(ctx: &UiContext<'_>, rect: Rect) {
+fn draw_rival(ctx: &UiContext<'_>, rect: Rect, actions: &mut Vec<UiAction>) {
     let rival = &ctx.session.rival_faction;
     draw_section_heading(ctx, "ui.rival_clan", rect.x, rect.y, rect.w);
     draw_ui_text_ex(
@@ -152,55 +153,16 @@ fn draw_rival(ctx: &UiContext<'_>, rect: Rect) {
             (ctx.data.text("ui.border"), rival.border_pressure),
         ],
     );
-    draw_ui_text_ex(
-        &ctx.data.text("ui.recent_actions"),
-        rect.x,
-        rect.y + 132.0,
-        TextStyle::new(16.0, style::GOLD).params(),
-    );
-    let mut y = rect.y + 156.0;
-    for entry in rival.action_log.iter().rev().take(2) {
-        let target = entry
-            .target_site_id
-            .as_deref()
-            .and_then(|site_id| ctx.data.site(site_id))
-            .map(|site| site.name.clone())
-            .unwrap_or_else(|| ctx.data.text("state.frontier"));
-        let season = entry.season.label().to_owned();
-        let year = entry.year.to_string();
-        draw_text_block(
-            &ctx.data.text_with(
-                "ui.rival_action_log",
-                &[
-                    ("{season}", &season),
-                    ("{year}", &year),
-                    ("{action}", &entry.action),
-                    ("{target}", &target),
-                    ("{reason}", &entry.reason),
-                    ("{result}", &entry.result),
-                ],
-            ),
-            rect.x,
-            y,
-            rect.w,
-            44.0,
-            13.0,
-            2.0,
-            style::TEXT,
-        );
-        y += 48.0;
-    }
-    if rival.action_log.is_empty() {
-        draw_text_block(
-            &ctx.data.text("ui.no_rival_actions"),
-            rect.x,
-            y - 4.0,
-            rect.w,
-            30.0,
-            13.0,
-            2.0,
-            style::TEXT_DIM,
-        );
+    if !rival.action_log.is_empty()
+        && virtual_button(
+            Rect::new(rect.x, rect.y + 132.0, rect.w, 32.0),
+            &ctx.data.text("ui.recent_actions"),
+            ctx.action_review.is_none(),
+            ButtonTone::Secondary,
+            ctx.pointer,
+        )
+    {
+        actions.push(UiAction::OpenReading(ReadingView::History));
     }
 }
 
@@ -283,7 +245,14 @@ fn draw_campaign_controls(
     y += if compact { 16.0 } else { 22.0 };
 
     let project_w = (rect.w - 12.0) / 3.0;
-    for (index, project) in ctx.data.campaign_balance.projects.iter().enumerate() {
+    for (index, project) in ctx
+        .data
+        .campaign_balance
+        .projects
+        .iter()
+        .filter(|project| !ctx.session.is_project_completed(ctx.data, project))
+        .enumerate()
+    {
         let status = ctx.session.project_status(ctx.data, &project.id);
         if inspectable_button(
             Rect::new(
@@ -306,7 +275,19 @@ fn draw_campaign_controls(
     y += if compact { 30.0 } else { 34.0 };
 
     let institution_w = (rect.w - 8.0) / 2.0;
-    for (index, institution) in ctx.data.campaign_balance.institutions.iter().enumerate() {
+    for (index, institution) in ctx
+        .data
+        .campaign_balance
+        .institutions
+        .iter()
+        .filter(|institution| {
+            !ctx.session
+                .active_institutions
+                .iter()
+                .any(|active| active.id == institution.id)
+        })
+        .enumerate()
+    {
         let status = ctx.session.institution_status(ctx.data, &institution.id);
         if inspectable_button(
             Rect::new(
@@ -325,6 +306,17 @@ fn draw_campaign_controls(
                 ActionReview::ActivateInstitution(institution.id.clone()),
             ));
         }
+    }
+    if (!ctx.session.completed_projects.is_empty() || !ctx.session.active_institutions.is_empty())
+        && virtual_button(
+            Rect::new(rect.x, y + 40.0, rect.w, 32.0),
+            &ctx.data.text("ui.completed"),
+            input_enabled,
+            ButtonTone::Secondary,
+            pointer,
+        )
+    {
+        actions.push(UiAction::OpenReading(ReadingView::Completed));
     }
 }
 

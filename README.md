@@ -99,7 +99,16 @@ shows a reason once; Help carries the confirmation instructions. Chronicle
 paging appears only for multiple pages. The inspector keeps supply state and
 counts of damaged or blocked routes visible; Routes & Supply owns route
 decisions and Wardens, including sites without known routes. Current focus
-appears once; Change Focus opens a comparison of yields, notes, and availability. Lost settlements and final-tier cities
+appears once; Change Focus opens a comparison of yields, notes, and availability.
+Got it dismisses first-use gestures and routine counsel for the current app
+session; Help reopens controls and current guidance. Urgent counsel and action
+blockers remain visible. Known-site Details holds flavour prose while terrain,
+ownership, traits, and local needs stay in the inspector. Recent Actions and
+Completed projects & institutions open paged records. Completed actions are
+hidden only for their actual target, and locked choices still open review.
+Event-specific causes and uncertainty remain beside choices; How events work
+opens generic explanations from events or Help. The ending shows one score and
+one set of legacy facts, with Restart and Title always reachable. Lost settlements and final-tier cities
 retain their status without presenting an impossible upgrade.
 
 The normal baseline is 1280×720. The minimum supported play area is landscape

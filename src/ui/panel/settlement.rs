@@ -39,11 +39,9 @@ pub(super) fn draw_existing_settlement(
     );
 
     let active_issue_count = active_issue_count(ctx, settlement);
-    let stores_label_y = y + 60.0;
-    let stores_grid_y = y + 72.0;
-    crate::ui::section_label(&ctx.data.text("ui.stores"), content.x, stores_label_y);
+    let stores_grid_y = y + 58.0;
     if active_issue_count > 0 {
-        let issues_rect = Rect::new(content.right() - 112.0, stores_label_y - 16.0, 112.0, 28.0);
+        let issues_rect = Rect::new(content.right() - 112.0, y + 90.0, 112.0, 24.0);
         if virtual_button(
             issues_rect,
             &ctx.data.text_with(
@@ -74,15 +72,19 @@ pub(super) fn draw_existing_settlement(
         &ctx.data
             .text_with("ui.focus_current", &[("{name}", focus_name)]),
         content.x,
-        y + 116.0,
-        content.w,
+        y + 96.0,
+        if active_issue_count > 0 {
+            content.w - 120.0
+        } else {
+            content.w
+        },
         24.0,
         16.0,
         2.0,
         style::TEXT_BRIGHT,
     );
     if virtual_button(
-        Rect::new(content.x, y + 148.0, content.w, 32.0),
+        Rect::new(content.x, y + 120.0, content.w, 32.0),
         &ctx.data.text("ui.change_focus"),
         interaction.input_enabled,
         ButtonTone::Secondary,
@@ -90,7 +92,7 @@ pub(super) fn draw_existing_settlement(
     ) {
         interaction.actions.push(UiAction::ToggleFocusChoices);
     }
-    let focus_grid_bottom = y + 184.0;
+    let focus_grid_bottom = y + 154.0;
     if !settlement.is_active()
         || ctx
             .data

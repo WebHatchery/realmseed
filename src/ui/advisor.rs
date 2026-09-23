@@ -1,6 +1,6 @@
 //! Realm overview and council guidance surfaces.
 
-use super::{section_label, style, UiAction, UiContext};
+use super::{style, UiAction, UiContext};
 use crate::state::{AdvisorPriority, SettlementStatus};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
@@ -10,7 +10,6 @@ use macroquad_toolkit::ui::RectExt;
 #[derive(Debug, Clone)]
 struct Recommendation {
     title: String,
-    detail: String,
 }
 
 pub(super) fn draw_realm_summary_overlay(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
@@ -22,7 +21,7 @@ pub(super) fn draw_realm_summary_overlay(ctx: &UiContext<'_>, actions: &mut Vec<
         screen.h,
         Color::new(0.004, 0.010, 0.012, 0.72),
     );
-    let rect = super::centered_modal_rect(ctx, 720.0, 520.0);
+    let rect = super::centered_modal_rect(ctx, 720.0, 420.0);
     style::draw_panel(rect);
 
     let content = rect.inset(17.0);
@@ -137,32 +136,6 @@ pub(super) fn draw_realm_summary_overlay(ctx: &UiContext<'_>, actions: &mut Vec<
             &[("{count}", &ctx.session.active_issues.len().to_string())],
         ),
     );
-
-    y += 26.0;
-    style::draw_divider(content.x, y, content.w);
-    y += 26.0;
-    let recommendation = recommendation_for(ctx);
-    section_label(&ctx.data.text("ui.advisor_counsel"), content.x, y);
-    draw_text_block(
-        &recommendation.title,
-        content.x,
-        y + 20.0,
-        content.w,
-        22.0,
-        15.0,
-        2.0,
-        style::TEXT_BRIGHT,
-    );
-    draw_text_block(
-        &recommendation.detail,
-        content.x,
-        y + 42.0,
-        content.w,
-        42.0,
-        12.5,
-        2.0,
-        style::TEXT_DIM,
-    );
 }
 
 pub(super) fn draw_council_footer(
@@ -188,12 +161,18 @@ pub(super) fn draw_council_footer(
 
     draw_quick_actions(ctx, utility, input_enabled, actions);
     style::draw_vertical_divider(decision.x - 6.0, decision.y + 3.0, decision.h - 6.0);
-    draw_ui_text_ex(
-        &recommendation.title,
-        decision.x,
-        decision.y + 18.0,
-        TextStyle::new(13.5, style::TEXT_BRIGHT).params(),
+    let urgent = matches!(
+        ctx.session.advisor_priority(ctx.data),
+        AdvisorPriority::AnswerEvent | AdvisorPriority::ResolveIssues
     );
+    if !ctx.guidance_dismissed || urgent {
+        draw_ui_text_ex(
+            &recommendation.title,
+            decision.x,
+            decision.y + 18.0,
+            TextStyle::new(13.5, style::TEXT_BRIGHT).params(),
+        );
+    }
     let detail = if ctx.session.pending_event.is_some() {
         ctx.data.text("ui.resolve_event_first")
     } else {
@@ -349,14 +328,11 @@ fn recommendation_for(ctx: &UiContext<'_>) -> Recommendation {
     match ctx.session.advisor_priority(ctx.data) {
         AdvisorPriority::AnswerEvent => Recommendation {
             title: ctx.data.text("ui.advisor_answer_title"),
-            detail: ctx.data.text("ui.advisor_scouting"),
         },
         AdvisorPriority::SpendActions => Recommendation {
             title: ctx.data.text("ui.advisor_actions_title"),
-            detail: ctx.data.text("ui.advisor_actions_spent"),
         },
         AdvisorPriority::ScoutSelected => {
-            let scout_status = ctx.session.scout_status(ctx.data);
             let site_name = ctx
                 .session
                 .selected_site(ctx.data)
@@ -366,28 +342,22 @@ fn recommendation_for(ctx: &UiContext<'_>) -> Recommendation {
                 title: ctx
                     .data
                     .text_with("ui.scout_title", &[("{site}", &site_name)]),
-                detail: scout_status.reason.clone(),
             }
         }
         AdvisorPriority::RevealFrontier => Recommendation {
             title: ctx.data.text("ui.advisor_reveal_title"),
-            detail: ctx.data.text("ui.advisor_reveal"),
         },
         AdvisorPriority::FoundCamp => Recommendation {
             title: ctx.data.text("ui.advisor_founding_title"),
-            detail: ctx.data.text("ui.advisor_founding"),
         },
         AdvisorPriority::BuildRoad => Recommendation {
             title: ctx.data.text("ui.advisor_roads_title"),
-            detail: ctx.data.text("ui.advisor_roads"),
         },
         AdvisorPriority::AdvanceSeason => Recommendation {
             title: ctx.data.text("ui.advisor_season_title"),
-            detail: ctx.data.text("ui.advisor_season"),
         },
         AdvisorPriority::ResolveIssues => Recommendation {
             title: ctx.data.text("ui.advisor_issues_title"),
-            detail: ctx.data.text("ui.advisor_issues"),
         },
     }
 }

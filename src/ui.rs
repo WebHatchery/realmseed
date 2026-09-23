@@ -15,7 +15,9 @@ mod map_sites;
 mod map_terrain;
 mod menu;
 mod panel;
+mod reading;
 mod routes;
+pub use reading::ReadingView;
 mod season_report;
 mod style;
 
@@ -86,6 +88,10 @@ pub enum UiAction {
     ToggleSeasonReport,
     ToggleHelp,
     ToggleFocusChoices,
+    OpenReading(ReadingView),
+    CloseReading,
+    ReadingPage(usize),
+    DismissGuidance,
     ChroniclePrevious,
     ChronicleNext,
     EndgameNewGame,
@@ -146,6 +152,9 @@ pub struct UiContext<'a> {
     pub show_season_report: bool,
     pub show_help: bool,
     pub show_focus_choices: bool,
+    pub reading: Option<ReadingView>,
+    pub reading_page: usize,
+    pub guidance_dismissed: bool,
     pub chronicle_page: usize,
     pub show_factions: bool,
     pub faction_view: FactionView,
@@ -210,6 +219,10 @@ pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAct
     let mut actions = Vec::new();
     if !supports_gameplay_viewport(&ctx) {
         draw_viewport_message(&ctx);
+        return actions;
+    }
+    if ctx.reading.is_some() {
+        reading::draw_reading(&ctx, &mut actions);
         return actions;
     }
     let event_open = ctx.session.pending_event.is_some();
@@ -445,10 +458,6 @@ fn realm_flows(ctx: &UiContext<'_>) -> ResourceStock {
 
 fn population_flow(ctx: &UiContext<'_>) -> i32 {
     ctx.session.last_season_flow.population_delta
-}
-
-pub(super) fn section_label(text: &str, x: f32, y: f32) {
-    style::draw_panel_title(text, x, y);
 }
 
 pub(super) fn virtual_button(

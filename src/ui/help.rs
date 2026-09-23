@@ -1,6 +1,6 @@
 //! Reopenable, touch-readable controls and opening guidance.
 
-use super::{style, UiAction, UiContext};
+use super::{style, ReadingView, UiAction, UiContext};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
@@ -68,6 +68,15 @@ pub(super) fn draw_help_overlay(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>
         content.y + 308.0,
         content.w,
     );
+    if super::virtual_button(
+        Rect::new(content.x, content.bottom() - 70.0, 180.0, 32.0),
+        &ctx.data.text("ui.event_details"),
+        true,
+        ButtonTone::Secondary,
+        ctx.pointer,
+    ) {
+        actions.push(UiAction::OpenReading(ReadingView::Events));
+    }
     draw_text_block(
         &ctx.data.text("ui.help_escape"),
         content.x,

@@ -1,6 +1,8 @@
 //! Event modal rendering and choice intents.
 
-use super::{inspectable_button, style, virtual_button, ActionReview, UiAction, UiContext};
+use super::{
+    inspectable_button, style, virtual_button, ActionReview, ReadingView, UiAction, UiContext,
+};
 use crate::state::fill_event_text;
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
@@ -25,7 +27,15 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>)
         Color::new(0.004, 0.010, 0.012, 0.72),
     );
 
-    let rect = super::centered_modal_rect(ctx, 884.0, 548.0);
+    let specific_details = [
+        (&template.visible_consequences, "ui.event_generic_visible"),
+        (&template.hidden_consequences, "ui.event_generic_uncertain"),
+    ]
+    .iter()
+    .filter(|(text, generic)| !text.is_empty() && **text != ctx.data.text(generic))
+    .count();
+    let height = 356.0 + template.choices.len() as f32 * 44.0 + specific_details as f32 * 42.0;
+    let rect = super::centered_modal_rect(ctx, 884.0, height);
     style::draw_panel(rect);
     let content = rect.inset(26.0);
 
@@ -74,22 +84,24 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>)
         content.w,
     );
     y += 42.0;
-    draw_event_detail(
-        &ctx.data.text("ui.visible"),
-        &template.visible_consequences,
-        content.x,
-        y,
-        content.w,
-    );
-    y += 42.0;
-    draw_event_detail(
-        &ctx.data.text("ui.uncertain"),
-        &template.hidden_consequences,
-        content.x,
-        y,
-        content.w,
-    );
-    y += 50.0;
+    for (label, text, generic) in [
+        (
+            "ui.visible",
+            &template.visible_consequences,
+            "ui.event_generic_visible",
+        ),
+        (
+            "ui.uncertain",
+            &template.hidden_consequences,
+            "ui.event_generic_uncertain",
+        ),
+    ] {
+        if !text.is_empty() && *text != ctx.data.text(generic) {
+            draw_event_detail(&ctx.data.text(label), text, content.x, y, content.w);
+            y += 42.0;
+        }
+    }
+    y += 8.0;
 
     style::draw_divider(content.x, y - 18.0, content.w);
 
@@ -123,6 +135,16 @@ pub(super) fn draw_event_modal(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>)
             },
         );
         y += 44.0;
+    }
+
+    if virtual_button(
+        Rect::new(content.x, content.bottom() - 34.0, 180.0, 32.0),
+        &ctx.data.text("ui.event_details"),
+        ctx.action_review.is_none(),
+        ButtonTone::Secondary,
+        ctx.pointer,
+    ) {
+        actions.push(UiAction::OpenReading(ReadingView::Events));
     }
 
     if template.allow_defer

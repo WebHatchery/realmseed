@@ -65,3 +65,21 @@ across this batch. Default publishing completed Windows/WebGL builds and preview
 deployment. Final focus-copy deduplication was included in WebGL publishing and
 native verification captures; the next default publish will refresh the Windows
 package with that copy. All shared capture processes exited normally.
+
+## Guidance and records disclosure (2026-09-23)
+
+Added dismissible routine guidance, site and event details, rival history,
+completed project effects, and a deduplicated ending summary. Blockers and
+current decision facts remain visible. Project completion checks are scoped to
+the selected target and covered by a regression test.
+
+The grouped 35-test suite passed before the final presentation refinements.
+Final formatting, strict Clippy, source-size/data checks and default publishing
+passed. Windows and WebGL preview packages now include the final changes,
+including the focus-copy update noted above. The shared capture harness generated
+11 scenes at each of 1280x720 and 800x560; all game processes exited.
+
+Final visual inspection and browser/touch interaction review remain outstanding
+in TODO.md because the user requested updating the list, committing and stopping.
+Earlier iterations were inspected, but the final compact inspector refinements
+and new browser disclosure interactions have not completed that review.

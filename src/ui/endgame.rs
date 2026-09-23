@@ -18,7 +18,7 @@ pub(super) fn draw_endgame_summary(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
         screen.h,
         Color::new(0.02, 0.025, 0.02, 0.70),
     );
-    let rect = super::centered_modal_rect(ctx, 868.0, 520.0);
+    let rect = super::centered_modal_rect(ctx, 868.0, 420.0);
     draw_surface_with_title(
         rect,
         Some(&ctx.data.text("ui.endgame_title")),
@@ -42,19 +42,18 @@ pub(super) fn draw_endgame_summary(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
         content.y + 54.0,
         TextStyle::new(24.0, dark::TEXT_BRIGHT).params(),
     );
-    draw_text_block(
-        &summary.summary_text,
-        content.x,
-        content.y + 80.0,
-        content.w,
-        190.0,
-        17.0,
-        4.0,
-        dark::TEXT,
-    );
     let details = ctx.data.text_with(
-        "state.summary_details",
+        "ui.ending_details",
         &[
+            (
+                "{ambition}",
+                &ctx.session
+                    .selected_ambition_id
+                    .as_deref()
+                    .and_then(|id| ctx.data.campaign_balance.ambition(id))
+                    .map(|ambition| ambition.name.clone())
+                    .unwrap_or_else(|| ctx.data.text("state.no_ambition")),
+            ),
             ("{identity}", &summary.strongest_identity),
             ("{largest}", &summary.largest_settlement),
             ("{worst}", &summary.worst_year.to_string()),
@@ -66,9 +65,9 @@ pub(super) fn draw_endgame_summary(ctx: &UiContext<'_>, actions: &mut Vec<UiActi
     draw_text_block(
         &details,
         content.x,
-        content.y + 286.0,
+        content.y + 88.0,
         content.w,
-        150.0,
+        content.h - 148.0,
         16.0,
         4.0,
         dark::TEXT_DIM,

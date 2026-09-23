@@ -309,3 +309,32 @@ fn chronicle_years_use_structured_tags_and_stable_ties() {
 
     assert_eq!(session.chronicle_years(), (1, 4));
 }
+
+#[test]
+fn completed_projects_remain_scoped_to_the_selected_target() {
+    let data = test_data();
+    let mut session = GameSession::new(&data);
+    let granaries = data.campaign_balance.project("expand_granaries").unwrap();
+    let watch = data.campaign_balance.project("frontier_watch").unwrap();
+    assert!(!session.is_project_completed(&data, granaries));
+    session.settlements[0].stored = realmseed::data::ResourceStock {
+        food: 1000,
+        timber: 1000,
+        stone: 1000,
+        wealth: 1000,
+    };
+    session.complete_project(&data, &granaries.id).unwrap();
+    session.complete_project(&data, &watch.id).unwrap();
+    assert!(session.is_project_completed(&data, granaries));
+    assert!(!session.project_status(&data, &granaries.id).enabled);
+    session.selected_site_id = "lowmeadow".to_owned();
+    assert!(!session.is_project_completed(&data, granaries));
+    assert!(session.is_project_completed(&data, watch));
+    let other_region = data
+        .sites
+        .iter()
+        .find(|site| site.region_id != "greenvale_basin")
+        .unwrap();
+    session.selected_site_id = other_region.id.clone();
+    assert!(!session.is_project_completed(&data, watch));
+}

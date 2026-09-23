@@ -8,11 +8,26 @@ use macroquad::prelude::set_fullscreen;
 impl Game {
     pub(super) fn apply_action(&mut self, action: UiAction) {
         match action {
+            UiAction::OpenReading(view) => {
+                self.reading = Some(view);
+                self.reading_page = 0;
+            }
+            UiAction::CloseReading => {
+                self.reading = None;
+            }
+            UiAction::ReadingPage(page) => {
+                self.reading_page = page;
+            }
+            UiAction::DismissGuidance => {
+                self.guidance_dismissed = true;
+            }
+
             UiAction::ToggleFocusChoices => {
                 self.show_focus_choices = !self.show_focus_choices;
             }
             UiAction::NewGame => {
                 self.show_focus_choices = false;
+                self.reading = None;
                 self.session = GameSession::new(&self.data);
                 self.show_chronicle = false;
                 self.show_season_report = false;
@@ -131,6 +146,9 @@ impl Game {
                 }
             }
             UiAction::ToggleHelp => {
+                if self.show_help {
+                    self.guidance_dismissed = true;
+                }
                 self.action_review = None;
                 self.show_help = !self.show_help;
                 if self.show_help {
