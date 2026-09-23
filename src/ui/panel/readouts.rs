@@ -2,7 +2,7 @@
 
 use crate::data::GameData;
 use crate::state::SettlementRuntimeState;
-use crate::ui::{style, UiContext};
+use crate::ui::style;
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
@@ -94,44 +94,6 @@ pub(super) fn draw_store_grid(data: &GameData, settlement: &SettlementRuntimeSta
     }
 }
 
-pub(super) fn draw_focus_card(
-    ctx: &UiContext<'_>,
-    settlement: &SettlementRuntimeState,
-    rect: Rect,
-) {
-    draw_surface(
-        rect,
-        &SurfaceStyle::new(Color::new(0.022, 0.041, 0.045, 0.74))
-            .with_border(1.0, Color::new(0.58, 0.45, 0.25, 0.22)),
-    );
-    let focus_name = settlement
-        .focus(ctx.data)
-        .map(|focus| focus.name.clone())
-        .unwrap_or_else(|| ctx.data.text("ui.unassigned"));
-    style::draw_icon(
-        focus_icon(&focus_name),
-        vec2(rect.x + 24.0, rect.y + 22.0),
-        30.0,
-        style::GOLD,
-    );
-    draw_ui_text_ex(
-        &focus_name,
-        rect.x + 54.0,
-        rect.y + 17.0,
-        TextStyle::new(15.0, style::TEXT_BRIGHT).params(),
-    );
-    draw_text_block(
-        &focus_summary(ctx, settlement),
-        rect.x + 54.0,
-        rect.y + 21.0,
-        rect.w - 62.0,
-        17.0,
-        10.0,
-        1.0,
-        style::TEXT_DIM,
-    );
-}
-
 pub(super) fn focus_icon(name: &str) -> style::IconKind {
     match name {
         "Farming" => style::IconKind::Food,
@@ -143,22 +105,7 @@ pub(super) fn focus_icon(name: &str) -> style::IconKind {
     }
 }
 
-fn focus_summary(ctx: &UiContext<'_>, settlement: &SettlementRuntimeState) -> String {
-    let Some(focus) = settlement.focus(ctx.data) else {
-        return ctx.data.text("ui.no_focus");
-    };
-    let output = resource_output_text(ctx.data, focus.output);
-    ctx.data.text_with(
-        "ui.base_focus_summary",
-        &[
-            ("{name}", &focus.name),
-            ("{output}", &output),
-            ("{notes}", &focus.notes),
-        ],
-    )
-}
-
-fn resource_output_text(data: &GameData, output: crate::data::ResourceStock) -> String {
+pub(super) fn resource_output_text(data: &GameData, output: crate::data::ResourceStock) -> String {
     let mut parts = Vec::new();
     if output.food != 0 {
         parts.push(output_amount(data, output.food, "ui.food"));

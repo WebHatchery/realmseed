@@ -1,60 +1,15 @@
 //! Active-settlement management: metrics, focus selection, and upgrades.
 
-use super::readouts::{draw_focus_card, draw_metric_grid, draw_store_grid, focus_icon};
+use super::readouts::{draw_metric_grid, draw_store_grid};
 use crate::data::ActiveIssueState;
 use crate::state::SettlementRuntimeState;
 use crate::ui::{
-    inspectable_button, style, virtual_button, virtual_icon_button, ActionReview,
-    FrontierDetailsTab, UiAction, UiContext,
+    inspectable_button, style, virtual_button, ActionReview, FrontierDetailsTab, UiAction,
+    UiContext,
 };
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::HoverTooltip;
-
-#[derive(Debug, Clone, Copy)]
-struct FocusButtonLayout {
-    columns: usize,
-    column_gap: f32,
-    row_gap: f32,
-    button_height: f32,
-}
-
-impl FocusButtonLayout {
-    const fn compact() -> Self {
-        Self {
-            columns: 3,
-            column_gap: 6.0,
-            row_gap: 4.0,
-            button_height: 25.0,
-        }
-    }
-
-    const fn roomy() -> Self {
-        Self {
-            columns: 2,
-            column_gap: 8.0,
-            row_gap: 6.0,
-            button_height: 28.0,
-        }
-    }
-
-    fn rows(self, item_count: usize) -> usize {
-        item_count.div_ceil(self.columns)
-    }
-
-    fn row_step(self) -> f32 {
-        self.button_height + self.row_gap
-    }
-
-    fn grid_bottom(self, y: f32, item_count: usize) -> f32 {
-        let rows = self.rows(item_count);
-        if rows == 0 {
-            y
-        } else {
-            y + (rows - 1) as f32 * self.row_step() + self.button_height
-        }
-    }
-}
 
 pub(super) struct SettlementInteraction<'a> {
     pub(super) tooltip: &'a mut HoverTooltip,
@@ -84,7 +39,6 @@ pub(super) fn draw_existing_settlement(
     );
 
     let active_issue_count = active_issue_count(ctx, settlement);
-    let compact = ctx.ui.logical_width < 1040.0;
     let stores_label_y = y + 60.0;
     let stores_grid_y = y + 72.0;
     crate::ui::section_label(&ctx.data.text("ui.stores"), content.x, stores_label_y);
@@ -112,26 +66,31 @@ pub(super) fn draw_existing_settlement(
         Rect::new(content.x, stores_grid_y, content.w, 34.0),
     );
 
-    let focus_label_y = if compact { y + 114.0 } else { y + 120.0 };
-    let focus_card_y = if compact { y + 128.0 } else { y + 134.0 };
-    crate::ui::section_label(&ctx.data.text("ui.current_focus"), content.x, focus_label_y);
-    draw_focus_card(
-        ctx,
-        settlement,
-        Rect::new(content.x, focus_card_y, content.w, 44.0),
+    let focus_name = settlement
+        .focus(ctx.data)
+        .map(|focus| focus.name.as_str())
+        .unwrap_or_default();
+    draw_text_block(
+        &ctx.data
+            .text_with("ui.focus_current", &[("{name}", focus_name)]),
+        content.x,
+        y + 116.0,
+        content.w,
+        24.0,
+        16.0,
+        2.0,
+        style::TEXT_BRIGHT,
     );
-
-    let actions_label_y = if compact { y + 174.0 } else { y + 190.0 };
-    let focus_grid_y = actions_label_y;
-    let focus_layout = focus_button_layout(ctx, content, y, settlement);
-    let focus_grid_bottom = draw_focus_buttons(
-        ctx,
-        interaction,
-        content,
-        focus_grid_y,
-        settlement,
-        focus_layout,
-    );
+    if virtual_button(
+        Rect::new(content.x, y + 148.0, content.w, 32.0),
+        &ctx.data.text("ui.change_focus"),
+        interaction.input_enabled,
+        ButtonTone::Secondary,
+        interaction.pointer,
+    ) {
+        interaction.actions.push(UiAction::ToggleFocusChoices);
+    }
+    let focus_grid_bottom = y + 184.0;
     if !settlement.is_active()
         || ctx
             .data
@@ -163,68 +122,7 @@ pub(super) fn draw_existing_settlement(
         interaction.pointer,
     );
 
-    let mut next_y = upgrade_rect.bottom() + 10.0;
-    let minimum_next_y = if compact { y + 278.0 } else { y + 294.0 };
-    if next_y < minimum_next_y {
-        next_y = minimum_next_y;
-    }
-
-    next_y
-}
-
-fn focus_button_layout(
-    ctx: &UiContext<'_>,
-    content: Rect,
-    y: f32,
-    settlement: &SettlementRuntimeState,
-) -> FocusButtonLayout {
-    let roomy = FocusButtonLayout::roomy();
-    if focus_layout_fits(ctx, content, y, settlement, roomy) {
-        roomy
-    } else {
-        FocusButtonLayout::compact()
-    }
-}
-
-fn focus_layout_fits(
-    ctx: &UiContext<'_>,
-    content: Rect,
-    y: f32,
-    settlement: &SettlementRuntimeState,
-    layout: FocusButtonLayout,
-) -> bool {
-    let actions_label_y = if ctx.ui.logical_width < 1040.0 {
-        y + 174.0
-    } else {
-        y + 190.0
-    };
-    let focus_grid_y = actions_label_y;
-    let focus_grid_bottom =
-        layout.grid_bottom(focus_grid_y, ctx.data.settlement_balance.focuses.len());
-    let upgrade_bottom = focus_grid_bottom + 9.0 + 28.0;
-    let minimum_next_y = if ctx.ui.logical_width < 1040.0 {
-        y + 278.0
-    } else {
-        y + 294.0
-    };
-    let route_y = (upgrade_bottom + 10.0).max(minimum_next_y) + 4.0;
-    let route_count = ctx
-        .session
-        .routes_for_site(&settlement.location_id)
-        .filter(|route| route.known)
-        .count();
-    let route_bottom = route_y + route_section_height(route_count, ctx.ui.logical_width < 1040.0);
-
-    route_bottom <= content.bottom() + 16.0
-}
-
-fn route_section_height(route_count: usize, compact: bool) -> f32 {
-    if compact {
-        return 46.0;
-    }
-    let shown_routes = route_count.min(2);
-    let disclosure = if route_count > 2 { 22.0 } else { 0.0 };
-    58.0 + shown_routes as f32 * 24.0 + disclosure + 2.0
+    upgrade_rect.bottom() + 14.0
 }
 
 fn active_issue_count(ctx: &UiContext<'_>, settlement: &SettlementRuntimeState) -> usize {
@@ -297,46 +195,4 @@ fn check_text(data: &crate::data::GameData, ok: bool, label_id: &str) -> String 
     } else {
         data.text_with("ui.requirement_needed", &[("{label}", &label)])
     }
-}
-
-fn draw_focus_buttons(
-    ctx: &UiContext<'_>,
-    interaction: &mut SettlementInteraction<'_>,
-    content: Rect,
-    y: f32,
-    settlement: &SettlementRuntimeState,
-    layout: FocusButtonLayout,
-) -> f32 {
-    let col_w =
-        (content.w - layout.column_gap * (layout.columns - 1) as f32) / layout.columns as f32;
-    for (index, focus) in ctx.data.settlement_balance.focuses.iter().enumerate() {
-        let col = (index % layout.columns) as f32;
-        let row = (index / layout.columns) as f32;
-        let rect = Rect::new(
-            content.x + col * (col_w + layout.column_gap),
-            y + row * layout.row_step(),
-            col_w,
-            layout.button_height,
-        );
-        let status = ctx.session.focus_change_status(ctx.data, &focus.id);
-        let is_current = settlement.focus_id == focus.id;
-        let tone = if is_current {
-            ButtonTone::Primary
-        } else {
-            ButtonTone::Secondary
-        };
-        if virtual_icon_button(
-            rect,
-            &focus.name,
-            focus_icon(&focus.name),
-            interaction.input_enabled && status.enabled,
-            tone,
-            interaction.pointer,
-        ) {
-            interaction
-                .actions
-                .push(UiAction::SetSettlementFocus(focus.id.clone()));
-        }
-    }
-    layout.grid_bottom(y, ctx.data.settlement_balance.focuses.len())
 }

@@ -115,19 +115,6 @@ fn draw_routes(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>, body: Rect) {
         .routes_for_site(&site.id)
         .filter(|route| route.known)
         .collect();
-    if routes.is_empty() {
-        draw_text_block(
-            &ctx.data.text("ui.no_known_routes"),
-            body.x,
-            body.y + 24.0,
-            body.w,
-            30.0,
-            16.0,
-            2.0,
-            style::TEXT_DIM,
-        );
-        return;
-    }
     let project_status = ctx
         .session
         .regional_project_status(ctx.data, &site.region_id);
@@ -143,6 +130,19 @@ fn draw_routes(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>, body: Rect) {
         actions.push(UiAction::OpenActionReview(
             ActionReview::CompleteRegionalProject(site.region_id.clone()),
         ));
+    }
+    if routes.is_empty() {
+        draw_text_block(
+            &ctx.data.text("ui.no_known_routes"),
+            body.x,
+            body.y + 64.0,
+            body.w,
+            30.0,
+            16.0,
+            2.0,
+            style::TEXT_DIM,
+        );
+        return;
     }
     let mut y = body.y + 42.0;
     for route in routes {

@@ -1,11 +1,13 @@
 //! Selected-site panel, campaign controls, and chronicle overlay.
 
 mod chronicle;
+mod focus;
 mod readouts;
 mod settlement;
 mod site;
 
 pub(super) use chronicle::draw_chronicle_overlay;
+pub(super) use focus::draw_focus_comparison;
 
 use super::{routes, style, UiAction, UiContext};
 use crate::data::SiteCategory;
@@ -27,15 +29,7 @@ pub(super) fn draw_side_panel(
     let mut y = content.y + 2.0;
     y = site::draw_selected_site(ctx, content, y);
     y = draw_settlement_section(ctx, tooltip, input_enabled, actions, content, y + 2.0);
-    routes::draw_route_section(
-        ctx,
-        tooltip,
-        ctx.pointer,
-        input_enabled,
-        actions,
-        content,
-        y + 4.0,
-    );
+    routes::draw_route_section(ctx, input_enabled, actions, content, y + 4.0);
 }
 
 fn draw_settlement_section(

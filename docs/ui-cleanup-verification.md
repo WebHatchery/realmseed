@@ -44,3 +44,24 @@ Final formatting, strict Clippy, five targeted data/source-size checks, and
 default Windows/WebGL preview publishing passed. The complete 34-test suite
 passed for the first batch; gameplay rules were not changed in the second.
 All shared-harness capture processes exited normally.
+
+## Focus and route disclosure (2026-09-23)
+
+Moved focus comparisons behind Change Focus and route actions/Wardens into
+Routes & Supply. Inspector retains current focus, supply state and a visible
+count of damaged/blocked routes. Wardens remains reachable without known routes.
+
+Reviewed gameplay, blocked-route inspector and focus comparison at 1280x720
+and 800x560, plus the five-route overlay at both sizes. Evidence is stored
+in verification/ui_gameplay.png, ui_minimum.png and the route_warning,
+focus_choices and frontier_routes normal/minimum pairs. The compact inspector
+now fits its supply text inside the panel. Browser pointer checks opened routes,
+reviewed Wardens, opened Change Focus and selected Farming; the overlay closed
+and the inspector updated without spending an action (the configured cost is 0).
+Physical touch and pinch were not exercised.
+
+Formatting, strict Clippy, the 34-test suite and source-size checks passed
+across this batch. Default publishing completed Windows/WebGL builds and preview
+deployment. Final focus-copy deduplication was included in WebGL publishing and
+native verification captures; the next default publish will refresh the Windows
+package with that copy. All shared capture processes exited normally.

@@ -9,6 +9,7 @@ pub(super) fn begin_capture_scene(game: &mut Game, scene: &str) {
     game.show_chronicle = false;
     game.show_season_report = false;
     game.show_help = false;
+    game.show_focus_choices = false;
     game.chronicle_page = 0;
     game.show_factions = false;
     game.faction_view = FactionView::Pressure;
@@ -121,6 +122,11 @@ pub(super) fn begin_capture_scene(game: &mut Game, scene: &str) {
             game.faction_view = FactionView::Campaign;
             game.screen = GameScreen::Playing;
         }
+        "focus_choices" => {
+            game.session = GameSession::new(&game.data);
+            game.show_focus_choices = true;
+            game.screen = GameScreen::Playing;
+        }
         "help" => {
             game.session = GameSession::new(&game.data);
             game.show_help = true;
@@ -143,7 +149,7 @@ pub(super) fn begin_capture_scene(game: &mut Game, scene: &str) {
             game.action_review = Some(ActionReview::UpgradeSettlement);
             game.screen = GameScreen::Playing;
         }
-        "frontier_routes" => {
+        "route_warning" | "frontier_routes" => {
             game.session = GameSession::new(&game.data);
             let known_sites = [
                 "lowmeadow",
@@ -159,7 +165,14 @@ pub(super) fn begin_capture_scene(game: &mut Game, scene: &str) {
             }
             game.session.refresh_route_knowledge();
             game.session.select_site(&game.data, "charter_hall");
-            game.show_frontier_details = true;
+            game.show_frontier_details = scene == "frontier_routes";
+            if scene == "route_warning" {
+                for route in &mut game.session.routes {
+                    if route.known {
+                        route.condition = crate::state::RouteCondition::Blocked;
+                    }
+                }
+            }
             game.frontier_details_tab = crate::ui::FrontierDetailsTab::Routes;
             game.screen = GameScreen::Playing;
         }

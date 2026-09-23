@@ -85,6 +85,7 @@ pub enum UiAction {
     ToggleChronicle,
     ToggleSeasonReport,
     ToggleHelp,
+    ToggleFocusChoices,
     ChroniclePrevious,
     ChronicleNext,
     EndgameNewGame,
@@ -144,6 +145,7 @@ pub struct UiContext<'a> {
     pub show_chronicle: bool,
     pub show_season_report: bool,
     pub show_help: bool,
+    pub show_focus_choices: bool,
     pub chronicle_page: usize,
     pub show_factions: bool,
     pub faction_view: FactionView,
@@ -216,6 +218,7 @@ pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAct
         || ctx.show_chronicle
         || ctx.show_season_report
         || ctx.show_help
+        || ctx.show_focus_choices
         || ctx.show_factions
         || ctx.show_realm_summary
         || ctx.show_frontier_details
@@ -237,6 +240,8 @@ pub fn draw_game_ui(ctx: UiContext<'_>, tooltip: &mut HoverTooltip) -> Vec<UiAct
         endgame::draw_endgame_summary(&ctx, &mut actions);
     } else if event_open {
         event::draw_event_modal(&ctx, &mut actions);
+    } else if ctx.show_focus_choices {
+        panel::draw_focus_comparison(&ctx, &mut actions);
     } else if ctx.show_factions {
         faction::draw_faction_overlay(&ctx, &mut actions);
     } else if ctx.show_chronicle {

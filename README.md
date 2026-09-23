@@ -96,7 +96,10 @@ Event choices and campaign planning use focused overlays so their costs,
 risks, and consequences can be compared before committing. Campaign planning
 uses a shorter overlay with one title and its decision controls. Action review
 shows a reason once; Help carries the confirmation instructions. Chronicle
-paging appears only for multiple pages. Lost settlements and final-tier cities
+paging appears only for multiple pages. The inspector keeps supply state and
+counts of damaged or blocked routes visible; Routes & Supply owns route
+decisions and Wardens, including sites without known routes. Current focus
+appears once; Change Focus opens a comparison of yields, notes, and availability. Lost settlements and final-tier cities
 retain their status without presenting an impossible upgrade.
 
 The normal baseline is 1280×720. The minimum supported play area is landscape

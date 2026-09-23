@@ -1,5 +1,9 @@
 {
   "entries": [
+    { "id": "ui.focus_comparison", "text": "Base yields: {output}\n{detail}" },
+    { "id": "ui.change_focus", "text": "Change Focus" },
+    { "id": "ui.focus_current", "text": "Focus: {name}" },
+    { "id": "ui.focus_selected", "text": "{name} (current)" },
     { "id": "state.no_season_summary", "text": "No season summary yet." },
     { "id": "state.select_scout_target", "text": "Select a scout target." },
     { "id": "state.site_already_known", "text": "This site is already known." },
@@ -317,6 +321,7 @@
     { "id": "ui.per_turn_negative", "text": "{rate}/turn" },
     { "id": "ui.last_season_positive", "text": "+{rate} last season" },
     { "id": "ui.last_season_negative", "text": "{rate} last season" },
+    { "id": "ui.routes_warning", "text": "Routes: {damaged} damaged, {blocked} blocked" },
     { "id": "ui.routes_supply", "text": "ROUTES & SUPPLY" },
     { "id": "ui.wardens", "text": "Wardens" },
     { "id": "ui.ready", "text": "Ready." },
