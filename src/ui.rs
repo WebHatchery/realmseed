@@ -268,14 +268,8 @@ fn draw_header(ctx: &UiContext<'_>) {
         Color::new(0.01, 0.020, 0.024, 0.42),
     );
 
-    draw_brand(rect);
     let clock = &ctx.session.clock;
-    let clock_x = rect.x
-        + if ctx.ui.logical_width < 1040.0 {
-            92.0
-        } else {
-            96.0
-        };
+    let clock_x = rect.x + 20.0;
     let season = clock.season.label().to_owned();
     let year = clock.year.to_string();
     draw_ui_text_ex(
@@ -338,13 +332,6 @@ fn draw_header(ctx: &UiContext<'_>) {
             style::IconKind::People,
             Color::new(0.48, 0.65, 0.68, 1.0),
         ),
-        (
-            ctx.data.text("ui.actions"),
-            ctx.session.council_actions_remaining,
-            0,
-            style::IconKind::Actions,
-            style::GOLD,
-        ),
     ];
     let compact = ctx.ui.logical_width < 960.0;
     let badge_gap = if compact { 5.0 } else { 9.0 };
@@ -369,27 +356,12 @@ fn draw_header(ctx: &UiContext<'_>) {
             rate: *rate,
             icon: *icon,
             color: *color,
-            show_rate: index != 5,
-            has_rate: index != 5 && ctx.session.last_season_flow.has_report,
+            has_rate: ctx.session.last_season_flow.has_report,
             positive_rate: &positive_rate,
             negative_rate: &negative_rate,
             compact,
         });
     }
-}
-
-fn draw_brand(rect: Rect) {
-    let mark_center = vec2(rect.x + 43.0, rect.y + 31.0);
-    draw_circle_lines(mark_center.x, mark_center.y, 21.0, 1.4, style::GOLD);
-    draw_circle_lines(
-        mark_center.x,
-        mark_center.y,
-        15.0,
-        0.8,
-        Color::new(0.80, 0.62, 0.34, 0.38),
-    );
-    style::draw_icon(style::IconKind::Tree, mark_center, 33.0, style::GOLD);
-    style::draw_vertical_divider(rect.x + 76.0, rect.y + 14.0, rect.h - 28.0);
 }
 
 struct ResourceReadout<'a> {
@@ -399,7 +371,6 @@ struct ResourceReadout<'a> {
     rate: i32,
     icon: style::IconKind,
     color: Color,
-    show_rate: bool,
     has_rate: bool,
     positive_rate: &'a str,
     negative_rate: &'a str,
@@ -414,7 +385,6 @@ fn draw_resource_readout(readout: ResourceReadout<'_>) {
         rate,
         icon,
         color,
-        show_rate,
         has_rate,
         positive_rate,
         negative_rate,
@@ -434,7 +404,7 @@ fn draw_resource_readout(readout: ResourceReadout<'_>) {
         rect.y + if compact { 17.0 } else { 18.0 },
         TextStyle::new(value_size, style::TEXT_BRIGHT).params(),
     );
-    if !show_rate || !has_rate {
+    if !has_rate {
         return;
     }
     let rate_text = if rate >= 0 {

@@ -1,12 +1,7 @@
 # TODO — Realmseed
 
-UI subtraction pass, 2026-09-23. Audit: [element classifications](docs/ui-subtraction-audit.md).
-Only remaining cleanup work is listed; no UI changes were implemented by this pass.
 
-- [ ] HUD/footer: remove the header Actions readout; keep the count beside Advance Season, where spending versus advancing is decided, including the pending-event warning.
-- [ ] Map: remove the non-interactive crest and STRATEGIC VIEW caption; neither communicates a decision or state. Keep branding on the title screen.
 - [ ] Map/footer: make drag/zoom prose and routine advisor instructions dismissible first-use guidance, reopened through Help; remove the duplicate counsel section from Realm summary. Preserve event blockers and actionable warnings.
-- [ ] Selected-site inspector: remove SELECTED SITE, SCOUTING, SITE DECISIONS, and ACTIONS headings where the named site and labeled controls already explain the content; retain labels distinguishing local stores and focus.
 - [ ] Selected-site inspector: remove the settlement status badge that repeats the tier/status subtitle and the rumor's repeated known-status/scout-reason text; retain status once and scouting costs or blockers beside Scout.
 - [ ] Known unowned/independent site inspector: move descriptive flavour paragraphs to tap/click details; retain ownership, terrain/traits, local need, and any facts affecting founding, trade, or integration beside their decisions.
 - [ ] Settlement inspector: collapse the six focus buttons behind a visible Change Focus control; keep the current focus once, and show base yields and notes with the expanded comparison instead of repeating the name in the card, summary, and selected button.
@@ -21,4 +16,3 @@ Only remaining cleanup work is listed; no UI changes were implemented by this pa
 - [ ] Campaign Planning: hide completed project and activated institution action buttons from available choices; retain achieved effects in an expandable completed section. Keep locked future choices inspectable for costs and unlock requirements.
 - [ ] Chronicle: hide Previous, Next, and Page 1 of 1 when only one page exists; retain navigation for multiple pages, entry dates/content, Open site affordances, and Close.
 - [ ] Endgame: merge facts repeated in the score heading, summary paragraph, and details block; keep score/ending once and one complete account of identity, settlement, years, defining event, ambition, and arcs, plus Restart and Title.
-- [ ] Gameplay panels/readouts: remove the inner decorative panel outline and individual metric-cell borders; they add no grouping beyond the existing panel and labeled row. Retain modal boundaries, actionable control outlines, selection, and warning cues.

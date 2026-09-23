@@ -85,12 +85,6 @@ fn draw_map_controls(
 
 fn draw_map_caption(ctx: &UiContext<'_>, panel_rect: Rect) {
     draw_ui_text_ex(
-        &ctx.data.text("ui.strategic_view"),
-        panel_rect.x + 18.0,
-        panel_rect.y + 74.0,
-        TextStyle::new(11.0, Color::new(0.86, 0.72, 0.42, 0.82)).params(),
-    );
-    draw_ui_text_ex(
         &ctx.data.text("ui.drag_map"),
         panel_rect.x + 18.0,
         panel_rect.bottom() - 14.0,

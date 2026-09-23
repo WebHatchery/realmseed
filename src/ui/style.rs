@@ -52,7 +52,6 @@ pub(super) fn draw_panel(rect: Rect) {
         Color::new(0.018, 0.032, 0.036, 0.82),
     );
     draw_chamfer_lines(rect, GOLD_DIM, 1.0);
-    draw_chamfer_lines(rect.inset(7.0), Color::new(0.88, 0.74, 0.48, 0.08), 1.0);
     draw_line(
         rect.x + 14.0,
         rect.y + 1.0,

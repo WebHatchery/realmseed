@@ -85,8 +85,8 @@ pub(super) fn draw_existing_settlement(
 
     let active_issue_count = active_issue_count(ctx, settlement);
     let compact = ctx.ui.logical_width < 1040.0;
-    let stores_label_y = if compact { y + 50.0 } else { y + 48.0 };
-    let stores_grid_y = y + 60.0;
+    let stores_label_y = y + 60.0;
+    let stores_grid_y = y + 72.0;
     crate::ui::section_label(&ctx.data.text("ui.stores"), content.x, stores_label_y);
     if active_issue_count > 0 {
         let issues_rect = Rect::new(content.right() - 112.0, stores_label_y - 16.0, 112.0, 28.0);
@@ -112,8 +112,8 @@ pub(super) fn draw_existing_settlement(
         Rect::new(content.x, stores_grid_y, content.w, 34.0),
     );
 
-    let focus_label_y = if compact { y + 102.0 } else { y + 108.0 };
-    let focus_card_y = if compact { y + 116.0 } else { y + 122.0 };
+    let focus_label_y = if compact { y + 114.0 } else { y + 120.0 };
+    let focus_card_y = if compact { y + 128.0 } else { y + 134.0 };
     crate::ui::section_label(&ctx.data.text("ui.current_focus"), content.x, focus_label_y);
     draw_focus_card(
         ctx,
@@ -121,14 +121,9 @@ pub(super) fn draw_existing_settlement(
         Rect::new(content.x, focus_card_y, content.w, 44.0),
     );
 
-    let actions_label_y = if compact { y + 162.0 } else { y + 178.0 };
-    let focus_grid_y = actions_label_y + 13.0;
+    let actions_label_y = if compact { y + 174.0 } else { y + 190.0 };
+    let focus_grid_y = actions_label_y;
     let focus_layout = focus_button_layout(ctx, content, y, settlement);
-    crate::ui::section_label(
-        &ctx.data.text("ui.settlement_actions"),
-        content.x,
-        actions_label_y,
-    );
     let focus_grid_bottom = draw_focus_buttons(
         ctx,
         interaction,
@@ -160,7 +155,7 @@ pub(super) fn draw_existing_settlement(
     );
 
     let mut next_y = upgrade_rect.bottom() + 10.0;
-    let minimum_next_y = if compact { y + 266.0 } else { y + 282.0 };
+    let minimum_next_y = if compact { y + 278.0 } else { y + 294.0 };
     if next_y < minimum_next_y {
         next_y = minimum_next_y;
     }
@@ -190,18 +185,18 @@ fn focus_layout_fits(
     layout: FocusButtonLayout,
 ) -> bool {
     let actions_label_y = if ctx.ui.logical_width < 1040.0 {
-        y + 162.0
+        y + 174.0
     } else {
-        y + 178.0
+        y + 190.0
     };
-    let focus_grid_y = actions_label_y + 13.0;
+    let focus_grid_y = actions_label_y;
     let focus_grid_bottom =
         layout.grid_bottom(focus_grid_y, ctx.data.settlement_balance.focuses.len());
     let upgrade_bottom = focus_grid_bottom + 9.0 + 28.0;
     let minimum_next_y = if ctx.ui.logical_width < 1040.0 {
-        y + 266.0
+        y + 278.0
     } else {
-        y + 282.0
+        y + 294.0
     };
     let route_y = (upgrade_bottom + 10.0).max(minimum_next_y) + 4.0;
     let route_count = ctx

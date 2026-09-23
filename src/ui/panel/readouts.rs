@@ -19,8 +19,7 @@ pub(super) fn draw_metric_grid(
         let rect = Rect::new(x + index as f32 * cell_w, y, cell_w, 44.0);
         draw_surface(
             rect,
-            &SurfaceStyle::new(Color::new(0.020, 0.034, 0.036, 0.76))
-                .with_border(1.0, Color::new(0.58, 0.45, 0.25, 0.22)),
+            &SurfaceStyle::new(Color::new(0.020, 0.034, 0.036, 0.76)),
         );
         draw_text_centered_in_box_ex(
             label,

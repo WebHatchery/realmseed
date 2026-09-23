@@ -24,12 +24,7 @@ pub(super) fn draw_side_panel(
     style::draw_panel(rect);
 
     let content = rect.inset(18.0);
-    style::draw_panel_title(
-        &ctx.data.text("ui.selected_site"),
-        content.x,
-        content.y + 16.0,
-    );
-    let mut y = content.y + 50.0;
+    let mut y = content.y + 2.0;
     y = site::draw_selected_site(ctx, content, y);
     y = draw_settlement_section(ctx, tooltip, input_enabled, actions, content, y + 2.0);
     routes::draw_route_section(
@@ -55,15 +50,7 @@ fn draw_settlement_section(
         return y;
     };
     if ctx.session.site_knowledge(&site.id) != SiteKnowledge::Known {
-        super::section_label(&ctx.data.text("ui.scouting"), content.x, y);
-        return site::draw_scout_action(
-            ctx,
-            ctx.pointer,
-            input_enabled,
-            actions,
-            content,
-            y + 14.0,
-        );
+        return site::draw_scout_action(ctx, ctx.pointer, input_enabled, actions, content, y);
     }
 
     if let Some(settlement) = ctx.session.settlement_at_site(&site.id) {
@@ -75,11 +62,9 @@ fn draw_settlement_section(
         };
         settlement::draw_existing_settlement(ctx, &mut interaction, content, y, settlement)
     } else if site.category == SiteCategory::Independent {
-        super::section_label(&ctx.data.text("ui.site_decisions"), content.x, y);
-        site::draw_independent_actions(ctx, ctx.pointer, input_enabled, actions, content, y + 14.0)
+        site::draw_independent_actions(ctx, ctx.pointer, input_enabled, actions, content, y)
     } else if site.category == SiteCategory::Settlement {
-        super::section_label(&ctx.data.text("ui.site_decisions"), content.x, y);
-        site::draw_found_camp_action(ctx, ctx.pointer, input_enabled, actions, content, y + 14.0)
+        site::draw_found_camp_action(ctx, ctx.pointer, input_enabled, actions, content, y)
     } else {
         y
     }

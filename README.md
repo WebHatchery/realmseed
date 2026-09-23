@@ -84,7 +84,10 @@ or settlement deserves the next council action. The illustrated map is the
 dominant focus; the selected-site inspector is the supporting decision area;
 quiet utilities stay in the footer. The primary action is contextual to the
 selected site, while `Advance Season` is separated as the season transition
-and shows the remaining action budget beside it.
+and shows the remaining action budget beside it. The header reserves its
+readouts for realm resources, population, and season; the named site leads
+the inspector without repeated section headings. Panel boundaries and
+action outlines provide grouping without inner decorative frames.
 
 The Realm summary is available from the footer when realm-wide stability,
 loyalty, supply, or danger needs review. Detailed seasonal results belong in
